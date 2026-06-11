@@ -49,8 +49,8 @@ win.show()
 
 print("== window & demo ==")
 win.load_demo()
-check("4 spectra loaded into table", win.table.rowCount() == 4)
-check("plot has 4 curves", len(win.plotview._curves) == 4)
+check("5 spectra loaded into table", win.table.rowCount() == 5)
+check("plot has 5 curves", len(win.plotview._curves) == 5)
 
 
 def select_rows(*rows):
@@ -65,9 +65,9 @@ def select_rows(*rows):
 print("== processing actions (no-arg) ==")
 select_rows(0)
 win.baseline_rb()
-check("rubberband applied, still 4 spectra", len(win.document) == 4)
+check("rubberband applied, still 5 spectra", len(win.document) == 5)
 win.snv()
-check("SNV applied", len(win.document) == 4)
+check("SNV applied", len(win.document) == 5)
 win.normalize("max")
 check("normalize max applied", abs(max(abs(win.document[0].y.min()),
                                        abs(win.document[0].y.max())) - 1.0) < 1e-6)
@@ -78,11 +78,11 @@ n_before = win.document[0].npoints
 win.smooth_sg()
 check("Savitzky-Golay ran", win.document[0].npoints == n_before)
 win.derivative()
-check("derivative ran", len(win.document) == 4)
+check("derivative ran", len(win.document) == 5)
 win.baseline_als()
-check("ALS ran", len(win.document) == 4)
+check("ALS ran", len(win.document) == 5)
 win.baseline_airpls()
-check("airPLS ran", len(win.document) == 4)
+check("airPLS ran", len(win.document) == 5)
 
 print("== axis conversions ==")
 win.remove_all()
@@ -205,6 +205,46 @@ win.plotview.mark_peaks([Peak(500, 8000, 10, 1, 1, 0), Peak(3000, 8000, 10, 1, 1
 ys2 = sorted(it.pos().y() for it in win.plotview._peak_items
              if isinstance(it, pg.TextItem))
 check("far-apart labels share a tier (not staggered)", abs(ys2[1] - ys2[0]) < 1e-6)
+
+print("== library / mixture / XRF handlers ==")
+from specview.demo import demo_xrf  # noqa: E402
+
+win.remove_all()
+xl = np.linspace(400, 1800, 600)
+def _bb(c, a, w):  # noqa: E306
+    return a * np.exp(-(xl - c) ** 2 / (2 * w ** 2))
+rA = Spectrum(xl, _bb(700, 1, 30) + _bb(1200, .5, 40), name="refA", x_unit="cm-1")
+rB = Spectrum(xl, _bb(900, .8, 25) + _bb(1500, .6, 35), name="refB", x_unit="cm-1")
+mix = Spectrum(xl, 0.7 * rA.y + 0.3 * rB.y, name="mix", x_unit="cm-1")
+for s in (mix, rA, rB):
+    win.document.add(s)
+win._rebuild_table()
+select_rows(1, 2)
+win.library_add()
+check("library_add stored 2 references", len(win.library) == 2)
+select_rows(0)
+win.library_search()
+check("library_search opened a results dialog",
+      win._dialogs and isinstance(win._dialogs[-1], dlg.TableDialog))
+select_rows(0, 1, 2)
+win.mixture_analysis()
+check("mixture_analysis drew the fit overlay", len(win.plotview._fit_items) > 0)
+
+win.remove_all()
+win.document.add(demo_xrf())
+win._rebuild_table()
+select_rows(0)
+win.identify_xrf()
+check("identify_xrf marked element peaks", len(win.plotview._peak_items) > 0)
+
+lib_path = os.path.join(tempfile.mkdtemp(), "lib.speclib")
+QtWidgets.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (lib_path, ""))
+QtWidgets.QFileDialog.getOpenFileName = staticmethod(lambda *a, **k: (lib_path, ""))
+win.library_save()
+win.library_clear()
+check("library_clear empties the library", len(win.library) == 0)
+win.library_load()
+check("library_load restores entries from file", len(win.library) == 2)
 
 print(f"\n{PASS} passed, {FAIL} failed")
 app.quit()

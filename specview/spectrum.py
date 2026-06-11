@@ -22,6 +22,7 @@ X_UNIT_LABELS = {
     "cm-1": "Wavenumber (cm⁻¹)",
     "raman_cm-1": "Raman shift (cm⁻¹)",
     "eV": "Energy (eV)",
+    "keV": "Energy (keV)",
     "THz": "Frequency (THz)",
 }
 

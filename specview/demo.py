@@ -61,6 +61,21 @@ def demo_nir() -> Spectrum:
     return Spectrum(x=x, y=y, name="Demo NIR", x_unit="nm", y_unit="absorbance")
 
 
+def demo_xrf() -> Spectrum:
+    """A synthetic XRF spectrum (keV) with common food-mineral lines."""
+    x = np.linspace(1.0, 20.0, 2200)
+
+    def line(c, a, w=0.06):
+        return a * np.exp(-(x - c) ** 2 / (2 * w ** 2))
+
+    peaks = (line(3.314, 2000) + line(3.692, 5000)     # K, Ca
+             + line(6.404, 8000) + line(7.058, 1500)    # Fe Kα, Kβ
+             + line(8.048, 3000) + line(8.639, 2500))    # Cu, Zn
+    rng = np.random.default_rng(9)
+    y = peaks + 300 * np.exp(-x / 4.0) + 50 + rng.normal(0, 28, x.size)
+    return Spectrum(x=x, y=y, name="Demo XRF (minerals)", x_unit="keV", y_unit="counts")
+
+
 def load_demo_set():
     """Return a small variety pack of demo spectra."""
-    return [demo_ftir(), demo_raman(), demo_uvvis(), demo_nir()]
+    return [demo_ftir(), demo_raman(), demo_uvvis(), demo_nir(), demo_xrf()]

@@ -77,10 +77,23 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
   Pseudo-Voigt 的疊加（可選同時擬合線性基線）；圖上疊出各分量（虛線）與加總、
   附 R² 與每峰中心/高度/FWHM/面積的表；一鍵把**擬合分量存回光譜清單**。
 - **區間積分**：指定 x 範圍、可減端點線性基線，算面積與重心，並在圖上標示積分區。
+- **混合物濃度（NNLS）**：以純物質參考譜，用非負最小平方解 mixture ≈ Σ cᵢ·refᵢ，
+  回報各成分係數、正規化比例與 R²，並疊出重建譜。參考譜可來自選取的光譜或光譜庫。
+- **XRF 元素鑑定**：對 keV（或 eV）能量軸的 XRF 譜尋峰，比對內建特徵譜線表
+  （Kα/Kβ/Lα/Lβ，常見元素 Z=11–92），在圖上標出元素（如 Fe Kα1）並附比對表。
 
 ![peak deconvolution](docs/peak_deconvolution.png)
 
 > 重疊的羰基（C=O）吸收帶被擬合拆解成三個 Gaussian 分量（R²≈0.9997）。
+
+![XRF elements](docs/xrf_elements.png)
+
+> XRF 譜自動標出對應元素（食品礦物 K / Ca / Fe / Cu / Zn）。
+
+### 光譜庫與相似度比對（Library 選單）
+- **自建光譜庫**：把載入的光譜「加入庫」，存成 `.speclib`（JSON）庫檔、之後可載入。
+- **相似度搜尋**：拿未知譜對庫比對，依**相關係數**排序，命中清單同時顯示
+  correlation / cosine / 光譜角 SAM / 歐氏距離，可一鍵把最佳命中疊到圖上。
 
 ---
 
@@ -98,9 +111,11 @@ spectra_viewer/
     ├── app.py              QApplication 設定 + 進入點
     ├── spectrum.py         Spectrum 資料模型 + SpectrumSet 文件
     ├── axes.py             座標軸換算（X、Y）
-    ├── processing.py       所有前處理演算法
-    ├── analysis.py         尋峰 / 峰形擬合 / 積分
-    ├── demo.py             內建示範光譜
+    ├── processing.py       所有前處理演算法（含 airPLS 基線）
+    ├── analysis.py         尋峰 / 峰形擬合 / 積分 / 混合物 NNLS
+    ├── library.py          光譜庫（.speclib）+ 相似度搜尋
+    ├── xrf.py              XRF 元素譜線表 + 峰→元素比對
+    ├── demo.py             內建示範光譜（FTIR/Raman/UV-Vis/NIR/XRF）
     ├── formats/            檔案 IO
     │   ├── __init__.py     依副檔名派發載入 + 存檔
     │   ├── ascii_io.py     ASCII 解析（偵測分隔符/表頭/多欄/歐規小數）
@@ -133,9 +148,10 @@ python tests/gui_smoke_test.py   # 建視窗 / 載入 / 處理 / 換算 / 分析
 
 ## 尚未納入（下一步）
 
-v1（檢視 + 前處理）與 v2（尋峰 / 峰形擬合 / 積分）已完成。後續可加：
-- **檢量線濃度**：用峰高或峰面積對已知濃度建線、回推未知樣品
+已完成：檢視 + 前處理（含 airPLS）、尋峰 / 峰形擬合 / 積分、混合物 NNLS、
+光譜庫相似度比對、XRF 元素鑑定、多格式 IO（含 JSON / MATLAB）。後續可加：
+- **檢量線濃度**：用峰高或峰面積對「一系列已知濃度」建線、回推未知樣品（NNLS 之外的單變量定量）
 - **螢光 EEM**：激發-發射矩陣等高線 / 3D 圖、瑞利散射移除
-- **資料庫比對**：光譜庫建立與相似度搜尋
 - **批次自動化**：把一串處理步驟套用到整批檔案
 - **化學計量建模**：PLS / PCA（接 scikit-learn，配合「合併匯出」的 X-matrix）
+- **XRF 能量校正**：channel/pixel 軸 → keV 的二點校正

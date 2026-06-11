@@ -15,7 +15,7 @@ _HC_EV_NM = 1239.841984  # h*c in eV·nm  -> E[eV] = 1239.84 / λ[nm]
 _C_THZ_NM = 299792.458    # c in nm·THz   -> f[THz] = 299792.458 / λ[nm]
 
 # Units that describe an optical x-axis (convertible to wavelength).
-X_CONVERTIBLE = {"nm", "um", "cm-1", "raman_cm-1", "eV", "THz"}
+X_CONVERTIBLE = {"nm", "um", "cm-1", "raman_cm-1", "eV", "keV", "THz"}
 # Units that describe an optical y-axis (convertible via T/R fraction).
 Y_CONVERTIBLE = {"transmittance", "%T", "absorbance",
                  "reflectance", "%R", "KM", "log1R"}
@@ -35,6 +35,8 @@ def x_to_nm(x: np.ndarray, unit: str, laser_nm: float | None = None) -> np.ndarr
         return 1.0e7 / np.where(np.abs(x) < _EPS, np.nan, x)
     if unit == "eV":
         return _HC_EV_NM / np.where(np.abs(x) < _EPS, np.nan, x)
+    if unit == "keV":
+        return _HC_EV_NM / np.where(np.abs(x) < _EPS, np.nan, x * 1000.0)
     if unit == "THz":
         return _C_THZ_NM / np.where(np.abs(x) < _EPS, np.nan, x)
     if unit == "raman_cm-1":
@@ -58,6 +60,8 @@ def nm_to_x(nm: np.ndarray, unit: str, laser_nm: float | None = None) -> np.ndar
         return 1.0e7 / safe
     if unit == "eV":
         return _HC_EV_NM / safe
+    if unit == "keV":
+        return _HC_EV_NM / safe / 1000.0
     if unit == "THz":
         return _C_THZ_NM / safe
     if unit == "raman_cm-1":

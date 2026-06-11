@@ -31,7 +31,7 @@ def check(name, cond):
 
 print("== model & demo ==")
 specs = load_demo_set()
-check("demo set has 4 spectra", len(specs) == 4)
+check("demo set has 5 spectra", len(specs) == 5)
 check("spectrum x sorted ascending", all(np.all(np.diff(s.x) > 0) for s in specs))
 ftir = specs[0]
 check("ftir is cm-1 / absorbance", ftir.x_unit == "cm-1" and ftir.y_unit == "absorbance")
@@ -263,6 +263,43 @@ check("MAT named variables", sm.npoints == 50 and sm.x_unit == "cm-1")
 mp2 = os.path.join(jdir, "matrix.mat")
 savemat(mp2, {"M": np.column_stack([np.arange(30.0), np.ones(30)])})
 check("MAT single 2-D matrix", load_any(mp2)[0].npoints == 30)
+
+print("== library search ==")
+from specview.library import SpectralLibrary, similarity_scores  # noqa: E402
+
+xl = np.linspace(400, 1800, 800)
+def _bnd(c, a, w):  # noqa: E306
+    return a * np.exp(-(xl - c) ** 2 / (2 * w ** 2))
+refA = Spectrum(xl, _bnd(700, 1.0, 30) + _bnd(1200, 0.5, 40), name="A", x_unit="cm-1")
+refB = Spectrum(xl, _bnd(900, 0.8, 25) + _bnd(1500, 0.6, 35), name="B", x_unit="cm-1")
+lib = SpectralLibrary("t")
+lib.add(refA)
+lib.add(refB)
+lp = os.path.join(tempfile.mkdtemp(), "t.speclib")
+lib.save(lp)
+lib2 = SpectralLibrary.load(lp)
+check("library save/load preserves entries", len(lib2) == 2 and lib2.entries[0].name == "A")
+hits = lib2.search(refA.copy(), top_n=2)
+check("library search ranks the match first",
+      hits[0]["name"] == "A" and hits[0]["scores"]["correlation"] > 0.99)
+check("similarity of identical spectra ~ 1",
+      abs(similarity_scores(refA, refA.copy())["correlation"] - 1) < 1e-9)
+
+print("== mixture NNLS ==")
+mix = Spectrum(xl, 0.6 * refA.y + 0.4 * refB.y, name="mix", x_unit="cm-1")
+mres = A.mixture_nnls(mix, [refA, refB], fit_offset=True)
+check("mixture fractions recovered (0.6 / 0.4)",
+      abs(mres.fractions[0] - 0.6) < 0.02 and abs(mres.fractions[1] - 0.4) < 0.02)
+check("mixture R^2 ~ 1", mres.r_squared > 0.999)
+
+print("== XRF element identification ==")
+from specview import xrf  # noqa: E402
+
+ids = xrf.identify_peaks([3.692, 6.404, 8.048], tol=0.05)
+check("XRF identifies Ca / Fe / Cu",
+      [r["best"]["symbol"] for r in ids] == ["Ca", "Fe", "Cu"])
+check("XRF line label is Greek", ids[1]["best"]["line_label"] == "Kα1")
+check("XRF tolerance rejects far energies", xrf.identify_peaks([50.0], 0.05)[0]["best"] is None)
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

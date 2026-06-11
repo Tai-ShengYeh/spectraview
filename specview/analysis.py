@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, nnls
 from scipy.signal import find_peaks as _sp_find_peaks
 from scipy.signal import peak_widths, savgol_filter
 
@@ -225,6 +225,52 @@ def component_to_spectrum(spec: Spectrum, x: np.ndarray, curve: np.ndarray,
     out = Spectrum(x=x, y=curve, name=label, x_unit=spec.x_unit, y_unit=spec.y_unit)
     out.meta["fit_component"] = True
     return out
+
+
+# ============================================================ mixture (NNLS)
+@dataclass
+class MixtureResult:
+    names: list          # component names
+    coeffs: np.ndarray   # raw non-negative coefficients
+    fractions: np.ndarray  # coeffs normalised to sum 1
+    x: np.ndarray
+    fit: np.ndarray      # reconstructed mixture (Σ coeff·ref)
+    r_squared: float
+    offset: float        # fitted constant baseline (0 if not used)
+
+
+def mixture_nnls(mixture: Spectrum, references: list[Spectrum],
+                 fit_offset: bool = True) -> MixtureResult:
+    """Estimate component proportions of a mixture from pure reference spectra.
+
+    Solves  mixture ≈ Σ cᵢ·refᵢ (+ offset)  with cᵢ ≥ 0 (non-negative least
+    squares). Returns raw coefficients and the normalised fractions (Σ = 1).
+    """
+    if not references:
+        raise ValueError("Need at least one reference spectrum.")
+    lo = max([mixture.x[0]] + [r.x[0] for r in references])
+    hi = min([mixture.x[-1]] + [r.x[-1] for r in references])
+    if hi <= lo:
+        raise ValueError("Mixture and references do not share an x-range.")
+    gx = mixture.x[(mixture.x >= lo) & (mixture.x <= hi)]
+    if gx.size < len(references) + 2:
+        raise ValueError("Too little overlap to fit that many components.")
+    b = np.interp(gx, mixture.x, mixture.y)
+    cols = [np.interp(gx, r.x, r.y) for r in references]
+    if fit_offset:
+        cols.append(np.ones_like(gx))
+    A = np.column_stack(cols)
+    coeffs, _ = nnls(A, b)
+    fit = A @ coeffs
+    offset = float(coeffs[-1]) if fit_offset else 0.0
+    comp_coeffs = coeffs[:-1] if fit_offset else coeffs
+    total = comp_coeffs.sum()
+    fractions = comp_coeffs / total if total > _EPS else comp_coeffs
+    ss_res = float(np.sum((b - fit) ** 2))
+    ss_tot = float(np.sum((b - b.mean()) ** 2)) or 1.0
+    return MixtureResult(names=[r.name for r in references], coeffs=comp_coeffs,
+                         fractions=fractions, x=gx, fit=fit,
+                         r_squared=1.0 - ss_res / ss_tot, offset=offset)
 
 
 # ============================================================ integration

@@ -7,8 +7,9 @@ import traceback
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from .. import __app_name__, __version__, analysis, axes, processing
+from .. import __app_name__, __version__, analysis, axes, processing, xrf
 from ..demo import load_demo_set
+from ..library import SpectralLibrary
 from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
                        save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
@@ -17,7 +18,8 @@ from .plotview import PlotView
 
 _X_TARGETS = [("Wavelength (nm)", "nm"), ("Wavenumber (cm⁻¹)", "cm-1"),
               ("Wavelength (µm)", "um"), ("Raman shift (cm⁻¹)", "raman_cm-1"),
-              ("Energy (eV)", "eV"), ("Frequency (THz)", "THz")]
+              ("Energy (eV)", "eV"), ("Energy (keV)", "keV"),
+              ("Frequency (THz)", "THz")]
 _Y_TARGETS = [("Transmittance", "transmittance"), ("Transmittance %", "%T"),
               ("Absorbance", "absorbance"), ("Reflectance", "reflectance"),
               ("Kubelka-Munk", "KM"), ("log(1/R)", "log1R")]
@@ -36,6 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._dark = False
         self._last_dir = ""   # remembered folder for open/save dialogs
         self._dialogs: list = []   # keep non-modal result dialogs alive
+        self.library = SpectralLibrary()   # reference spectral library
 
         self.plotview = PlotView(self.document)
         self.plotview.cursorMoved.connect(self._on_cursor)
@@ -188,8 +191,24 @@ class MainWindow(QtWidgets.QMainWindow):
         m_an.addAction(QtGui.QAction("Integrate range…", self,
                                      triggered=self.integrate_range))
         m_an.addSeparator()
+        m_an.addAction(QtGui.QAction("Mixture analysis (NNLS)…", self,
+                                     triggered=self.mixture_analysis))
+        m_an.addAction(QtGui.QAction("Identify XRF elements…", self,
+                                     triggered=self.identify_xrf))
+        m_an.addSeparator()
         m_an.addAction(QtGui.QAction("Clear analysis overlays", self,
                                      triggered=self.clear_analysis))
+
+        m_lib = mb.addMenu("&Library")
+        m_lib.addAction(QtGui.QAction("Add selected to library", self,
+                                      triggered=self.library_add))
+        m_lib.addAction(QtGui.QAction("Search selected against library…", self,
+                                      triggered=self.library_search))
+        m_lib.addSeparator()
+        m_lib.addAction(QtGui.QAction("View library…", self, triggered=self.library_view))
+        m_lib.addAction(QtGui.QAction("Load library…", self, triggered=self.library_load))
+        m_lib.addAction(QtGui.QAction("Save library…", self, triggered=self.library_save))
+        m_lib.addAction(QtGui.QAction("Clear library", self, triggered=self.library_clear))
 
         m_help = mb.addMenu("&Help")
         m_help.addAction(QtGui.QAction("About", self, triggered=self.about))
@@ -807,6 +826,174 @@ class MainWindow(QtWidgets.QMainWindow):
     def clear_analysis(self) -> None:
         self.plotview.clear_analysis()
         self.status.showMessage("Cleared analysis overlays.", 3000)
+
+    def mixture_analysis(self) -> None:
+        idx = self._selected_indices()
+        if len(idx) >= 2:
+            mixture, refs, src = self.document[idx[0]], \
+                [self.document[i] for i in idx[1:]], "selected"
+        elif len(idx) == 1 and len(self.library):
+            mixture, refs, src = self.document[idx[0]], list(self.library.entries), \
+                "library"
+        else:
+            QtWidgets.QMessageBox.information(
+                self, "Mixture analysis",
+                "Select the mixture plus its reference components (the FIRST "
+                "selected is the mixture), or select just the mixture and load a "
+                "reference library.")
+            return
+        try:
+            res = analysis.mixture_nnls(mixture, refs, fit_offset=True)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.warning(self, "Mixture analysis failed", str(exc))
+            return
+        self.plotview.show_fit(res.x, res.fit, [])
+        order = np.argsort(res.fractions)[::-1]
+        rows = [[i + 1, res.names[j], f"{res.coeffs[j]:.4g}",
+                 f"{res.fractions[j] * 100:.2f}%"] for i, j in enumerate(order)]
+        summary = (f"Mixture “{mixture.name}” · {len(refs)} references ({src}) · "
+                   f"R²={res.r_squared:.4f} · offset={res.offset:.4g}")
+        self._show_dialog(TableDialog(
+            f"Mixture composition — {mixture.name}",
+            ["#", "Component", "Coefficient", "Fraction"], rows, self,
+            summary=summary, default_dir=self._last_dir))
+        self.status.showMessage(summary, 9000)
+
+    def identify_xrf(self) -> None:
+        spec = self._analysis_target()
+        if spec is None:
+            QtWidgets.QMessageBox.information(self, "Identify XRF", "Load a spectrum first.")
+            return
+        if spec.x_unit not in ("keV", "eV"):
+            QtWidgets.QMessageBox.warning(
+                self, "Identify XRF",
+                f"XRF element ID needs an energy axis in keV or eV; this spectrum is "
+                f"in '{spec.x_unit}'. Convert/calibrate the x-axis to energy first.")
+            return
+        v = FormDialog.exec_form("Identify XRF elements", [
+            {"key": "height", "label": "Min peak height (% of range)", "type": "float",
+             "default": 3.0, "min": 0.0, "max": 100.0, "decimals": 1},
+            {"key": "prom", "label": "Min prominence (% of range)", "type": "float",
+             "default": 2.0, "min": 0.0, "max": 100.0, "decimals": 1},
+            {"key": "tol", "label": "Match tolerance (keV)", "type": "float",
+             "default": 0.10, "min": 0.01, "max": 1.0, "decimals": 3},
+        ], self, f"Analysing: {spec.name}")
+        if not v:
+            return
+        peaks = analysis.find_peaks(spec, v["height"] / 100.0, v["prom"] / 100.0)
+        if not peaks:
+            self.status.showMessage("No XRF peaks found — lower the thresholds.", 6000)
+            return
+        scale = 1.0 if spec.x_unit == "keV" else 1e-3   # eV -> keV
+        ident = xrf.identify_peaks([p.center * scale for p in peaks], tol=v["tol"])
+        labels = [f"{r['best']['symbol']} {r['best']['line_label']}" if r["best"]
+                  else "?" for r in ident]
+        self.plotview.mark_peaks(peaks, color="#1f77b4", labels=labels)
+        rows = []
+        for i, (p, r) in enumerate(zip(peaks, ident)):
+            b = r["best"]
+            rows.append([i + 1, f"{p.center * scale:.4g}",
+                         f"{b['symbol']} ({b['name']})" if b else "—",
+                         b["line_label"] if b else "—",
+                         f"{b['energy']:.4g}" if b else "—",
+                         f"{b['delta'] * 1000:+.0f}" if b else "—"])
+        n_match = sum(1 for r in ident if r["best"])
+        self._show_dialog(TableDialog(
+            f"XRF elements — {spec.name}",
+            ["#", "Peak (keV)", "Element", "Line", "Line (keV)", "ΔE (eV)"], rows, self,
+            summary=f"{len(peaks)} peaks, {n_match} matched to elements.",
+            default_dir=self._last_dir))
+        self.status.showMessage(f"XRF: matched {n_match}/{len(peaks)} peaks.", 6000)
+
+    # ---- spectral library -----------------------------------------------
+    def library_add(self) -> None:
+        targets = [self.document[i] for i in self._selected_indices()] or \
+            list(self.document)
+        targets = [s for s in targets if s.npoints]
+        if not targets:
+            QtWidgets.QMessageBox.information(self, "Library", "No spectra to add.")
+            return
+        for s in targets:
+            self.library.add(s)
+        self.status.showMessage(
+            f"Added {len(targets)} → library now has {len(self.library)} entries.", 6000)
+
+    def library_search(self) -> None:
+        spec = self._analysis_target()
+        if spec is None:
+            QtWidgets.QMessageBox.information(self, "Library search", "Load a spectrum first.")
+            return
+        if not len(self.library):
+            QtWidgets.QMessageBox.information(
+                self, "Library search",
+                "The library is empty. Add spectra (Library ▸ Add selected) or load a "
+                "library file first.")
+            return
+        hits = self.library.search(spec, top_n=15)
+        rows = [[i + 1, h["name"], f"{h['scores']['correlation']:.4f}",
+                 f"{h['scores']['cosine']:.4f}", f"{h['scores']['sam']:.4f}",
+                 f"{h['scores']['euclid']:.4f}"] for i, h in enumerate(hits)]
+
+        def overlay_top():
+            if hits:
+                top = hits[0]["entry"].copy()
+                top.name, top.color = f"[ref] {hits[0]['name']}", None
+                self.document.add(top)
+                self._rebuild_table()
+                self.plotview.refresh()
+                self.status.showMessage(f"Overlaid: {hits[0]['name']}", 5000)
+
+        top_txt = (f"Best match: {hits[0]['name']} "
+                   f"(correlation {hits[0]['scores']['correlation']:.4f})") if hits else ""
+        self._show_dialog(TableDialog(
+            f"Library search — {spec.name}",
+            ["#", "Reference", "Correlation", "Cosine", "SAM (rad)", "Euclid"], rows, self,
+            summary=top_txt, extra_buttons=[("Overlay top hit", overlay_top)],
+            default_dir=self._last_dir))
+
+    def library_view(self) -> None:
+        if not len(self.library):
+            QtWidgets.QMessageBox.information(self, "Library", "The library is empty.")
+            return
+        rows = [[i + 1, s.name, s.npoints, s.x_unit, s.y_unit]
+                for i, s in enumerate(self.library.entries)]
+        self._show_dialog(TableDialog(
+            f"Library: {self.library.name} ({len(self.library)} entries)",
+            ["#", "Name", "Points", "X unit", "Y unit"], rows, self,
+            default_dir=self._last_dir))
+
+    def library_load(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load library", self._last_dir,
+            "Spectral library (*.speclib *.json);;All files (*.*)")
+        if not path:
+            return
+        try:
+            self.library = SpectralLibrary.load(path)
+            self._last_dir = os.path.dirname(os.path.abspath(path))
+            self.status.showMessage(
+                f"Loaded library '{self.library.name}' ({len(self.library)} entries).", 7000)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.critical(self, "Load failed", str(exc))
+
+    def library_save(self) -> None:
+        if not len(self.library):
+            QtWidgets.QMessageBox.information(self, "Library", "The library is empty.")
+            return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save library", self._default_save_path("references.speclib"),
+            "Spectral library (*.speclib);;JSON (*.json)")
+        if not path:
+            return
+        try:
+            self.library.save(path)
+            self._report_saved(path)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.critical(self, "Save failed", str(exc))
+
+    def library_clear(self) -> None:
+        self.library.clear()
+        self.status.showMessage("Library cleared.", 3000)
 
     # ===================================================== drag & drop
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:

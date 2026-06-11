@@ -112,19 +112,24 @@ class PlotView(QtWidgets.QWidget):
             self.set_flip_x(True)
 
     # ---- analysis overlays ----------------------------------------------
-    def mark_peaks(self, peaks, color: str = "#d62728") -> None:
-        """Draw markers + position labels, staggering labels of close peaks.
+    def mark_peaks(self, peaks, color: str = "#d62728", labels=None) -> None:
+        """Draw markers + labels, staggering labels of close peaks.
 
-        Labels of peaks closer than ~4% of the visible x-range are stacked into
-        an ascending staircase so their text never overlaps horizontally.
+        ``labels`` (parallel to ``peaks``) overrides the default position text —
+        used by XRF to label peaks with element symbols. Labels of peaks closer
+        than ~4% of the visible x-range stack into an ascending staircase so
+        their text never overlaps horizontally.
         """
         self.clear_peaks()
         if not peaks:
             return
-        xs = [p.center for p in peaks]
-        ys = [p.height for p in peaks]
-        scatter = pg.ScatterPlotItem(xs, ys, symbol="t1", size=11,
-                                     brush=pg.mkBrush(color), pen=pg.mkPen("k", width=0.5))
+        # (x, y, text) triples so labels follow their peak through the sort
+        triples = [(p.center, p.height,
+                    labels[i] if labels else f"{p.center:.4g}")
+                   for i, p in enumerate(peaks)]
+        scatter = pg.ScatterPlotItem([t[0] for t in triples], [t[1] for t in triples],
+                                     symbol="t1", size=11, brush=pg.mkBrush(color),
+                                     pen=pg.mkPen("k", width=0.5))
         self.plot.addItem(scatter)
         self._peak_items.append(scatter)
 
@@ -134,12 +139,11 @@ class PlotView(QtWidgets.QWidget):
         near = 0.04 * x_span      # peaks closer than this share a cluster
         step = 0.05 * y_span      # one vertical stagger tier
         last_x, level = None, 0
-        for p in sorted(peaks, key=lambda q: q.center):
-            level = level + 1 if (last_x is not None and abs(p.center - last_x) < near) \
-                else 0
-            last_x = p.center
-            txt = pg.TextItem(f"{p.center:.4g}", color=color, anchor=(0.5, 1.0))
-            txt.setPos(p.center, p.height + step * (0.3 + level))
+        for cx, cy, text in sorted(triples, key=lambda t: t[0]):
+            level = level + 1 if (last_x is not None and abs(cx - last_x) < near) else 0
+            last_x = cx
+            txt = pg.TextItem(text, color=color, anchor=(0.5, 1.0))
+            txt.setPos(cx, cy + step * (0.3 + level))
             self.plot.addItem(txt)
             self._peak_items.append(txt)
 
