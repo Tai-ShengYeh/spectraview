@@ -69,6 +69,10 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
   附 R² 與每峰中心/高度/FWHM/面積的表；一鍵把**擬合分量存回光譜清單**。
 - **區間積分**：指定 x 範圍、可減端點線性基線，算面積與重心，並在圖上標示積分區。
 
+![peak deconvolution](docs/peak_deconvolution.png)
+
+> 重疊的羰基（C=O）吸收帶被擬合拆解成三個 Gaussian 分量（R²≈0.9997）。
+
 ---
 
 ## 專案結構

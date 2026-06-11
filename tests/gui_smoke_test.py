@@ -189,6 +189,21 @@ win.clear_analysis()
 check("clear_analysis removes all overlays",
       not win.plotview._peak_items and not win.plotview._fit_items)
 
+print("== peak label staggering (no overlap for close peaks) ==")
+import pyqtgraph as pg  # noqa: E402
+from specview.analysis import Peak  # noqa: E402
+
+win.plotview.plot.getViewBox().setRange(xRange=(0, 3800), yRange=(0, 40000), padding=0)
+win.plotview.mark_peaks([Peak(1052, 13000, 10, 1, 1, 0), Peak(1093, 12500, 10, 1, 1, 1)])
+labels = [it for it in win.plotview._peak_items if isinstance(it, pg.TextItem)]
+ys = sorted(it.pos().y() for it in labels)
+check("two close peaks -> 2 labels", len(labels) == 2)
+check("close-peak labels staggered vertically", ys[1] - ys[0] > 500)
+win.plotview.mark_peaks([Peak(500, 8000, 10, 1, 1, 0), Peak(3000, 8000, 10, 1, 1, 1)])
+ys2 = sorted(it.pos().y() for it in win.plotview._peak_items
+             if isinstance(it, pg.TextItem))
+check("far-apart labels share a tier (not staggered)", abs(ys2[1] - ys2[0]) < 1e-6)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 app.quit()
 sys.exit(1 if FAIL else 0)
