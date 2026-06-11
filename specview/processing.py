@@ -156,6 +156,52 @@ def baseline_als(spec: Spectrum, lam: float = 1e5, p: float = 0.01,
     return out
 
 
+def _whittaker_smooth(y: np.ndarray, w: np.ndarray, lam: float,
+                      diff_order: int = 1) -> np.ndarray:
+    """Penalised (Whittaker) least-squares smoother used by airPLS."""
+    m = y.size
+    E = sparse.eye(m, format="csc")
+    for _ in range(diff_order):
+        E = E[1:] - E[:-1]
+    W = sparse.diags(w, 0, shape=(m, m))
+    A = (W + lam * (E.transpose() @ E)).tocsc()
+    return spsolve(A, w * y)
+
+
+def baseline_airpls(spec: Spectrum, lam: float = 1e5, porder: int = 2,
+                    n_iter: int = 15) -> Spectrum:
+    """airPLS baseline (adaptive iteratively reweighted penalised least squares).
+
+    Z.-M. Zhang, S. Chen & Y.-Z. Liang, *Analyst* 135 (2010) 1138-1146;
+    reference implementation: https://github.com/zmzhang/airPLS (re-implemented
+    here from the published algorithm). Robust for fluorescence-style backgrounds.
+    ``lam`` controls smoothness (~1e2..1e7); ``porder`` is the difference order
+    (2 is the default here — it tracks broad curved backgrounds far better than
+    order 1, which collapses to a flat line at large ``lam``).
+    """
+    y = spec.y.astype(float)
+    m = y.size
+    if m < 3:
+        return spec.copy()
+    w = np.ones(m)
+    z = y.copy()
+    total = np.abs(y).sum() or 1.0
+    for i in range(1, int(n_iter) + 1):
+        z = _whittaker_smooth(y, w, lam, porder)
+        d = y - z
+        neg = d < 0
+        dssn = float(np.abs(d[neg].sum()))
+        if dssn < 0.001 * total:          # converged
+            break
+        w[~neg] = 0.0                     # points above baseline = peaks -> ignore
+        w[neg] = np.exp(i * np.abs(d[neg]) / dssn)
+        w[0] = np.exp(i * np.abs(d[neg]).max() / dssn)
+        w[-1] = w[0]
+    out = spec.replace_data(spec.x, y - z)
+    out.meta["last_op"] = f"Baseline: airPLS (lam={lam:g}, porder={porder})"
+    return out
+
+
 # ----------------------------------------------------------- normalisation
 def normalize(spec: Spectrum, method: str = "max", x0: float | None = None) -> Spectrum:
     """Normalise a spectrum.

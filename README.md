@@ -39,7 +39,8 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 
 ### 檢視核心
 - **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
-  GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）。一個檔可含多條光譜。
+  JSON（多種結構：x/y 陣列、別名鍵、pairs、`spectra` 多光譜）、MATLAB（.mat，含命名變數
+  與 N×2 / N×M 矩陣）、GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）。一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
 - **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列）。
 - **座標軸換算**
@@ -53,13 +54,18 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 
 ### 前處理（可作用於選取的光譜，未選取則套用全部）
 - **平滑**：Savitzky-Golay、移動平均
-- **基線校正**：Rubberband（凸包）、多項式（ModPoly 疊代）、非對稱最小平方 ALS（Eilers）
+- **基線校正**：Rubberband（凸包）、多項式（ModPoly 疊代）、非對稱最小平方 ALS（Eilers）、
+  **airPLS**（Zhang 2010；對螢光背景特別有效，預設 porder=2）
 - **微分**：1–4 階（Savitzky-Golay）
 - **正規化**：峰值=1、Min-Max(0..1)、面積=1、向量(L2)、指定 x₀ 處=1
 - **散射校正**：SNV、MSC（對平均光譜）、detrend
 - **光譜運算**：兩條相加/減/乘/除（自動對齊重疊區）、平均（mean/median）
 - **轉換**：裁切 x 範圍、重採樣到均勻格點
 - **復原/重做**：每步處理皆可 Undo/Redo（Ctrl+Z / Ctrl+Y）
+
+![airPLS baseline](docs/airpls_baseline.png)
+
+> airPLS 把 Raman 的螢光背景（藍色估計基線）扣掉，尖峰完整保留、落在零線。
 
 ### 分析（v2，Analyze 選單）
 - **尋峰**：自動偵測峰（或谷）、量測 FWHM、近似面積；在圖上標峰位、並彈出
@@ -96,6 +102,9 @@ spectra_viewer/
     │   ├── __init__.py     依副檔名派發載入 + 存檔
     │   ├── ascii_io.py     ASCII 解析（偵測分隔符/表頭/多欄/歐規小數）
     │   ├── jcamp.py        自寫 JCAMP-DX 解析（AFFN/PAC/SQZ/DIF/DUP）
+    │   ├── json_io.py      JSON 讀寫（多結構）
+    │   ├── mat_io.py       MATLAB .mat 讀取（scipy.io）
+    │   ├── _hints.py       JSON/MAT 共用：鍵名別名 + 單位正規化
     │   └── binary_io.py    SPC / OPUS（選用套件，優雅降級）
     └── ui/                 PySide6 + pyqtgraph 介面
         ├── main_window.py  主視窗、選單、工具列、清單、復原

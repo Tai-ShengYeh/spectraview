@@ -81,6 +81,8 @@ win.derivative()
 check("derivative ran", len(win.document) == 4)
 win.baseline_als()
 check("ALS ran", len(win.document) == 4)
+win.baseline_airpls()
+check("airPLS ran", len(win.document) == 4)
 
 print("== axis conversions ==")
 win.remove_all()

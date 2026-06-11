@@ -214,5 +214,55 @@ s3 = load_jcamp(p3)[0]
 check("AFFN pairs decode", np.allclose(s3.x, [200, 201, 202]) and np.allclose(s3.y, [0.1, 0.2, 0.35]))
 check("AFFN pairs units", s3.x_unit == "nm" and s3.y_unit == "absorbance")
 
+print("== airPLS baseline ==")
+xb = np.linspace(0, 1000, 1000)
+bg = 100.0 * np.exp(-(xb - 500) ** 2 / (2 * 300 ** 2)) + 50.0   # broad background
+pk = 200.0 * np.exp(-(xb - 700) ** 2 / (2 * 10 ** 2))           # sharp peak
+sb = Spectrum(xb, bg + pk, name="airpls")
+corr = processing.baseline_airpls(sb, lam=1e5, porder=2)
+check("airPLS removes background (median ~0)", abs(np.median(corr.y)) < 10)
+check("airPLS preserves the peak", corr.y.max() > 150)
+check("airPLS flattens peak-free region",
+      np.abs(corr.y[xb < 600]).max() < 0.1 * corr.y.max())
+
+print("== JSON IO ==")
+import json as _json  # noqa: E402
+from specview.formats import save_json  # noqa: E402
+
+jdir = tempfile.mkdtemp()
+def _wj(name, obj):  # noqa: E306
+    p = os.path.join(jdir, name)
+    _json.dump(obj, open(p, "w"))
+    return p
+sj = load_any(_wj("a.json", {"x": [1, 2, 3], "y": [4, 5, 6]}))[0]
+check("JSON x/y arrays", sj.npoints == 3 and np.allclose(sj.y, [4, 5, 6]))
+sj = load_any(_wj("b.json", {"name": "S", "x_unit": "nm", "y_unit": "absorbance",
+                             "wavelength": [1, 2], "absorbance": [7, 8]}))[0]
+check("JSON aliased keys + units",
+      sj.name == "S" and sj.x_unit == "nm" and sj.y_unit == "absorbance")
+sj = load_any(_wj("c.json", {"data": [[1, 9], [2, 8]]}))[0]
+check("JSON data pairs", np.allclose(sj.x, [1, 2]) and np.allclose(sj.y, [9, 8]))
+check("JSON spectra list -> N spectra",
+      len(load_any(_wj("d.json", {"spectra": [{"x": [1, 2], "y": [1, 2]},
+                                              {"x": [1, 2], "y": [3, 4]}]}))) == 2)
+check("JSON top-level pairs list",
+      load_any(_wj("e.json", [[1, 1], [2, 2], [3, 3]]))[0].npoints == 3)
+rt = Spectrum([400, 500], [0.1, 0.2], name="rt", x_unit="nm", y_unit="absorbance")
+rp = os.path.join(jdir, "rt.json")
+save_json(rt, rp)
+bj = load_any(rp)[0]
+check("JSON round trip", np.allclose(bj.y, rt.y) and bj.x_unit == "nm" and bj.name == "rt")
+
+print("== MATLAB .mat IO ==")
+from scipy.io import savemat  # noqa: E402
+
+mp = os.path.join(jdir, "named.mat")
+savemat(mp, {"wavenumber": np.linspace(400, 4000, 50), "intensity": np.arange(50.0)})
+sm = load_any(mp)[0]
+check("MAT named variables", sm.npoints == 50 and sm.x_unit == "cm-1")
+mp2 = os.path.join(jdir, "matrix.mat")
+savemat(mp2, {"M": np.column_stack([np.arange(30.0), np.ones(30)])})
+check("MAT single 2-D matrix", load_any(mp2)[0].npoints == 30)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

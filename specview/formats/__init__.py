@@ -13,6 +13,8 @@ from ..spectrum import Spectrum
 from .ascii_io import load_ascii
 from .binary_io import MissingDependency, load_opus, load_spc
 from .jcamp import load_jcamp
+from .json_io import load_json, save_json
+from .mat_io import load_mat
 
 # Map file extensions to reader functions.
 _READERS = {
@@ -20,13 +22,18 @@ _READERS = {
     ".tsv": load_ascii, ".asc": load_ascii, ".prn": load_ascii, ".xy": load_ascii,
     ".dx": load_jcamp, ".jdx": load_jcamp, ".jcm": load_jcamp, ".jcamp": load_jcamp,
     ".spc": load_spc,
+    ".json": load_json,
+    ".mat": load_mat,
 }
 
 # OPUS files often have numeric extensions (.0, .1, ...).
 OPEN_FILTER = (
-    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.dx *.jdx *.jcamp *.spc);;"
+    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.dx *.jdx *.jcamp *.spc "
+    "*.json *.mat);;"
     "ASCII (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy);;"
     "JCAMP-DX (*.dx *.jdx *.jcamp);;"
+    "JSON (*.json);;"
+    "MATLAB (*.mat);;"
     "GRAMS SPC (*.spc);;"
     "Bruker OPUS (*.0 *.1 *.2);;"
     "All files (*.*)"
@@ -140,5 +147,5 @@ def save_combined_csv(spectra, path: str, layout: str = "columns") -> dict:
             "resampled": resampled}
 
 
-__all__ = ["load_any", "save_csv", "save_jcamp", "save_combined_csv", "merge_spectra",
-           "OPEN_FILTER", "MissingDependency"]
+__all__ = ["load_any", "save_csv", "save_jcamp", "save_json", "save_combined_csv",
+           "merge_spectra", "OPEN_FILTER", "MissingDependency"]

@@ -10,7 +10,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from .. import __app_name__, __version__, analysis, axes, processing
 from ..demo import load_demo_set
 from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
-                       save_csv, save_jcamp)
+                       save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
 from .dialogs import FormDialog, TableDialog
 from .plotview import PlotView
@@ -155,6 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mb_.addAction(QtGui.QAction("Polynomial…", self, triggered=self.baseline_poly))
         mb_.addAction(QtGui.QAction("Asymmetric Least Squares…", self,
                                     triggered=self.baseline_als))
+        mb_.addAction(QtGui.QAction("airPLS…", self, triggered=self.baseline_airpls))
         m_proc.addAction(QtGui.QAction("Derivative…", self, triggered=self.derivative))
         mn = m_proc.addMenu("Normalize")
         for label, meth in [("Peak = 1 (max)", "max"), ("Min–Max (0..1)", "minmax"),
@@ -322,12 +323,15 @@ class MainWindow(QtWidgets.QMainWindow):
         spec = self.document[idx[0]]
         path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save spectrum", self._default_save_path(f"{spec.name}.csv"),
-            "CSV (*.csv);;JCAMP-DX (*.dx)")
+            "CSV (*.csv);;JCAMP-DX (*.dx);;JSON (*.json)")
         if not path:
             return
         try:
-            if path.lower().endswith(".dx"):
+            low = path.lower()
+            if low.endswith(".dx"):
                 save_jcamp(spec, path)
+            elif low.endswith(".json"):
+                save_json(spec, path)
             else:
                 save_csv(spec, path)
             self._report_saved(path)
@@ -536,6 +540,22 @@ class MainWindow(QtWidgets.QMainWindow):
         if v:
             self._apply_inplace(lambda s: processing.baseline_als(s, v["lam"], v["p"]),
                                 "Baseline ALS")
+
+    def baseline_airpls(self) -> None:
+        v = FormDialog.exec_form("airPLS baseline", [
+            {"key": "lam", "label": "Smoothness λ", "type": "float",
+             "default": 1e5, "min": 1.0, "max": 1e9, "decimals": 0, "step": 1e4},
+            {"key": "porder", "label": "Difference order (2 = robust)", "type": "int",
+             "default": 2, "min": 1, "max": 3},
+            {"key": "n_iter", "label": "Max iterations", "type": "int",
+             "default": 15, "min": 1, "max": 100},
+        ], self, "Adaptive iteratively reweighted penalised least squares "
+                 "(Zhang et al. 2010). Great for fluorescence-style backgrounds.")
+        if v:
+            self._apply_inplace(
+                lambda s: processing.baseline_airpls(s, v["lam"], int(v["porder"]),
+                                                     int(v["n_iter"])),
+                "Baseline airPLS")
 
     def derivative(self) -> None:
         v = FormDialog.exec_form("Derivative (Savitzky-Golay)", [
