@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpectraView ｜ 光譜 × 食品分析（化學計量學）桌面工具</title>
+<meta name="description" content="SpectraView：受 SpectraGryph 啟發的開源桌面光譜工具，為食品分析化學計量學工作流而生。載入 FTIR／Raman／NIR／XRF，做基線、SNV/MSC、微分等前處理，尋峰、峰形擬合、混合物 NNLS、XRF 元素鑑定、光譜庫比對，最後匯出 X-matrix 餵 PCA / PLS。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{--paper:#FFFFFF;--paper2:#F5F2E9;--ink:#1A1A1A;--soft:#52493b;--teal:#0E7C7B;--cover:#119C9A;--coral:#E36414;--gold:#C8941F;--line:#E4DECC;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.65;}
+  a{color:var(--teal);text-decoration:none;} a:hover{text-decoration:underline;}
+  h1,h2,h3{font-weight:900;line-height:1.2;}
+  code,kbd{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;}
+  .topbar{background:var(--ink);color:#cfc8b6;font-size:13.5px;padding:8px 22px;}
+  .topbar a{color:#9fd3d2;font-weight:700;}
+  .hero{background:var(--cover);color:#fff;text-align:center;padding:64px 22px 54px;}
+  .hero .badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#FFDE7A;font-weight:900;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:5px 14px;margin-bottom:16px;}
+  .hero h1{font-size:clamp(34px,6vw,60px);letter-spacing:.01em;}
+  .hero .accent{color:#FFDE7A;}
+  .hero p{font-size:clamp(15px,2.2vw,20px);color:rgba(255,255,255,.92);font-weight:500;margin-top:14px;max-width:760px;margin-inline:auto;}
+  .hero .stats{display:flex;gap:34px;justify-content:center;flex-wrap:wrap;margin-top:28px;}
+  .hero .stats b{display:block;font-size:30px;font-weight:900;color:#FFDE7A;}
+  .hero .stats span{font-size:13px;color:rgba(255,255,255,.85);font-weight:500;}
+  .hero .cta{margin-top:30px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .btn{font-weight:900;border-radius:999px;padding:11px 22px;font-size:15px;display:inline-block;}
+  .btn.solid{background:#FFDE7A;color:#0a3b3a;} .btn.solid:hover{text-decoration:none;filter:brightness(1.05);}
+  .btn.ghost{border:1.5px solid rgba(255,255,255,.6);color:#fff;} .btn.ghost:hover{text-decoration:none;background:rgba(255,255,255,.12);}
+  main{max-width:1080px;margin:0 auto;padding:0 22px;}
+  section{padding:54px 0 8px;}
+  .kicker{color:var(--coral);font-weight:900;font-size:14px;letter-spacing:.14em;text-transform:uppercase;}
+  section h2{font-size:clamp(24px,3.5vw,34px);margin:6px 0 6px;}
+  section .lead{color:var(--soft);font-size:16.5px;margin-bottom:8px;max-width:820px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin:24px 0;}
+  .card{background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;}
+  .card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.08);}
+  .card .tag{font-size:12px;font-weight:900;color:#fff;background:var(--teal);border-radius:999px;padding:3px 11px;align-self:flex-start;margin-bottom:10px;}
+  .card .tag.coral{background:var(--coral);} .card .tag.gold{background:var(--gold);}
+  .card h3{font-size:20px;margin-bottom:6px;}
+  .card p{color:var(--soft);font-size:14.5px;font-weight:500;flex:1;}
+  .card .links{margin-top:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .card .go{font-weight:900;color:var(--coral);}
+  .card .repo{font-size:13px;color:var(--soft);}
+  /* feature rows with screenshot */
+  .feature{display:grid;grid-template-columns:1fr 1.15fr;gap:28px;align-items:center;background:var(--paper2);border:1px solid var(--line);border-radius:18px;padding:26px 28px;margin:20px 0;}
+  .feature:nth-child(even){grid-template-columns:1.15fr 1fr;}
+  .feature:nth-child(even) .ftext{order:2;}
+  .feature img{width:100%;border-radius:12px;border:1px solid var(--line);box-shadow:0 8px 22px rgba(0,0,0,.07);background:#fff;}
+  .feature h3{font-size:21px;margin-bottom:4px;}
+  .feature .why{color:var(--teal);font-weight:900;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+  .feature p{color:var(--soft);font-size:15px;font-weight:500;}
+  .feature .menu{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:700;color:#fff;background:var(--gold);border-radius:6px;padding:3px 9px;}
+  @media(max-width:760px){.feature,.feature:nth-child(even){grid-template-columns:1fr;}.feature:nth-child(even) .ftext{order:0;}}
+  /* workflow */
+  .flow{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;margin:24px 0;}
+  .flow .step{flex:1;min-width:150px;background:var(--paper2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;}
+  .flow .step.me{background:#e7f4f3;border-color:var(--teal);}
+  .flow .step b{display:block;font-size:15px;margin-bottom:4px;}
+  .flow .step.me b{color:var(--teal);}
+  .flow .step span{font-size:13px;color:var(--soft);font-weight:500;}
+  .flow .arrow{align-self:center;color:var(--coral);font-weight:900;font-size:22px;}
+  @media(max-width:760px){.flow .arrow{transform:rotate(90deg);}}
+  /* interactive */
+  .play{background:#0e2b2a;border-radius:18px;padding:24px 24px 26px;margin:22px 0;color:#eafaf8;}
+  .play h3{color:#fff;font-size:20px;}
+  .play .sub{color:#a8d6d3;font-size:14px;margin:4px 0 14px;font-weight:500;}
+  .play .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .play .tab{cursor:pointer;border:1.5px solid #2f5b59;background:#123e3c;color:#cdeae8;font-weight:700;font-size:13.5px;border-radius:999px;padding:7px 15px;font-family:inherit;}
+  .play .tab.active{background:#FFDE7A;color:#0a3b3a;border-color:#FFDE7A;}
+  .play .canvaswrap{background:#0a2120;border-radius:12px;padding:10px 8px 4px;}
+  .play .explain{margin-top:12px;font-size:14px;color:#d7efed;min-height:42px;}
+  .play .explain b{color:#FFDE7A;}
+  /* install */
+  pre{background:var(--ink);color:#e6e0cf;border-radius:12px;padding:16px 18px;overflow:auto;font-size:14px;line-height:1.7;margin:14px 0;}
+  pre .c{color:#9fd3d2;}
+  .note{background:#fff8e8;border:1px solid var(--gold);border-radius:12px;padding:14px 18px;color:#6b531a;font-size:14.5px;margin:14px 0;}
+  footer{background:var(--ink);color:#cfc8b6;text-align:center;padding:34px 22px;margin-top:56px;font-size:13.5px;}
+  footer b{color:var(--gold);} footer a{color:#9fd3d2;}
+</style>
+</head>
+<body>
+<div class="topbar">← <a href="https://tai-shengyeh.github.io/">食品科學教學課程</a> ｜ 光譜 × 食品分析（化學計量學）</div>
+
+<header class="hero">
+  <span class="badge">Spectroscopy × Chemometrics · 桌面工具</span>
+  <h1>Spectra<span class="accent">View</span></h1>
+  <p>把儀器吐出的原始光譜，互動地「看清楚 → 前處理 → 分析 → 匯出 X-matrix」。
+     一個受 SpectraGryph 啟發、用 Python 寫的開源桌面工具，補上化學計量工作流最前段的那一哩路。</p>
+  <div class="stats">
+    <div><b>8</b><span>檔案格式</span></div>
+    <div><b>10+</b><span>前處理方法</span></div>
+    <div><b>6</b><span>分析模組</span></div>
+  </div>
+  <div class="cta">
+    <a class="btn solid" href="https://github.com/Tai-ShengYeh/spectraview">GitHub 原始碼 →</a>
+    <a class="btn ghost" href="#install">下載與安裝</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- positioning -->
+  <section id="why">
+    <span class="kicker">Where it fits</span>
+    <h2>它在化學計量工作流的哪一段？</h2>
+    <p class="lead">PCA / PLS / PLS-DA 的成敗，七成在「前處理」。SpectraView 就是把載入、前處理與檢視
+       這段做成所見即所得的桌面操作，再一鍵匯出乾淨的資料矩陣，交給 Orange 或 scikit-learn 建模。</p>
+    <div class="flow">
+      <div class="step"><b>① 儀器光譜</b><span>FTIR / Raman / NIR / XRF 的原始檔（含散射、螢光、基線漂移）</span></div>
+      <div class="arrow">→</div>
+      <div class="step me"><b>② SpectraView</b><span>載入·疊圖·座標軸換算·基線/SNV/微分·尋峰/擬合·XRF元素·庫比對·匯出 X-matrix</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>③ PCA / PLS</b><span>Orange Data Mining 或 Python scikit-learn 建模</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>④ 解釋</b><span>分群、定量、摻偽鑑別、產地溯源</span></div>
+    </div>
+    <div class="note">🎓 三層教學的延伸：<b>看影片建直覺 → 讀 Python 學算法 → 用 Orange 親手做</b>，
+       SpectraView 再加一層「<b>用桌面工具親手把光譜整理乾淨</b>」，學生看得到每一步前處理對光譜做了什麼。</div>
+  </section>
+
+  <!-- preprocessing for chemometrics -->
+  <section id="prep">
+    <span class="kicker">Step 1 · Preprocessing</span>
+    <h2>化學計量前處理：為什麼非做不可</h2>
+    <p class="lead">同一批樣品，散射、基線與儀器漂移會讓 PCA 第一主成分整個被「物理雜訊」佔據。
+       下面每個前處理都對應一種要消除的干擾。</p>
+
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">去螢光 / 散射背景</div>
+        <h3>基線校正（airPLS）</h3>
+        <p>Raman 的螢光背景、NIR 的散射斜坡會壓過真正的化學訊號。airPLS（Zhang 2010）自適應地把背景估出來扣掉，尖峰完整保留。另含 Rubberband、多項式、非對稱最小平方 ALS。</p>
+        <span class="menu">Process ▸ Baseline ▸ airPLS</span>
+      </div>
+      <img src="airpls_baseline.png" alt="airPLS 基線校正：藍色估計基線扣掉螢光背景，紅色校正後尖峰落在零線">
+    </div>
+
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">NIR 必備的散射校正</div>
+        <h3>SNV / MSC · 微分 · 正規化</h3>
+        <p>粒徑與光程差造成的乘性散射，用 <b>SNV</b>（標準常態變量）或 <b>MSC</b>（多元散射校正）拉平；<b>一階／二階微分</b>（Savitzky-Golay）去基線漂移、凸顯重疊峰；正規化讓樣品可比較。這些正是 NIR/PLS 定量前的標準配方。</p>
+        <span class="menu">Process ▸ Scatter correction / Derivative</span>
+      </div>
+      <img src="neospectra_absorbance.png" alt="NeoSpectra NIR 反射率轉吸光度的多條光譜疊圖">
+    </div>
+
+    <!-- interactive playground -->
+    <div class="play">
+      <h3>▶ 互動：前處理 playground</h3>
+      <div class="sub">同一條 NIR 光譜，點按鈕看每種前處理把它變成什麼樣子（在你瀏覽器即時計算）。</div>
+      <div class="tabs" id="ppTabs">
+        <button class="tab active" data-mode="raw">原始光譜</button>
+        <button class="tab" data-mode="base">基線校正</button>
+        <button class="tab" data-mode="snv">SNV 散射校正</button>
+        <button class="tab" data-mode="d1">一階微分</button>
+        <button class="tab" data-mode="d2">二階微分</button>
+      </div>
+      <div class="canvaswrap"><canvas id="ppChart" height="150"></canvas></div>
+      <div class="explain" id="ppExplain"></div>
+    </div>
+  </section>
+
+  <!-- analysis -->
+  <section id="analysis">
+    <span class="kicker">Step 2 · Analysis</span>
+    <h2>光譜分析：從峰到成分</h2>
+    <p class="lead">前處理之後，SpectraView 也能直接做定性與半定量分析——很多時候不必先進到化學計量就有答案。</p>
+
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">重疊帶的定量</div>
+        <h3>尋峰 · 峰形擬合 / 去卷積</h3>
+        <p>自動尋峰（含 FWHM），再用 Gaussian / Lorentzian / Pseudo-Voigt 擬合，把重疊的吸收帶拆成各自的分量、算面積。食品脂肪的羰基（C=O）區就是典型例子。</p>
+        <span class="menu">Analyze ▸ Peak fit / deconvolution</span>
+      </div>
+      <img src="peak_deconvolution.png" alt="羰基重疊帶被擬合拆成三個 Gaussian 分量，R²≈0.9997">
+    </div>
+
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">元素指紋 · 摻偽與礦物質</div>
+        <h3>XRF 元素鑑定</h3>
+        <p>對 keV 能量軸的 XRF 譜尋峰，比對內建特徵譜線表（Kα/Kβ/Lα/Lβ，元素 Z=11–92），在圖上直接標出元素。食品礦物 K、Ca、Fe、Cu、Zn 一目了然——這正是 XRF 食品鑑別的入口。</p>
+        <span class="menu">Analyze ▸ Identify XRF elements</span>
+      </div>
+      <img src="xrf_elements.png" alt="XRF 譜自動標出 K / Ca / Fe / Cu / Zn 等元素特徵線">
+    </div>
+
+    <div class="grid">
+      <div class="card"><span class="tag coral">NNLS</span><h3>混合物濃度推算</h3>
+        <p>以純物質參考譜，非負最小平方解 mixture ≈ Σ cᵢ·refᵢ，回推各成分比例與 R²。摻偽比例、調合油組成的快速估計。</p>
+        <div class="links"><span class="repo">Analyze ▸ Mixture analysis (NNLS)</span></div></div>
+      <div class="card"><span class="tag">Library</span><h3>光譜庫相似度比對</h3>
+        <p>自建 .speclib 參考庫，拿未知譜比對；命中清單同列相關係數、cosine、光譜角 SAM、歐氏距離，一鍵疊圖。</p>
+        <div class="links"><span class="repo">Library ▸ Search against library</span></div></div>
+      <div class="card"><span class="tag gold">I/O</span><h3>8 種格式 · 一鍵匯出矩陣</h3>
+        <p>讀 ASCII / JCAMP-DX / SPC / OPUS / JSON / MATLAB；合併匯出可選「每列一樣品」的 X-matrix，直接餵 scikit-learn 的 PCA / PLS。</p>
+        <div class="links"><span class="repo">File ▸ Export combined data</span></div></div>
+    </div>
+  </section>
+
+  <!-- bridge to chemometrics courses -->
+  <section id="courses">
+    <span class="kicker">Pairs with</span>
+    <h2>搭配這些化學計量課程一起用</h2>
+    <p class="lead">先用 SpectraView 把光譜整理、看懂、匯出，再進到各技術的 PCA / PLS / PLS-DA 教學包親手建模。</p>
+    <div class="grid">
+      <div class="card"><span class="tag">NIR</span><h3>近紅外 · PLS 定量</h3>
+        <p>SNV/微分前處理 → PLS 預測脂肪含量（Tecator 肉品）。</p>
+        <div class="links"><a class="go" href="https://tai-shengyeh.github.io/chemometrics-teaching/">課程頁 →</a></div></div>
+      <div class="card"><span class="tag">FTIR</span><h3>紅外 · PLS-DA 鑑別</h3>
+        <p>即溶咖啡 Arabica vs Robusta；基線/微分後做判別。</p>
+        <div class="links"><a class="go" href="https://tai-shengyeh.github.io/ftir-food-analysis/teaching.html">課程頁 →</a></div></div>
+      <div class="card"><span class="tag">XRF</span><h3>X 射線螢光 · 元素指紋</h3>
+        <p>蜂蜜元素表（CC0）即時實算真假與摻假鑑別。</p>
+        <div class="links"><a class="go" href="https://tai-shengyeh.github.io/xrf-food-analysis/">課程頁 →</a></div></div>
+      <div class="card"><span class="tag">Raman</span><h3>拉曼 · 互動投影片</h3>
+        <p>拉曼在食品分析的應用＋形成性評量小遊戲。</p>
+        <div class="links"><a class="go" href="https://tai-shengyeh.github.io/raman-food-analysis/">課程頁 →</a></div></div>
+    </div>
+  </section>
+
+  <!-- install -->
+  <section id="install">
+    <span class="kicker">Get it</span>
+    <h2>下載與安裝</h2>
+    <p class="lead">純 Python 桌面程式（PySide6 + pyqtgraph + numpy/scipy）。Windows / macOS / Linux 皆可。</p>
+<pre><span class="c"># 取得程式碼</span>
+git clone https://github.com/Tai-ShengYeh/spectraview.git
+cd spectraview
+
+<span class="c"># 安裝相依套件（核心即可直接 pip install）</span>
+pip install -r requirements.txt
+
+<span class="c"># 啟動</span>
+python run.py</pre>
+    <div class="note">沒有資料也能玩：開啟後選 <b>File ▸ Load demo spectra</b> 載入內建的 FTIR / Raman / UV-Vis / NIR / XRF 示範光譜，立刻試前處理與分析。讀取二進位儀器檔（SPC / Bruker OPUS）為選用功能，未安裝時會給清楚提示。</div>
+    <p style="color:var(--soft);font-size:14.5px;">授權 MIT · 97 項自動測試（CI 於 Python 3.10 / 3.12 自動把關）。歡迎 issue 與 PR。</p>
+  </section>
+
+</main>
+
+<footer>
+  © Tai-Sheng Yeh（葉泰聖）· SpectraView 是 <a href="https://tai-shengyeh.github.io/">食品科學教學課程</a> 的開源桌面工具<br>
+  以 <b>Python</b>（PySide6 · pyqtgraph · NumPy · SciPy）打造 · airPLS 演算法引用 Zhang et al. 2010 ·
+  <a href="https://github.com/Tai-ShengYeh/spectraview">GitHub @Tai-ShengYeh/spectraview</a>
+</footer>
+
+<script>
+// ---- synthetic NIR-ish spectrum (deterministic) ----
+const N = 220, x0 = 1100, x1 = 2500;
+const X = Array.from({length:N}, (_,i)=> x0 + (x1-x0)*i/(N-1));
+function noise(i){ const s = Math.sin(i*127.1)*43758.5453; return (s - Math.floor(s) - 0.5)*0.010; }
+function band(x,c,a,w){ return a*Math.exp(-((x-c)**2)/(2*w*w)); }
+const RAW = X.map((x,i)=>{
+  const scatter = 0.45 + 0.00035*(x-x0) + 0.22*Math.exp(-((x-2050)**2)/(2*620*620)); // baseline + scatter
+  const bands = band(x,1450,0.26,42)+band(x,1730,0.30,34)+band(x,1940,0.40,30)+band(x,2100,0.18,46)+band(x,2300,0.34,26);
+  return scatter + bands + noise(i);
+});
+// ---- preprocessing in JS ----
+function movavg(y,w){ const h=Math.floor(w/2),o=[]; for(let i=0;i<y.length;i++){let s=0,n=0; for(let k=-h;k<=h;k++){const j=i+k; if(j>=0&&j<y.length){s+=y[j];n++;}} o.push(s/n);} return o; }
+function baseline(y){ const b=movavg(y,Math.round(N/2)|1); return y.map((v,i)=>v-b[i]); }   // crude high-pass = baseline removed
+function snv(y){ const m=y.reduce((a,b)=>a+b,0)/y.length; const sd=Math.sqrt(y.reduce((a,b)=>a+(b-m)**2,0)/y.length); return y.map(v=>(v-m)/sd); }
+function deriv(y,g){ const s=movavg(y,5),o=new Array(y.length).fill(0); for(let i=g;i<y.length-g;i++) o[i]=(s[i+g]-s[i-g])/(2*g); return o; }
+const SETS = {
+  raw:  {y:RAW, txt:"<b>原始光譜</b>：基線往右抬升（散射）＋ 1940 nm 附近的水分吸收凸起。直接拿去 PCA，第一主成分多半只看到這個物理斜坡，不是化學差異。"},
+  base: {y:baseline(RAW), txt:"<b>基線校正</b>：把緩慢起伏的背景扣掉，只留下吸收帶。樣品間的可比性大增。"},
+  snv:  {y:snv(RAW), txt:"<b>SNV 散射校正</b>：每條光譜減平均、除標準差，消除乘性散射與整體亮度差異——NIR 定量前最常用的一步。"},
+  d1:   {y:deriv(RAW,3), txt:"<b>一階微分</b>：去掉常數基線位移，斜率變化處（吸收帶邊緣）被放大。"},
+  d2:   {y:deriv(deriv(RAW,3),3), txt:"<b>二階微分</b>：同時去掉位移與斜率，把重疊的吸收峰解析開——峰位對應原譜的吸收中心。"}
+};
+let chart;
+function draw(mode){
+  const set = SETS[mode];
+  const data = X.map((x,i)=>({x, y:set.y[i]}));
+  if(!chart){
+    chart = new Chart(document.getElementById('ppChart'), {
+      type:'line',
+      data:{datasets:[{data, borderColor:'#FFDE7A', borderWidth:2, pointRadius:0, tension:.18}]},
+      options:{animation:{duration:350}, parsing:false, plugins:{legend:{display:false}},
+        scales:{ x:{type:'linear', min:x0, max:x1, title:{display:true,text:'Wavelength (nm)',color:'#a8d6d3'},
+                    ticks:{color:'#8fc0bd'}, grid:{color:'rgba(255,255,255,.06)'}},
+                 y:{ title:{display:true,text:'response',color:'#a8d6d3'}, ticks:{color:'#8fc0bd'}, grid:{color:'rgba(255,255,255,.06)'}}}}
+    });
+  } else { chart.data.datasets[0].data = data; chart.update(); }
+  document.getElementById('ppExplain').innerHTML = set.txt;
+}
+document.querySelectorAll('#ppTabs .tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('#ppTabs .tab').forEach(b=>b.classList.remove('active'));
+  t.classList.add('active'); draw(t.dataset.mode);
+}));
+draw('raw');
+</script>
+</body>
+</html>
