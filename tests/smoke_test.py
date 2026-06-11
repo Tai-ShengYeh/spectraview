@@ -67,7 +67,7 @@ check("poly baseline runs", np.isfinite(poly.y).all())
 nmax = processing.normalize(ftir, "max")
 check("normalize max -> peak 1", abs(np.max(np.abs(nmax.y)) - 1.0) < 1e-9)
 narea = processing.normalize(ftir, "area")
-_trapz = getattr(np, "trapezoid", getattr(np, "trapz"))
+_trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 check("normalize area -> integral 1", abs(_trapz(np.abs(narea.y), narea.x) - 1.0) < 1e-6)
 snv = processing.snv(ftir)
 check("SNV -> mean~0 std~1", abs(snv.y.mean()) < 1e-9 and abs(snv.y.std() - 1) < 1e-9)

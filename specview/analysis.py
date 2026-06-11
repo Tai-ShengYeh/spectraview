@@ -15,7 +15,7 @@ from scipy.signal import peak_widths, savgol_filter
 from .spectrum import Spectrum
 
 _EPS = 1e-12
-_trapz = getattr(np, "trapezoid", getattr(np, "trapz"))
+_trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz  # trapz removed in numpy 2.3
 _GAUSS_FWHM = 2.0 * np.sqrt(2.0 * np.log(2.0))   # FWHM = 2.3548 * sigma
 _GAUSS_AREA = np.sqrt(np.pi / (4.0 * np.log(2.0)))  # area ≈ 1.0645 * height * FWHM
 

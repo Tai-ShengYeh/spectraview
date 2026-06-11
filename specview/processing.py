@@ -14,8 +14,10 @@ from scipy.sparse.linalg import spsolve
 from .spectrum import Spectrum
 
 _EPS = 1e-12
-# np.trapz was deprecated in NumPy 2.0 in favour of np.trapezoid.
-_trapz = getattr(np, "trapezoid", getattr(np, "trapz"))
+# np.trapz was deprecated in NumPy 2.0 and REMOVED in 2.3 (use np.trapezoid).
+# Must be lazy: a getattr default is evaluated eagerly, so referencing np.trapz
+# there would raise on numpy>=2.3 even when trapezoid exists.
+_trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
 
 
 # ----------------------------------------------------------------- helpers
