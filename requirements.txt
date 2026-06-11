@@ -1,0 +1,13 @@
+# --- Core (required) ---
+numpy>=1.23
+scipy>=1.9
+PySide6>=6.5
+pyqtgraph>=0.13
+matplotlib>=3.6        # vector export (SVG / PDF / EPS)
+
+# --- Optional binary-format readers ---
+# Already installed & verified in this environment.
+brukeropusreader>=1.3   # Bruker OPUS files (.0, .1, ...)
+# spc-spectra's legacy build imports numpy, so install it with build isolation off:
+#   pip install --no-build-isolation spc-spectra
+spc-spectra>=0.4        # GRAMS/Galactic .spc files
