@@ -1,5 +1,8 @@
 # SpectraView
 
+[![tests](https://github.com/Tai-ShengYeh/spectraview/actions/workflows/tests.yml/badge.svg)](https://github.com/Tai-ShengYeh/spectraview/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一個受 [SpectraGryph](https://www.effemm2.de/spectragryph/) 啟發、用 Python 寫的**桌面光譜檢視與處理程式**。
 專為食品分析 / 儀器分析教學與研究設計，可載入、疊圖檢視、換算座標軸、做前處理的
 FTIR、Raman、UV-Vis、NIR、XRF/LIBS 等光譜。
