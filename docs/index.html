@@ -78,6 +78,9 @@
   /* install */
   pre{background:var(--ink);color:#e6e0cf;border-radius:12px;padding:16px 18px;overflow:auto;font-size:14px;line-height:1.7;margin:14px 0;}
   pre .c{color:#9fd3d2;}
+  kbd{background:var(--paper2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 7px;font-size:.85em;color:var(--ink);font-weight:700;}
+  code{background:var(--paper2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.9em;color:#0a3b3a;}
+  .istep{margin:20px 0 2px;color:var(--teal);font-size:18px;font-weight:900;}
   .note{background:#fff8e8;border:1px solid var(--gold);border-radius:12px;padding:14px 18px;color:#6b531a;font-size:14.5px;margin:14px 0;}
   footer{background:var(--ink);color:#cfc8b6;text-align:center;padding:34px 22px;margin-top:56px;font-size:13.5px;}
   footer b{color:var(--gold);} footer a{color:#9fd3d2;}
@@ -231,6 +234,26 @@
     <span class="kicker">Get it</span>
     <h2>下載與安裝</h2>
     <p class="lead">純 Python 桌面程式（PySide6 + pyqtgraph + numpy/scipy）。Windows / macOS / Linux 皆可。</p>
+
+    <div class="note" style="background:#e7f4f3;border-color:var(--teal);color:#0a3b3a">
+      <b>完全沒裝過 Python？沒問題。</b>下面是給 <b>Windows 初學者</b>的「零基礎」流程：先用 <b>winget</b>（Windows 10／11 內建的官方安裝工具，不必先裝任何東西）裝好 <b>git</b> 與 <b>Python 3.12</b>，再下載並啟動 SpectraView。已經有 git 與 Python 的人，直接跳到 <b>步驟 ④</b>。
+    </div>
+
+    <div class="istep">① 開啟 PowerShell</div>
+    <p style="color:var(--soft);font-size:15px;">按鍵盤 <kbd>⊞ Win</kbd>，輸入 <b>PowerShell</b>，按 <kbd>Enter</kbd> 開啟（<b>不需要</b>系統管理員身分）。</p>
+
+    <div class="istep">② 用 winget 安裝 git 與 Python 3.12</div>
+<pre><span class="c"># winget 是 Windows 10／11 內建，照貼照執行就好</span>
+winget install -e --id Git.Git
+winget install -e --id Python.Python.3.12</pre>
+    <div class="note"><b>台灣的電腦要加什麼地區參數嗎？不用。</b><code>winget install</code> 與地區無關，上面的指令在台灣、任何語系的 Windows 都一樣可用，<b>不需要</b>加 <code>TW</code> 之類參數。若 winget 第一次跳出「Microsoft 使用合約／來源」提示，輸入 <kbd>Y</kbd> 再按 <kbd>Enter</kbd> 同意即可。兩個都裝完後，請<b>關掉這個 PowerShell、重新開一個新的</b>，<code>git</code>／<code>python</code> 指令才會生效。</div>
+
+    <div class="istep">③ 確認裝好了</div>
+<pre>git --version          <span class="c"># 出現 git version 2.xx 就 OK</span>
+python --version       <span class="c"># 出現 Python 3.12.x 就 OK</span></pre>
+    <div class="note">若打 <code>python</code> 後跳出 <b>Microsoft Store</b>（沒顯示版本）：到「設定 ▸ 應用程式 ▸ 應用程式執行別名」，把 <b>python.exe／python3.exe</b> 的別名<b>關掉</b>；或改用 <code>py -3.12 --version</code>、之後啟動也用 <code>py -3.12 run.py</code>。</div>
+
+    <div class="istep">④ 下載並啟動 SpectraView</div>
 <pre><span class="c"># 取得程式碼</span>
 git clone https://github.com/Tai-ShengYeh/spectraview.git
 cd spectraview
