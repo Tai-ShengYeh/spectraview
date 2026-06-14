@@ -29,6 +29,33 @@ pip install -r requirements.txt
 （`spc-spectra` 的舊式建置會在隔離環境找不到 numpy，請用
 `pip install --no-build-isolation spc-spectra`。）
 
+### macOS（Mac 電腦）
+
+適用 Apple 晶片（M1/M2/M3…）與 Intel Mac。建議用 [Homebrew](https://brew.sh/) 安裝 git 與 Python，再用虛擬環境執行：
+
+```bash
+# 1) 安裝 Homebrew（若已安裝可略過）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2) 安裝 git 與 Python 3.12
+brew install git python@3.12
+
+# 3) 取得程式碼
+git clone https://github.com/Tai-ShengYeh/spectraview.git
+cd spectraview
+
+# 4) 建立虛擬環境並安裝相依套件
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 5) 啟動
+python run.py
+```
+
+macOS 請使用 `python3` / `pip3` 指令（系統內建的 `python` 可能不存在或為舊版）。
+下次要再開程式：`cd spectraview && source .venv/bin/activate && python run.py`。
+
 ## 執行
 
 ```bash

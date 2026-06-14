@@ -239,6 +239,7 @@
       <b>完全沒裝過 Python？沒問題。</b>下面是給 <b>Windows 初學者</b>的「零基礎」流程：先用 <b>winget</b>（Windows 10／11 內建的官方安裝工具，不必先裝任何東西）裝好 <b>git</b> 與 <b>Python 3.12</b>，再下載並啟動 SpectraView。已經有 git 與 Python 的人，直接跳到 <b>步驟 ④</b>。
     </div>
 
+    <h3 style="margin:18px 0 6px;">🪟 Windows 安裝</h3>
     <div class="istep">① 開啟 PowerShell</div>
     <p style="color:var(--soft);font-size:15px;">按鍵盤 <kbd>⊞ Win</kbd>，輸入 <b>PowerShell</b>，按 <kbd>Enter</kbd> 開啟（<b>不需要</b>系統管理員身分）。</p>
 
@@ -264,6 +265,45 @@ pip install -r requirements.txt
 <span class="c"># 啟動</span>
 python run.py</pre>
     <div class="note">沒有資料也能玩：開啟後選 <b>File ▸ Load demo spectra</b> 載入內建的 FTIR / Raman / UV-Vis / NIR / XRF 示範光譜，立刻試前處理與分析。讀取二進位儀器檔（SPC / Bruker OPUS）為選用功能，未安裝時會給清楚提示。</div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:34px 0 26px;">
+
+    <h3 style="margin:0 0 6px;">🍎 macOS 安裝（Mac 電腦）</h3>
+    <div class="note" style="background:#e7f4f3;border-color:var(--teal);color:#0a3b3a">
+      <b>Mac 完全沒裝過 Python？沒問題。</b>下面是給 <b>macOS 初學者</b>的「零基礎」流程：先用 <b>Homebrew</b>（macOS 最常用的官方套件管理工具）裝好 <b>git</b> 與 <b>Python 3.12</b>，再下載並啟動 SpectraView。已經有 git 與 Python 3.10+ 的人，直接跳到 <b>步驟 ④</b>。適用 Apple 晶片（M1/M2/M3…）與 Intel Mac。
+    </div>
+
+    <div class="istep">① 開啟「終端機」Terminal</div>
+    <p style="color:var(--soft);font-size:15px;">按 <kbd>⌘ Cmd</kbd>+<kbd>Space</kbd> 開啟 Spotlight，輸入 <b>Terminal</b>（終端機），按 <kbd>Enter</kbd> 開啟。</p>
+
+    <div class="istep">② 安裝 Homebrew（若已安裝可略過）</div>
+<pre><span class="c"># 貼上官方安裝指令，照畫面提示按 Enter／輸入登入密碼即可</span>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</pre>
+    <div class="note">安裝完成後，若終端機提示要把 brew 加入 PATH（<b>Apple 晶片</b>的 Mac 常見），照著畫面最後那兩行 <code>echo ... >> ~/.zprofile</code> 與 <code>eval ...</code> 指令貼上執行；或直接<b>關掉終端機、重新開一個新的</b>，再用 <code>brew --version</code> 確認可用。</div>
+
+    <div class="istep">③ 用 Homebrew 安裝 git 與 Python 3.12，並確認</div>
+<pre>brew install git python@3.12
+
+git --version          <span class="c"># 出現 git version 2.xx 就 OK</span>
+python3 --version      <span class="c"># 出現 Python 3.12.x（或 3.10+）就 OK</span></pre>
+    <div class="note">macOS 請一律使用 <code>python3</code> 與 <code>pip3</code> 指令（系統內建的 <code>python</code> 可能不存在或為舊版）。</div>
+
+    <div class="istep">④ 下載並啟動 SpectraView</div>
+<pre><span class="c"># 取得程式碼</span>
+git clone https://github.com/Tai-ShengYeh/spectraview.git
+cd spectraview
+
+<span class="c"># 建議用虛擬環境，避免污染系統 Python</span>
+python3 -m venv .venv
+source .venv/bin/activate
+
+<span class="c"># 安裝相依套件</span>
+pip install -r requirements.txt
+
+<span class="c"># 啟動</span>
+python run.py</pre>
+    <div class="note">下次要再開程式時，先 <code>cd spectraview</code> 再 <code>source .venv/bin/activate</code>，然後 <code>python run.py</code> 即可。第一次啟動若 macOS 詢問鍵盤／螢幕錄製等權限，按一般 App 方式允許即可。</div>
+
     <p style="color:var(--soft);font-size:14.5px;">授權 MIT · 97 項自動測試（CI 於 Python 3.10 / 3.12 自動把關）。歡迎 issue 與 PR。</p>
   </section>
 
