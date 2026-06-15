@@ -124,6 +124,21 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **相似度搜尋**：拿未知譜對庫比對，依**相關係數**排序，命中清單同時顯示
   correlation / cosine / 光譜角 SAM / 歐氏距離，可一鍵把最佳命中疊到圖上。
 
+### 二維分析（Analyze 選單）
+- **螢光 EEM**：讀 ex×em 矩陣檔或由多條發射光譜組成；2D 等高線熱圖（含色條、十字游標讀值）
+  ＋可旋轉的 3D 表面；一鍵遮除 Rayleigh／Raman 散射脊。
+- **2D 相關光譜（2D-COS）**：對一系列隨擾動變化的光譜，算同步 Φ＝DᵀD/(m−1) 與
+  異步 Ψ＝Dᵀ·H·D/(m−1)（H=Hilbert-Noda 矩陣）相關圖；兩條譜用 **2T2D**
+  （Φ=½(yₐ⊗yₐ+y_b⊗y_b)、Ψ=½(yₐ⊗y_b−y_b⊗yₐ)）。慣例同 shigemorita 2Dpy / R corr2D。
+
+![EEM 2D](docs/eem_2d.png)
+
+> 螢光 EEM 等高線：左為原始、右為遮除 Rayleigh 散射脊後。
+
+![2D-COS](docs/cos2d.png)
+
+> 2D-COS 同步（對角自相關峰＋off-diagonal 交叉峰）與異步（反對稱、顯示變化先後）相關圖。
+
 ---
 
 ## 專案結構
@@ -144,6 +159,8 @@ spectra_viewer/
     ├── analysis.py         尋峰 / 峰形擬合 / 積分 / 混合物 NNLS
     ├── library.py          光譜庫（.speclib）+ 相似度搜尋
     ├── xrf.py              XRF 元素譜線表 + 峰→元素比對
+    ├── cos2d.py            2D 相關光譜（同步/異步 + 2T2D）
+    ├── eem.py              螢光 EEM 模型 / 讀檔 / 散射移除
     ├── demo.py             內建示範光譜（FTIR/Raman/UV-Vis/NIR/XRF）
     ├── formats/            檔案 IO
     │   ├── __init__.py     依副檔名派發載入 + 存檔
@@ -156,6 +173,7 @@ spectra_viewer/
     └── ui/                 PySide6 + pyqtgraph 介面
         ├── main_window.py  主視窗、選單、工具列、清單、復原
         ├── plotview.py     繪圖區、十字游標、堆疊、匯出
+        ├── mapwindow.py    2D 熱圖視窗（EEM/2D-COS）+ 3D 表面（matplotlib）
         └── dialogs.py      通用參數對話框
 ```
 
@@ -178,9 +196,10 @@ python tests/gui_smoke_test.py   # 建視窗 / 載入 / 處理 / 換算 / 分析
 ## 尚未納入（下一步）
 
 已完成：檢視 + 前處理（含 airPLS）、尋峰 / 峰形擬合 / 積分、混合物 NNLS、
-光譜庫相似度比對、XRF 元素鑑定、多格式 IO（含 JSON / MATLAB）。後續可加：
+光譜庫相似度比對、XRF 元素鑑定、**螢光 EEM（2D/3D）**、**2D-COS（含 2T2D）**、
+多格式 IO（含 JSON / MATLAB）。後續可加：
 - **檢量線濃度**：用峰高或峰面積對「一系列已知濃度」建線、回推未知樣品（NNLS 之外的單變量定量）
-- **螢光 EEM**：激發-發射矩陣等高線 / 3D 圖、瑞利散射移除
+- **EEM 進階**：PARAFAC 平行因子分解、Raman 散射內插填補
 - **批次自動化**：把一串處理步驟套用到整批檔案
 - **化學計量建模**：PLS / PCA（接 scikit-learn，配合「合併匯出」的 X-matrix）
 - **XRF 能量校正**：channel/pixel 軸 → keV 的二點校正

@@ -246,6 +246,27 @@ check("library_clear empties the library", len(win.library) == 0)
 win.library_load()
 check("library_load restores entries from file", len(win.library) == 2)
 
+print("== 2D-COS / EEM windows ==")
+from specview.ui.mapwindow import EEMWindow, MapWindow, Surface3DDialog  # noqa: E402
+from specview.demo import demo_eem  # noqa: E402
+
+win.remove_all()
+win.load_demo_series()
+sm2 = win.table.selectionModel()
+for r in range(len(win.document)):
+    sm2.select(win.table.model().index(r, 0),
+               QtCore.QItemSelectionModel.SelectionFlag.Select
+               | QtCore.QItemSelectionModel.SelectionFlag.Rows)
+win.cos2d_analysis()
+maps = [d for d in win._dialogs if isinstance(d, MapWindow)]
+check("2D-COS opened a 2-panel map window", bool(maps) and len(maps[-1]._items) == 2)
+win.open_demo_eem()
+eemw = [d for d in win._dialogs if isinstance(d, EEMWindow)]
+check("EEM window opened", bool(eemw))
+eemw[-1]._toggle_scatter(True)
+check("EEM scatter toggle masks NaN", bool(np.isnan(eemw[-1]._items[0]["Zxy"]).any()))
+check("EEM 3D surface dialog builds", Surface3DDialog(demo_eem()) is not None)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 app.quit()
 sys.exit(1 if FAIL else 0)

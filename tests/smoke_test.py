@@ -301,5 +301,44 @@ check("XRF identifies Ca / Fe / Cu",
 check("XRF line label is Greek", ids[1]["best"]["line_label"] == "Kα1")
 check("XRF tolerance rejects far energies", xrf.identify_peaks([50.0], 0.05)[0]["best"] is None)
 
+print("== 2D correlation (2D-COS / 2T2D) ==")
+from specview import cos2d  # noqa: E402
+from specview.demo import demo_cos_series  # noqa: E402
+
+series = demo_cos_series(14)
+xc, sync, asyn = cos2d.correlation_from_spectra(series, ref="mean")
+check("2D-COS synchronous is symmetric", np.allclose(sync, sync.T))
+check("2D-COS asynchronous is antisymmetric", np.allclose(asyn, -asyn.T))
+i12, i15 = np.argmin(np.abs(xc - 1200)), np.argmin(np.abs(xc - 1500))
+check("sync cross-peak (1200,1500) < 0 (anti-correlated)", sync[i12, i15] < 0)
+check("async cross-peak (1200,1500) nonzero (sequential)", abs(asyn[i12, i15]) > 1e-3)
+H = cos2d.hilbert_noda_matrix(5)
+check("Hilbert-Noda zero diagonal & antisymmetric",
+      np.allclose(np.diag(H), 0) and np.allclose(H, -H.T))
+gx, phi, psi = cos2d.two_trace_from_spectra(series[0], series[-1])
+check("2T2D Φ symmetric, Ψ antisymmetric",
+      np.allclose(phi, phi.T) and np.allclose(psi, -psi.T))
+check("2T2D Ψ nonzero", np.abs(psi).max() > 1e-6)
+
+print("== fluorescence EEM ==")
+from specview import eem as eemmod  # noqa: E402
+from specview.demo import demo_eem  # noqa: E402
+
+E = demo_eem()
+check("EEM Z shape is ex×em", E.Z.shape == (E.ex.size, E.em.size))
+check("EEM scatter removal masks Rayleigh", np.isnan(eemmod.remove_scatter(E, width=10).Z).sum() > 0)
+ems = [Spectrum(np.linspace(300, 560, 180),
+                np.exp(-((np.linspace(300, 560, 180) - (360 + i * 4)) ** 2) / (2 * 18 ** 2)),
+                name=f"ex{260 + i * 10}") for i in range(7)]
+Ef = eemmod.eem_from_spectra(ems)
+check("EEM from 7 emission spectra", Ef.Z.shape == (7, 180) and Ef.ex[0] == 260)
+ep = os.path.join(tempfile.mkdtemp(), "e.csv")
+with open(ep, "w", encoding="utf-8") as fh:
+    fh.write("corner," + ",".join(f"{v:.0f}" for v in E.ex) + "\n")
+    for j, emv in enumerate(E.em):
+        fh.write(f"{emv:.0f}," + ",".join(f"{E.Z[i, j]:.2f}" for i in range(E.ex.size)) + "\n")
+E2 = eemmod.read_eem_matrix(ep, ex_in_columns=True)
+check("EEM matrix file round-trip", np.allclose(E2.Z, E.Z, atol=1e-1))
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

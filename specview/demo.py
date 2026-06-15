@@ -76,6 +76,49 @@ def demo_xrf() -> Spectrum:
     return Spectrum(x=x, y=y, name="Demo XRF (minerals)", x_unit="keV", y_unit="counts")
 
 
+def demo_eem():
+    """A synthetic fluorescence EEM: two fluorophores + a Rayleigh scatter ridge."""
+    from .eem import EEM
+    ex = np.linspace(240.0, 450.0, 44)
+    em = np.linspace(280.0, 560.0, 130)
+    EX, EM = np.meshgrid(ex, em, indexing="ij")   # (n_ex, n_em)
+
+    def blob(ex0, em0, a, sx, sy):
+        return a * np.exp(-((EX - ex0) ** 2 / (2 * sx ** 2) + (EM - em0) ** 2 / (2 * sy ** 2)))
+
+    Z = blob(275, 330, 1000, 14, 24) + blob(350, 440, 720, 20, 34)   # two fluorophores
+    Z += 1600 * np.exp(-((EM - EX) ** 2) / (2 * 6.0 ** 2))           # Rayleigh ridge (em≈ex)
+    Z += 350 * np.exp(-((EM - 2 * EX) ** 2) / (2 * 7.0 ** 2))        # 2nd-order Rayleigh
+    Z += 300.0
+    return EEM(ex=ex, em=em, Z=Z, name="Demo EEM")
+
+
+def demo_cos_series(n: int = 14):
+    """A perturbation series for 2D-COS.
+
+    Three bands change at DIFFERENT points along the perturbation (sigmoidal),
+    so both the synchronous and the asynchronous maps show clear cross-peaks:
+    the 1200 band falls early, 1350 mid, 1500 rises late.
+    """
+    x = np.linspace(1000.0, 1800.0, 400)
+
+    def band(c, a, w):
+        return a * np.exp(-((x - c) ** 2) / (2 * w ** 2))
+
+    def sig(t, c, k=14.0):
+        return 1.0 / (1.0 + np.exp(-k * (t - c)))
+
+    specs = []
+    for j in range(n):
+        t = j / (n - 1)
+        y = ((1 - sig(t, 0.35)) * band(1200, 1.0, 25)
+             + sig(t, 0.50) * band(1350, 0.6, 20)
+             + sig(t, 0.68) * band(1500, 0.9, 30))
+        specs.append(Spectrum(x=x, y=y, name=f"t={t:.2f}", x_unit="cm-1",
+                              y_unit="absorbance", meta={"perturbation": t}))
+    return specs
+
+
 def load_demo_set():
     """Return a small variety pack of demo spectra."""
     return [demo_ftir(), demo_raman(), demo_uvvis(), demo_nir(), demo_xrf()]

@@ -7,13 +7,14 @@ import traceback
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from .. import __app_name__, __version__, analysis, axes, processing, xrf
-from ..demo import load_demo_set
+from .. import __app_name__, __version__, analysis, axes, cos2d, eem, processing, xrf
+from ..demo import demo_cos_series, demo_eem, load_demo_set
 from ..library import SpectralLibrary
 from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
                        save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
 from .dialogs import FormDialog, TableDialog
+from .mapwindow import EEMWindow, MapWindow
 from .plotview import PlotView
 
 _X_TARGETS = [("Wavelength (nm)", "nm"), ("Wavenumber (cm⁻¹)", "cm-1"),
@@ -196,6 +197,17 @@ class MainWindow(QtWidgets.QMainWindow):
         m_an.addAction(QtGui.QAction("Identify XRF elements…", self,
                                      triggered=self.identify_xrf))
         m_an.addSeparator()
+        m_an.addAction(QtGui.QAction("2D correlation (2D-COS / 2T2D)…", self,
+                                     triggered=self.cos2d_analysis))
+        m_eem = m_an.addMenu("Fluorescence EEM")
+        m_eem.addAction(QtGui.QAction("Open EEM matrix file…", self,
+                                      triggered=self.open_eem_file))
+        m_eem.addAction(QtGui.QAction("Build EEM from loaded spectra…", self,
+                                      triggered=self.build_eem_from_spectra))
+        m_eem.addAction(QtGui.QAction("Open demo EEM", self, triggered=self.open_demo_eem))
+        m_an.addSeparator()
+        m_an.addAction(QtGui.QAction("Load demo perturbation series (for 2D-COS)", self,
+                                     triggered=self.load_demo_series))
         m_an.addAction(QtGui.QAction("Clear analysis overlays", self,
                                      triggered=self.clear_analysis))
 
@@ -826,6 +838,104 @@ class MainWindow(QtWidgets.QMainWindow):
     def clear_analysis(self) -> None:
         self.plotview.clear_analysis()
         self.status.showMessage("Cleared analysis overlays.", 3000)
+
+    # ---- 2D correlation spectroscopy ------------------------------------
+    def cos2d_analysis(self) -> None:
+        idx = self._selected_indices()
+        targets = [self.document[i] for i in idx] if idx else list(self.document)
+        targets = [s for s in targets if s.npoints]
+        if len(targets) < 2:
+            QtWidgets.QMessageBox.information(
+                self, "2D correlation",
+                "Select at least two spectra (a perturbation series).\n"
+                "Tip: Analyze ▸ Load demo perturbation series.")
+            return
+        methods = [("Generalized 2D-COS (Noda)", "generalized")]
+        if len(targets) == 2:
+            methods.append(("Two-trace 2D (2T2D)", "2t2d"))
+        v = FormDialog.exec_form("2D correlation analysis", [
+            {"key": "method", "label": "Method", "type": "choice",
+             "options": methods, "default": "generalized"},
+            {"key": "ref", "label": "Reference (generalized)", "type": "choice",
+             "options": [("Mean → dynamic spectra", "mean"), ("None", "none")],
+             "default": "mean"},
+        ], self, f"{len(targets)} spectra selected.")
+        if not v:
+            return
+        try:
+            if v["method"] == "2t2d":
+                x, sync, asyn = cos2d.two_trace_from_spectra(targets[0], targets[1])
+                tag = "2T2D"
+            else:
+                x, sync, asyn = cos2d.correlation_from_spectra(targets, ref=v["ref"])
+                tag = "2D-COS"
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.warning(self, "2D correlation failed", str(exc))
+            return
+        xl = targets[0].x_label
+        panels = [
+            {"x": x, "y": x, "Z": sync, "label": "Synchronous  Φ(ν₁,ν₂)",
+             "xlabel": xl, "ylabel": xl, "diverging": True},
+            {"x": x, "y": x, "Z": asyn, "label": "Asynchronous  Ψ(ν₁,ν₂)",
+             "xlabel": xl, "ylabel": xl, "diverging": True},
+        ]
+        self._show_dialog(MapWindow(panels, title=f"{tag} — {len(targets)} spectra",
+                                    parent=self))
+        self.status.showMessage(f"{tag}: synchronous + asynchronous from "
+                                f"{len(targets)} spectra.", 6000)
+
+    # ---- fluorescence EEM -----------------------------------------------
+    def _show_eem(self, e) -> None:
+        self._show_dialog(EEMWindow(e, parent=self))
+
+    def open_eem_file(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open EEM matrix", self._last_dir,
+            "EEM matrix (*.csv *.txt *.dat *.tsv);;All files (*.*)")
+        if not path:
+            return
+        v = FormDialog.exec_form("EEM layout", [
+            {"key": "exc", "label": "Excitation axis is in…", "type": "choice",
+             "options": [("Columns (first row = excitation)", "cols"),
+                         ("Rows (first column = excitation)", "rows")], "default": "cols"},
+        ], self, "How the matrix file is laid out.")
+        if not v:
+            return
+        try:
+            e = eem.read_eem_matrix(path, ex_in_columns=(v["exc"] == "cols"))
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.critical(self, "EEM read failed", str(exc))
+            return
+        self._last_dir = os.path.dirname(os.path.abspath(path))
+        self._show_eem(e)
+
+    def build_eem_from_spectra(self) -> None:
+        targets = [self.document[i] for i in self._selected_indices()] or \
+            list(self.document)
+        targets = [s for s in targets if s.npoints]
+        if len(targets) < 2:
+            QtWidgets.QMessageBox.information(
+                self, "Build EEM",
+                "Select at least two emission spectra (each at one excitation "
+                "wavelength; excitation read from the name like 'ex280' or meta).")
+            return
+        try:
+            e = eem.eem_from_spectra(targets)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.warning(self, "Build EEM failed", str(exc))
+            return
+        self._show_eem(e)
+
+    def open_demo_eem(self) -> None:
+        self._show_eem(demo_eem())
+
+    def load_demo_series(self) -> None:
+        self.document.add_many(demo_cos_series(12))
+        self._rebuild_table()
+        self.plotview.refresh()
+        self.plotview.autoscale()
+        self.status.showMessage("Loaded a 12-spectrum demo perturbation series — "
+                                "select them all, then Analyze ▸ 2D correlation.", 9000)
 
     def mixture_analysis(self) -> None:
         idx = self._selected_indices()
