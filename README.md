@@ -123,6 +123,8 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **自建光譜庫**：把載入的光譜「加入庫」，存成 `.speclib`（JSON）庫檔、之後可載入。
 - **相似度搜尋**：拿未知譜對庫比對，依**相關係數**排序，命中清單同時顯示
   correlation / cosine / 光譜角 SAM / 歐氏距離，可一鍵把最佳命中疊到圖上。
+- **現成範例**：[`examples/sugars_nir.speclib`](examples/) 是 9 種糖類／添加物的 NIR 光譜庫
+  （附 3 個未知譜查詢檔）；`Library ▸ Load library` 載入即可試比對。
 
 ### 二維分析（Analyze 選單）
 - **螢光 EEM**：讀 ex×em 矩陣檔或由多條發射光譜組成；2D 等高線熱圖（含色條、十字游標讀值）
