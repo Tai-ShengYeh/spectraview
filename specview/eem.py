@@ -14,6 +14,27 @@ import numpy as np
 _EPS = 1e-12
 
 
+@dataclass
+class ParafacResult:
+    """PARAFAC decomposition of a stack of EEMs into ``rank`` components."""
+    ex: np.ndarray            # excitation axis
+    em: np.ndarray            # emission axis
+    ex_load: np.ndarray       # (n_ex, rank) excitation loadings
+    em_load: np.ndarray       # (n_em, rank) emission loadings
+    scores: np.ndarray        # (n_samples, rank) sample scores
+    fit: float                # 1 - ||X - X̂|| / ||X||
+    names: list               # sample names
+
+    @property
+    def rank(self) -> int:
+        return self.scores.shape[1]
+
+    def component_eem(self, f: int) -> "EEM":
+        """The rank-1 EEM of component f (excitation ⊗ emission loading)."""
+        Z = np.outer(self.ex_load[:, f], self.em_load[:, f])
+        return EEM(self.ex, self.em, Z, name=f"PARAFAC comp {f + 1}")
+
+
 @dataclass(eq=False)
 class EEM:
     ex: np.ndarray            # excitation wavelengths (ascending)
@@ -132,6 +153,78 @@ def eem_from_spectra(spectra, ex_values=None) -> EEM:
 
 
 # ----------------------------------------------------------- scatter removal
+# ----------------------------------------------------------- PARAFAC
+def _khatri_rao(B: np.ndarray, C: np.ndarray) -> np.ndarray:
+    """Column-wise Khatri-Rao product: KR[j*K+k, f] = B[j,f]·C[k,f]."""
+    return (B[:, None, :] * C[None, :, :]).reshape(B.shape[0] * C.shape[0], B.shape[1])
+
+
+def parafac(X: np.ndarray, rank: int, n_iter: int = 400, tol: float = 1e-9,
+            nonneg: bool = True, seed: int = 0):
+    """PARAFAC (CANDECOMP) of a 3-way array via alternating least squares.
+
+    X has shape (n_samples, n_ex, n_em). Returns (scores, ex_load, em_load, fit)
+    with X[i,j,k] ≈ Σ_f scores[i,f]·ex_load[j,f]·em_load[k,f]. ``nonneg`` projects
+    every factor to be non-negative (appropriate for fluorescence).
+    """
+    X = np.asarray(X, dtype=float)
+    I, J, K = X.shape
+    rng = np.random.default_rng(seed)
+    A = rng.random((I, rank))
+    B = rng.random((J, rank))
+    C = rng.random((K, rank))
+    X0 = X.reshape(I, J * K)
+    X1 = np.moveaxis(X, 1, 0).reshape(J, I * K)
+    X2 = np.moveaxis(X, 2, 0).reshape(K, I * J)
+    normX = np.linalg.norm(X) or 1.0
+    prev = None
+    err = 1.0
+    for _ in range(n_iter):
+        A = X0 @ _khatri_rao(B, C) @ np.linalg.pinv((B.T @ B) * (C.T @ C))
+        if nonneg:
+            A = np.clip(A, 0.0, None)
+        B = X1 @ _khatri_rao(A, C) @ np.linalg.pinv((A.T @ A) * (C.T @ C))
+        if nonneg:
+            B = np.clip(B, 0.0, None)
+        C = X2 @ _khatri_rao(A, B) @ np.linalg.pinv((A.T @ A) * (B.T @ B))
+        if nonneg:
+            C = np.clip(C, 0.0, None)
+        Xhat = (A @ _khatri_rao(B, C).T).reshape(I, J, K)
+        err = float(np.linalg.norm(X - Xhat) / normX)
+        if prev is not None and abs(prev - err) < tol:
+            break
+        prev = err
+    # resolve scaling: unit-norm excitation & emission loadings, push size to scores
+    for f in range(rank):
+        nb = np.linalg.norm(B[:, f]) or 1.0
+        nc = np.linalg.norm(C[:, f]) or 1.0
+        B[:, f] /= nb
+        C[:, f] /= nc
+        A[:, f] *= nb * nc
+    return A, B, C, 1.0 - err
+
+
+def parafac_from_eems(eems, rank: int, nonneg: bool = True) -> ParafacResult:
+    """Run PARAFAC on a list of EEMs that share the same ex/em grid."""
+    eems = list(eems)
+    if len(eems) < 2:
+        raise ValueError("PARAFAC needs at least two EEMs (samples).")
+    ref = eems[0]
+    for e in eems:
+        if (e.ex.shape != ref.ex.shape or e.em.shape != ref.em.shape
+                or not np.allclose(e.ex, ref.ex) or not np.allclose(e.em, ref.em)):
+            raise ValueError("All EEMs must share the same excitation/emission grid.")
+    X = np.stack([np.nan_to_num(e.Z, nan=0.0) for e in eems])   # (n_samples, n_ex, n_em)
+    if rank < 1 or rank > min(ref.ex.size, ref.em.size, len(eems)):
+        raise ValueError("Number of components is out of range for this data.")
+    A, B, C, fit = parafac(X, rank, nonneg=nonneg)
+    # order components by descending mean score (largest first)
+    order = np.argsort(A.mean(axis=0))[::-1]
+    return ParafacResult(ex=ref.ex, em=ref.em, ex_load=B[:, order], em_load=C[:, order],
+                         scores=A[:, order], fit=float(fit),
+                         names=[e.name for e in eems])
+
+
 def remove_scatter(eem: EEM, first: bool = True, second: bool = True,
                    raman: bool = False, width: float = 15.0,
                    raman_shift: float = 3400.0, fill: str = "nan") -> EEM:

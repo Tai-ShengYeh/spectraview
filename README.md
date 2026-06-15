@@ -130,6 +130,14 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **2D 相關光譜（2D-COS）**：對一系列隨擾動變化的光譜，算同步 Φ＝DᵀD/(m−1) 與
   異步 Ψ＝Dᵀ·H·D/(m−1)（H=Hilbert-Noda 矩陣）相關圖；兩條譜用 **2T2D**
   （Φ=½(yₐ⊗yₐ+y_b⊗y_b)、Ψ=½(yₐ⊗y_b−y_b⊗yₐ)）。慣例同 shigemorita 2Dpy / R corr2D。
+- **Hetero-correlation（異質相關）**：兩種不同技術（同一批樣品、同一擾動）做交叉
+  二維相關，得非方陣 Φ／Ψ＝D₁ᵀD₂/(m−1)、D₁ᵀ·H·D₂/(m−1)。
+- **EEM PARAFAC**：一疊多樣品 EEM 用平行因子分解（ALS，非負約束）盲解成各螢光成分的
+  激發／發射輪廓與樣品分數；附每個成分的 rank-1 EEM 與分數表。
+
+![PARAFAC](docs/parafac.png)
+
+> PARAFAC 從 7 個混合 EEM 盲解出 3 個螢光團的激發/發射輪廓（fit≈0.98）。
 
 ![EEM 2D](docs/eem_2d.png)
 
@@ -196,10 +204,10 @@ python tests/gui_smoke_test.py   # 建視窗 / 載入 / 處理 / 換算 / 分析
 ## 尚未納入（下一步）
 
 已完成：檢視 + 前處理（含 airPLS）、尋峰 / 峰形擬合 / 積分、混合物 NNLS、
-光譜庫相似度比對、XRF 元素鑑定、**螢光 EEM（2D/3D）**、**2D-COS（含 2T2D）**、
-多格式 IO（含 JSON / MATLAB）。後續可加：
+光譜庫相似度比對、XRF 元素鑑定、**螢光 EEM（2D/3D）＋ PARAFAC**、
+**2D-COS（含 2T2D、hetero-correlation）**、多格式 IO（含 JSON / MATLAB）。後續可加：
 - **檢量線濃度**：用峰高或峰面積對「一系列已知濃度」建線、回推未知樣品（NNLS 之外的單變量定量）
-- **EEM 進階**：PARAFAC 平行因子分解、Raman 散射內插填補
+- **EEM 進階**：Raman 散射內插填補、PARAFAC 成分數的 core-consistency 診斷
 - **批次自動化**：把一串處理步驟套用到整批檔案
 - **化學計量建模**：PLS / PCA（接 scikit-learn，配合「合併匯出」的 X-matrix）
 - **XRF 能量校正**：channel/pixel 軸 → keV 的二點校正

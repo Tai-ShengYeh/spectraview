@@ -8,13 +8,13 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from .. import __app_name__, __version__, analysis, axes, cos2d, eem, processing, xrf
-from ..demo import demo_cos_series, demo_eem, load_demo_set
+from ..demo import demo_cos_series, demo_eem, demo_eem_stack, load_demo_set
 from ..library import SpectralLibrary
 from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
                        save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
 from .dialogs import FormDialog, TableDialog
-from .mapwindow import EEMWindow, MapWindow
+from .mapwindow import EEMWindow, MapWindow, ParafacWindow
 from .plotview import PlotView
 
 _X_TARGETS = [("Wavelength (nm)", "nm"), ("Wavenumber (cm⁻¹)", "cm-1"),
@@ -40,6 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._last_dir = ""   # remembered folder for open/save dialogs
         self._dialogs: list = []   # keep non-modal result dialogs alive
         self.library = SpectralLibrary()   # reference spectral library
+        self.eems: list = []       # opened EEMs (for PARAFAC stacks)
 
         self.plotview = PlotView(self.document)
         self.plotview.cursorMoved.connect(self._on_cursor)
@@ -205,6 +206,11 @@ class MainWindow(QtWidgets.QMainWindow):
         m_eem.addAction(QtGui.QAction("Build EEM from loaded spectra…", self,
                                       triggered=self.build_eem_from_spectra))
         m_eem.addAction(QtGui.QAction("Open demo EEM", self, triggered=self.open_demo_eem))
+        m_eem.addSeparator()
+        m_eem.addAction(QtGui.QAction("PARAFAC on loaded EEM stack…", self,
+                                      triggered=self.parafac_analysis))
+        m_eem.addAction(QtGui.QAction("Open demo EEM stack (for PARAFAC)", self,
+                                      triggered=self.open_demo_eem_stack))
         m_an.addSeparator()
         m_an.addAction(QtGui.QAction("Load demo perturbation series (for 2D-COS)", self,
                                      triggered=self.load_demo_series))
@@ -853,40 +859,84 @@ class MainWindow(QtWidgets.QMainWindow):
         methods = [("Generalized 2D-COS (Noda)", "generalized")]
         if len(targets) == 2:
             methods.append(("Two-trace 2D (2T2D)", "2t2d"))
+        if len(targets) >= 4 and len(targets) % 2 == 0:
+            methods.append(("Hetero-correlation (1st half × 2nd half)", "hetero"))
         v = FormDialog.exec_form("2D correlation analysis", [
             {"key": "method", "label": "Method", "type": "choice",
              "options": methods, "default": "generalized"},
-            {"key": "ref", "label": "Reference (generalized)", "type": "choice",
+            {"key": "ref", "label": "Reference (generalized / hetero)", "type": "choice",
              "options": [("Mean → dynamic spectra", "mean"), ("None", "none")],
              "default": "mean"},
-        ], self, f"{len(targets)} spectra selected.")
+        ], self, f"{len(targets)} spectra selected. (Hetero splits them in half: the "
+                 "first set is one technique, the second the other — pair by sample order.)")
         if not v:
             return
         try:
             if v["method"] == "2t2d":
                 x, sync, asyn = cos2d.two_trace_from_spectra(targets[0], targets[1])
+                xl = yl = targets[0].x_label
                 tag = "2T2D"
+            elif v["method"] == "hetero":
+                h = len(targets) // 2
+                g1, g2 = targets[:h], targets[h:]
+                x, y, sync, asyn = cos2d.hetero_from_spectra(g1, g2, ref=v["ref"])
+                xl, yl = g1[0].x_label, g2[0].x_label
+                tag = "Hetero 2D-COS"
             else:
                 x, sync, asyn = cos2d.correlation_from_spectra(targets, ref=v["ref"])
+                xl = yl = targets[0].x_label
                 tag = "2D-COS"
         except Exception as exc:  # noqa: BLE001
             QtWidgets.QMessageBox.warning(self, "2D correlation failed", str(exc))
             return
-        xl = targets[0].x_label
+        y = x if v["method"] != "hetero" else y
         panels = [
-            {"x": x, "y": x, "Z": sync, "label": "Synchronous  Φ(ν₁,ν₂)",
-             "xlabel": xl, "ylabel": xl, "diverging": True},
-            {"x": x, "y": x, "Z": asyn, "label": "Asynchronous  Ψ(ν₁,ν₂)",
-             "xlabel": xl, "ylabel": xl, "diverging": True},
+            {"x": x, "y": y, "Z": sync, "label": "Synchronous  Φ",
+             "xlabel": xl, "ylabel": yl, "diverging": True},
+            {"x": x, "y": y, "Z": asyn, "label": "Asynchronous  Ψ",
+             "xlabel": xl, "ylabel": yl, "diverging": True},
         ]
         self._show_dialog(MapWindow(panels, title=f"{tag} — {len(targets)} spectra",
                                     parent=self))
-        self.status.showMessage(f"{tag}: synchronous + asynchronous from "
-                                f"{len(targets)} spectra.", 6000)
+        self.status.showMessage(f"{tag}: synchronous + asynchronous map.", 6000)
 
     # ---- fluorescence EEM -----------------------------------------------
     def _show_eem(self, e) -> None:
+        self.eems.append(e)
         self._show_dialog(EEMWindow(e, parent=self))
+
+    def open_demo_eem_stack(self) -> None:
+        stack = demo_eem_stack(7)
+        self.eems = list(stack)        # a self-contained demo stack (shared grid)
+        self._show_dialog(EEMWindow(stack[0], parent=self))
+        self.status.showMessage(
+            f"Loaded a {len(stack)}-EEM demo stack (shared grid). "
+            "Run EEM ▸ PARAFAC on loaded EEM stack.", 9000)
+
+    def parafac_analysis(self) -> None:
+        if len(self.eems) < 2:
+            QtWidgets.QMessageBox.information(
+                self, "PARAFAC",
+                "PARAFAC needs at least two EEMs sharing the same grid. Open several "
+                "EEM files, or use EEM ▸ Open demo EEM stack.")
+            return
+        maxr = max(1, min(8, len(self.eems)))
+        v = FormDialog.exec_form("PARAFAC decomposition", [
+            {"key": "rank", "label": "Number of components", "type": "int",
+             "default": min(3, maxr), "min": 1, "max": maxr},
+            {"key": "nonneg", "label": "Non-negative loadings (fluorescence)",
+             "type": "bool", "default": True},
+        ], self, f"{len(self.eems)} EEMs loaded.")
+        if not v:
+            return
+        try:
+            res = eem.parafac_from_eems(self.eems, int(v["rank"]), nonneg=v["nonneg"])
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.warning(self, "PARAFAC failed", str(exc))
+            return
+        self._show_dialog(ParafacWindow(res, parent=self))
+        self.status.showMessage(f"PARAFAC: {res.rank} components, fit {res.fit:.4f} "
+                                f"from {len(self.eems)} EEMs.", 8000)
 
     def open_eem_file(self) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(

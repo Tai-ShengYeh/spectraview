@@ -46,6 +46,42 @@ def correlation(M: np.ndarray, ref: str = "mean"):
     return sync, asyn
 
 
+def hetero_correlation(M1: np.ndarray, M2: np.ndarray, ref: str = "mean"):
+    """Hetero-spectral 2D correlation between two datasets sharing a perturbation.
+
+    M1 (m × n1) and M2 (m × n2) are two techniques measured on the SAME m
+    perturbation points. Returns (sync, asyn), each n1 × n2.
+    """
+    M1 = np.asarray(M1, dtype=float)
+    M2 = np.asarray(M2, dtype=float)
+    if M1.shape[0] != M2.shape[0]:
+        raise ValueError("Both datasets need the same number of perturbation rows.")
+    m = M1.shape[0]
+    if m < 2:
+        raise ValueError("Need at least two perturbation points.")
+    D1 = M1 - M1.mean(axis=0) if ref == "mean" else M1
+    D2 = M2 - M2.mean(axis=0) if ref == "mean" else M2
+    sync = (D1.T @ D2) / (m - 1)
+    asyn = (D1.T @ (hilbert_noda_matrix(m) @ D2)) / (m - 1)
+    return sync, asyn
+
+
+def hetero_from_spectra(group1: list[Spectrum], group2: list[Spectrum],
+                        ref: str = "mean"):
+    """Hetero-correlation from two equal-length groups of spectra.
+
+    Returns (x1, x2, sync, asyn); sync/asyn have shape (n1, n2).
+    """
+    if len(group1) != len(group2):
+        raise ValueError("The two sets must contain the same number of spectra.")
+    if len(group1) < 2:
+        raise ValueError("Each set needs at least two spectra.")
+    g1, M1 = _common_grid(group1)
+    g2, M2 = _common_grid(group2)
+    sync, asyn = hetero_correlation(M1, M2, ref)
+    return g1, g2, sync, asyn
+
+
 def two_trace(ya: np.ndarray, yb: np.ndarray):
     """Two-trace 2D (2T2D) correlation, Noda 2018.
 

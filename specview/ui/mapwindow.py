@@ -160,6 +160,51 @@ class EEMWindow(MapWindow):
         self._dlg3d = dlg
 
 
+class ParafacWindow(QtWidgets.QMainWindow):
+    """Shows a PARAFAC decomposition: excitation/emission loadings + scores."""
+
+    def __init__(self, result, parent=None):
+        super().__init__(parent)
+        self.result = result
+        self.setWindowTitle(f"PARAFAC — {result.rank} components (fit {result.fit:.3f})")
+        self.resize(940, 470)
+        from ..spectrum import PALETTE
+        self.glw = pg.GraphicsLayoutWidget()
+        self.setCentralWidget(self.glw)
+        p_em = self.glw.addPlot(title="Emission loadings")
+        p_em.setLabel("bottom", "Emission (nm)")
+        p_em.addLegend(offset=(-10, 10))
+        p_ex = self.glw.addPlot(title="Excitation loadings")
+        p_ex.setLabel("bottom", "Excitation (nm)")
+        p_ex.addLegend(offset=(-10, 10))
+        for f in range(result.rank):
+            col = PALETTE[f % len(PALETTE)]
+            pen = pg.mkPen(col, width=2)
+            p_em.plot(result.em, result.em_load[:, f], pen=pen, name=f"C{f + 1}")
+            p_ex.plot(result.ex, result.ex_load[:, f], pen=pen, name=f"C{f + 1}")
+        self._extra: list = []
+        tb = self.addToolBar("PARAFAC")
+        tb.addAction("Scores…", self._show_scores)
+        tb.addAction("Component EEMs", self._show_components)
+
+    def _show_scores(self):
+        from .dialogs import TableDialog
+        r = self.result
+        rows = [[r.names[i]] + [f"{r.scores[i, f]:.4g}" for f in range(r.rank)]
+                for i in range(len(r.names))]
+        d = TableDialog("PARAFAC sample scores",
+                        ["Sample"] + [f"C{f + 1}" for f in range(r.rank)], rows, self,
+                        summary=f"{r.rank} components · model fit {r.fit:.4f}")
+        d.show()
+        self._extra.append(d)
+
+    def _show_components(self):
+        for f in range(self.result.rank):
+            w = EEMWindow(self.result.component_eem(f), self)
+            w.show()
+            self._extra.append(w)
+
+
 class Surface3DDialog(QtWidgets.QDialog):
     """A rotatable 3-D EEM surface (matplotlib embedded in Qt)."""
 

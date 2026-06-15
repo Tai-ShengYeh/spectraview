@@ -267,6 +267,35 @@ eemw[-1]._toggle_scatter(True)
 check("EEM scatter toggle masks NaN", bool(np.isnan(eemw[-1]._items[0]["Zxy"]).any()))
 check("EEM 3D surface dialog builds", Surface3DDialog(demo_eem()) is not None)
 
+print("== PARAFAC / hetero windows ==")
+from specview.ui.mapwindow import ParafacWindow  # noqa: E402
+from specview.demo import demo_cos_series as _dcs  # noqa: E402
+
+win.open_demo_eem_stack()
+check("demo EEM stack collected", len(win.eems) >= 7)
+win.parafac_analysis()                       # exec_form stub -> default rank=3
+check("PARAFAC window opened", any(isinstance(d, ParafacWindow) for d in win._dialogs))
+
+_defaults = dlg.FormDialog.exec_form
+dlg.FormDialog.exec_form = staticmethod(
+    lambda t, f, parent=None, description=None: {"method": "hetero", "ref": "mean"})
+win.remove_all()
+gA, gB = _dcs(5), _dcs(5)
+for s in gB:
+    s.x = s.x + 1500.0
+for s in gA + gB:
+    win.document.add(s)
+win._rebuild_table()
+sm3 = win.table.selectionModel()
+for r in range(len(win.document)):
+    sm3.select(win.table.model().index(r, 0),
+               QtCore.QItemSelectionModel.SelectionFlag.Select
+               | QtCore.QItemSelectionModel.SelectionFlag.Rows)
+win.cos2d_analysis()
+dlg.FormDialog.exec_form = _defaults
+check("hetero 2D-COS opened a map window",
+      any(type(d).__name__ == "MapWindow" for d in win._dialogs))
+
 print(f"\n{PASS} passed, {FAIL} failed")
 app.quit()
 sys.exit(1 if FAIL else 0)

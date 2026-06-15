@@ -340,5 +340,29 @@ with open(ep, "w", encoding="utf-8") as fh:
 E2 = eemmod.read_eem_matrix(ep, ex_in_columns=True)
 check("EEM matrix file round-trip", np.allclose(E2.Z, E.Z, atol=1e-1))
 
+print("== EEM PARAFAC ==")
+from specview.demo import demo_eem_stack  # noqa: E402
+
+stack = demo_eem_stack(7)
+pres = eemmod.parafac_from_eems(stack, rank=3, nonneg=True)
+check("PARAFAC fit > 0.95", pres.fit > 0.95)
+check("PARAFAC factor shapes",
+      pres.scores.shape == (7, 3) and pres.ex_load.shape == (stack[0].ex.size, 3))
+em_peaks = sorted(pres.em[np.argmax(pres.em_load[:, f])] for f in range(3))
+check("PARAFAC recovers emission peaks ~330/400/440",
+      all(any(abs(p - t) < 12 for p in em_peaks) for t in (330, 400, 440)))
+check("PARAFAC loadings are non-negative",
+      (pres.ex_load >= 0).all() and (pres.em_load >= 0).all())
+check("component_eem is a rank-1 EEM",
+      pres.component_eem(0).Z.shape == (stack[0].ex.size, stack[0].em.size))
+
+print("== hetero 2D-COS ==")
+sA, sB = demo_cos_series(10), demo_cos_series(10)
+gx1, gx2, hsync, hasyn = cos2d.hetero_from_spectra(sA, sB, "mean")
+check("hetero map shape matches the two grids", hsync.shape == (gx1.size, gx2.size))
+_, homo_sync, _ = cos2d.correlation_from_spectra(sA, "mean")
+_, _, hsame, _ = cos2d.hetero_from_spectra(sA, sA, "mean")
+check("hetero(X,X) sync == generalized sync", np.allclose(hsame, homo_sync, atol=1e-9))
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

@@ -93,6 +93,27 @@ def demo_eem():
     return EEM(ex=ex, em=em, Z=Z, name="Demo EEM")
 
 
+def demo_eem_stack(n_samples: int = 7, seed: int = 0):
+    """A stack of EEMs for PARAFAC: 3 fluorophores at varying concentrations."""
+    from .eem import EEM
+    ex = np.linspace(240.0, 450.0, 40)
+    em = np.linspace(280.0, 560.0, 90)
+    EX, EM = np.meshgrid(ex, em, indexing="ij")
+
+    def blob(ex0, em0, sx, sy):
+        return np.exp(-((EX - ex0) ** 2 / (2 * sx ** 2) + (EM - em0) ** 2 / (2 * sy ** 2)))
+
+    profiles = [blob(275, 330, 14, 24), blob(350, 440, 20, 34), blob(300, 400, 16, 28)]
+    rng = np.random.default_rng(seed)
+    conc = rng.uniform(0.2, 1.0, size=(n_samples, 3))
+    eems = []
+    for i in range(n_samples):
+        Z = sum(conc[i, f] * profiles[f] for f in range(3))
+        Z = Z + rng.normal(0, 0.004, Z.shape)            # mild noise
+        eems.append(EEM(ex=ex, em=em, Z=np.clip(Z, 0, None), name=f"sample {i + 1}"))
+    return eems
+
+
 def demo_cos_series(n: int = 14):
     """A perturbation series for 2D-COS.
 

@@ -244,6 +244,26 @@
       <img src="cos2d.png" alt="2D-COS 同步與異步相關圖">
     </div>
 
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">多樣品螢光盲解</div>
+        <h3>EEM PARAFAC 平行因子分解</h3>
+        <p>一疊多樣品 EEM，用 PARAFAC（交替最小平方、非負約束）盲解成各<b>螢光成分</b>的激發／發射輪廓與每個樣品的相對濃度（分數）。下圖從 7 個混合 EEM 還原出 3 個螢光團（fit 0.98），是 DOM／食品螢光定量的標準做法。</p>
+        <span class="menu">Analyze ▸ Fluorescence EEM ▸ PARAFAC</span>
+      </div>
+      <img src="parafac.png" alt="PARAFAC 還原 3 個螢光團的激發/發射載荷">
+    </div>
+
+    <div class="feature">
+      <div class="ftext">
+        <div class="why">跨技術交叉相關</div>
+        <h3>Hetero 2D-COS（異質相關）</h3>
+        <p>兩種<b>不同技術</b>（如 IR × Raman、NIR × 螢光）量同一批樣品，做異質二維相關，得到<b>非方陣</b>的同步／異步圖：哪一段 IR 吸收和哪一段 Raman 位移一起變、誰先誰後。在 2D-COS 對話框選「Hetero」，把選取的光譜前半當技術 1、後半當技術 2。</p>
+        <span class="menu">Analyze ▸ 2D correlation ▸ Hetero-correlation</span>
+      </div>
+      <img src="cos2d_hetero.png" alt="Hetero 2D-COS：兩種技術的非方陣相關圖">
+    </div>
+
     <div class="play">
       <h3>▶ 互動：2D-COS 即時計算</h3>
       <div class="sub">三個譜帶（1200 / 1350 / 1500 cm⁻¹）在擾動中依序變化；下面的同步、異步相關圖用 Noda 演算法在你的瀏覽器即時算出。</div>
