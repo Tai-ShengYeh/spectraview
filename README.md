@@ -123,8 +123,20 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **自建光譜庫**：把載入的光譜「加入庫」，存成 `.speclib`（JSON）庫檔、之後可載入。
 - **相似度搜尋**：拿未知譜對庫比對，依**相關係數**排序，命中清單同時顯示
   correlation / cosine / 光譜角 SAM / 歐氏距離，可一鍵把最佳命中疊到圖上。
-- **現成範例**：[`examples/sugars_nir.speclib`](examples/) 是 9 種糖類／添加物的 NIR 光譜庫
-  （附 3 個未知譜查詢檔）；`Library ▸ Load library` 載入即可試比對。
+- **現成範例**：[`examples/sugars_nir.speclib`](examples/) — 9 種糖類／添加物的 NIR 光譜庫（見下）。
+
+> **範例：糖類 NIR 鑑別**
+> [`examples/`](examples/) 內含一個用真實 DLP-Hadamard 近紅外（1600–2400 nm）量測建成的光譜庫：
+> aspartame、benzoic acid、caffeine、fructose、glucose、lactose、maltose、sucralose、sucrose 共 9 種，
+> 每條參考譜是該物質 **5 次重複的平均**；另附 `unknown_glucose.csv`、`unknown_sucrose.csv`、
+> `unknown_caffeine.csv` 三個單次量測的查詢檔。
+>
+> **用法**：`Library ▸ Load library…` 載入 `sugars_nir.speclib` → `File ▸ Open…` 載入一個 `unknown_*.csv`
+> → 在清單選它 → `Library ▸ Search selected against library…`。
+>
+> **結果**：留一驗證 **9/9** 全中；相關係數呈現化學上合理的分布——糖類彼此相似（蔗糖 vs 果糖 ≈ 0.99，
+> 因為蔗糖＝葡萄糖＋果糖），但和添加物（咖啡因、苯甲酸 ≈ 0.7–0.87）明顯拉開。
+> 線上另有[**互動比對 demo**](https://tai-shengyeh.github.io/spectraview/)，點按鈕即時看排名與疊圖，免安裝。
 
 ### 二維分析（Analyze 選單）
 - **螢光 EEM**：讀 ex×em 矩陣檔或由多條發射光譜組成；2D 等高線熱圖（含色條、十字游標讀值）
