@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="sugar_demo_data.js"></script>
 <style>
   :root{--paper:#FFFFFF;--paper2:#F5F2E9;--ink:#1A1A1A;--soft:#52493b;--teal:#0E7C7B;--cover:#119C9A;--coral:#E36414;--gold:#C8941F;--line:#E4DECC;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -205,6 +206,17 @@
       <div class="card"><span class="tag gold">I/O</span><h3>8 種格式 · 一鍵匯出矩陣</h3>
         <p>讀 ASCII / JCAMP-DX / SPC / OPUS / JSON / MATLAB；合併匯出可選「每列一樣品」的 X-matrix，直接餵 scikit-learn 的 PCA / PLS。</p>
         <div class="links"><span class="repo">File ▸ Export combined data</span></div></div>
+    </div>
+
+    <div class="play" id="libdemo">
+      <h3>▶ 互動：光譜庫比對（9 種糖 / 添加物）</h3>
+      <div class="sub">點一個「未知樣品」，瀏覽器即時把它的 NIR 譜對 9 條參考譜算相關係數並排名。資料來自真實 DLP-Hadamard NIR 量測（隨附在 repo 的 <code style="color:#a8d6d3;background:none;border:0">examples/sugars_nir.speclib</code>）。</div>
+      <div class="tabs" id="libTabs"></div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;">
+        <div class="canvaswrap" style="flex:1;min-width:280px;"><canvas id="libChart" height="150"></canvas></div>
+        <div id="libRanks" style="flex:1;min-width:230px;"></div>
+      </div>
+      <div class="explain" id="libExplain"></div>
     </div>
   </section>
 
@@ -463,6 +475,57 @@ draw('raw');
     ctx.putImageData(img,0,0);
   }
   render('cosSync', sync); render('cosAsync', asyn);
+})();
+</script>
+
+<script>
+// ---- live spectral-library matching demo (9 sugars/additives, real NIR) ----
+(function(){
+  const D = window.SUGARDATA; if(!D) return;
+  const AX = Array.from({length:D.n}, (_,i)=> D.x0 + (D.x1-D.x0)*i/(D.n-1));
+  const corr = (a,b)=>{ let ma=0,mb=0; for(let i=0;i<a.length;i++){ma+=a[i];mb+=b[i];} ma/=a.length; mb/=b.length;
+    let saa=0,sbb=0,sab=0; for(let i=0;i<a.length;i++){const da=a[i]-ma, db=b[i]-mb; saa+=da*da; sbb+=db*db; sab+=da*db;}
+    return sab/Math.sqrt(saa*sbb); };
+  const mm = (y)=>{ const lo=Math.min(...y), hi=Math.max(...y), d=(hi-lo)||1; return y.map(v=>(v-lo)/d); };
+  let chart;
+  const tabs = document.getElementById('libTabs');
+  D.order.forEach((s,i)=>{ const b=document.createElement('button'); b.className='tab'+(i===0?' active':'');
+    b.textContent=s; b.onclick=()=>pick(s,b); tabs.appendChild(b); });
+  function pick(sub, btn){
+    document.querySelectorAll('#libTabs .tab').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    const q = D.qry[sub];
+    const ranked = D.order.map(s=>({s, r:corr(q, D.ref[s])})).sort((a,b)=>b.r-a.r);
+    const top = ranked[0];
+    const dsU = AX.map((x,i)=>({x, y:mm(q)[i]}));
+    const dsR = AX.map((x,i)=>({x, y:mm(D.ref[top.s])[i]}));
+    if(!chart){
+      chart = new Chart(document.getElementById('libChart'), {type:'line',
+        data:{datasets:[
+          {label:'未知樣品', data:dsU, borderColor:'#FFDE7A', borderWidth:2, pointRadius:0, tension:.2},
+          {label:'最相近參考', data:dsR, borderColor:'#7fd4d0', borderWidth:1.5, borderDash:[5,3], pointRadius:0, tension:.2}]},
+        options:{animation:{duration:300}, parsing:false, plugins:{legend:{labels:{color:'#cdeae8'}}},
+          scales:{x:{type:'linear', min:D.x0, max:D.x1, title:{display:true,text:'Wavelength (nm)',color:'#a8d6d3'},
+                     ticks:{color:'#8fc0bd'}, grid:{color:'rgba(255,255,255,.06)'}},
+                  y:{title:{display:true,text:'norm. absorbance',color:'#a8d6d3'}, ticks:{color:'#8fc0bd'},
+                     grid:{color:'rgba(255,255,255,.06)'}}}}});
+    } else { chart.data.datasets[0].data=dsU; chart.data.datasets[1].data=dsR; chart.update(); }
+    const box = document.getElementById('libRanks'); box.innerHTML='';
+    ranked.forEach((it,idx)=>{
+      const w = Math.max(2, Math.round(Math.max(0,it.r)*100));
+      const row = document.createElement('div'); row.style.cssText='margin:4px 0;font-size:12.5px;';
+      row.innerHTML =
+        `<div style="display:flex;justify-content:space-between;color:${idx===0?'#FFDE7A':'#cdeae8'};font-weight:${idx===0?700:500}">`+
+        `<span>${idx+1}. ${it.s}${idx===0?' ✓':''}</span><span>${it.r.toFixed(3)}</span></div>`+
+        `<div style="height:7px;background:#123e3c;border-radius:4px;overflow:hidden;margin-top:2px;">`+
+        `<div style="height:100%;width:${w}%;background:${idx===0?'#FFDE7A':'#3a6b68'}"></div></div>`;
+      box.appendChild(row);
+    });
+    document.getElementById('libExplain').innerHTML =
+      `未知樣品 <b>${sub}</b> → 最相近 <b>${top.s}</b>（相關係數 ${top.r.toFixed(3)}）。`+
+      `注意<b>糖類彼此相關高</b>、和<b>添加物</b>（咖啡因、苯甲酸）明顯拉開——這正是光譜庫鑑別在做的事。`;
+  }
+  pick(D.order[0]);
 })();
 </script>
 </body>
