@@ -418,5 +418,43 @@ try:
 except ValueError:
     check("too-few-standards raises", True)
 
+print("== PerkinElmer .sp reader ==")
+import struct as _struct  # noqa: E402
+
+from specview.formats.binary_io import load_sp as _load_sp  # noqa: E402
+
+
+def _pe_block(bid, content):  # noqa: E306
+    return _struct.pack("<Hi", bid, len(content)) + content
+
+
+_npts = 8
+_yvals = np.linspace(0.10, 0.80, _npts)
+_sp_raw = (
+    b"PEPE 2D constant interval DataSet file\x00"
+    + _pe_block(0x8B72, b"\x00\x00" + _struct.pack("<2d", 4000.0, 400.0))  # first/last X
+    + _pe_block(0x8B75, b"\x00\x00" + _struct.pack("<i", _npts))           # N points
+    + _pe_block(0x8B77, b"\x00\x00" + _struct.pack("<H", 4) + b"cm-1")     # X units
+    + _pe_block(0x8B78, b"\x00\x00" + _struct.pack("<H", 1) + b"A")        # Y units
+    + _pe_block(0x8B7C, b"\x00\x00" + _struct.pack("<i", _npts * 8)
+                + _yvals.astype("<f8").tobytes())                          # Y data
+)
+_sp_path = os.path.join(tempfile.mkdtemp(), "sample.sp")
+open(_sp_path, "wb").write(_sp_raw)
+_sp = load_any(_sp_path)[0]
+check("PE .sp reads N points", _sp.npoints == _npts)
+check("PE .sp maps units (cm-1 / absorbance)",
+      _sp.x_unit == "cm-1" and _sp.y_unit == "absorbance")
+check("PE .sp X axis from first/last X",
+      abs(_sp.x.min() - 400) < 1e-6 and abs(_sp.x.max() - 4000) < 1e-6)
+check("PE .sp Y values round-trip", np.allclose(np.sort(_sp.y), _yvals))
+_bad = os.path.join(tempfile.mkdtemp(), "bad.sp")
+open(_bad, "wb").write(b"NOTPE...")
+try:
+    _load_sp(_bad)
+    check("PE .sp rejects a non-PerkinElmer file", False)
+except ValueError:
+    check("PE .sp rejects a non-PerkinElmer file", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

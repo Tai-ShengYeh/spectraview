@@ -72,7 +72,8 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 ### 檢視核心
 - **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
   JSON（多種結構：x/y 陣列、別名鍵、pairs、`spectra` 多光譜）、MATLAB（.mat，含命名變數
-  與 N×2 / N×M 矩陣）、GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）、NeoSpectra（.Spectrum，NIR 匯出）。一個檔可含多條光譜。
+  與 N×2 / N×M 矩陣）、GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）、NeoSpectra（.Spectrum，NIR 匯出）、
+  PerkinElmer（.sp，純 Python 解析、免裝套件）。一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
 - **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列），游標停在曲線上會浮現該光譜名稱。
 - **座標軸換算**
@@ -186,6 +187,7 @@ spectra_viewer/
     ├── axes.py             座標軸換算（X、Y）
     ├── processing.py       所有前處理演算法（含 airPLS 基線）
     ├── analysis.py         尋峰 / 峰形擬合 / 積分 / 混合物 NNLS
+    ├── calibration.py      檢量線（迴歸 + 濃度反推、LOD/LOQ、信賴區間）
     ├── library.py          光譜庫（.speclib）+ 相似度搜尋
     ├── xrf.py              XRF 元素譜線表 + 峰→元素比對
     ├── cos2d.py            2D 相關光譜（同步/異步 + 2T2D）
@@ -198,11 +200,12 @@ spectra_viewer/
     │   ├── json_io.py      JSON 讀寫（多結構）
     │   ├── mat_io.py       MATLAB .mat 讀取（scipy.io）
     │   ├── _hints.py       JSON/MAT 共用：鍵名別名 + 單位正規化
-    │   └── binary_io.py    SPC / OPUS（選用套件，優雅降級）
+    │   └── binary_io.py    SPC / OPUS（選用套件，優雅降級）+ PerkinElmer .sp（純 Python）
     └── ui/                 PySide6 + pyqtgraph 介面
         ├── main_window.py  主視窗、選單、工具列、清單、復原
         ├── plotview.py     繪圖區、十字游標、堆疊、匯出
         ├── mapwindow.py    2D 熱圖視窗（EEM/2D-COS）+ 3D 表面（matplotlib）
+        ├── calibration_view.py  檢量線對話框 + 結果視窗
         └── dialogs.py      通用參數對話框
 ```
 
