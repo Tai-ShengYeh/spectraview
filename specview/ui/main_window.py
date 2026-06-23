@@ -7,12 +7,14 @@ import traceback
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from .. import __app_name__, __version__, analysis, axes, cos2d, eem, processing, xrf
+from .. import (__app_name__, __version__, analysis, axes, calibration, cos2d,
+                eem, processing, xrf)
 from ..demo import demo_cos_series, demo_eem, demo_eem_stack, load_demo_set
 from ..library import SpectralLibrary
 from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
                        save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
+from .calibration_view import CalibrationDialog, CalibrationWindow
 from .dialogs import FormDialog, TableDialog
 from .mapwindow import EEMWindow, MapWindow, ParafacWindow
 from .plotview import PlotView
@@ -208,6 +210,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                      triggered=self.mixture_analysis))
         m_an.addAction(QtGui.QAction("Identify XRF elements…", self,
                                      triggered=self.identify_xrf))
+        m_an.addAction(QtGui.QAction("Calibration curve (檢量線)…", self,
+                                     triggered=self.calibration_curve))
         m_an.addSeparator()
         m_an.addAction(QtGui.QAction("2D correlation (2D-COS / 2T2D)…", self,
                                      triggered=self.cos2d_analysis))
@@ -1075,6 +1079,48 @@ class MainWindow(QtWidgets.QMainWindow):
             summary=f"{len(peaks)} peaks, {n_match} matched to elements.",
             default_dir=self._last_dir))
         self.status.showMessage(f"XRF: matched {n_match}/{len(peaks)} peaks.", 6000)
+
+    # ---- calibration curve (檢量線) -------------------------------------
+    def calibration_curve(self) -> None:
+        specs = [s for s in self._targets() if s.npoints]
+        if len(specs) < 2:
+            QtWidgets.QMessageBox.information(
+                self, "Calibration curve",
+                "Load the standard spectra (and any unknown samples) and select "
+                "them first. Each standard needs a known concentration — put it in "
+                "the spectrum name (e.g. 'std 5 ppm') or type it into the table.")
+            return
+        res = CalibrationDialog.exec_dialog(specs, self, self._last_dir)
+        if not res:
+            return
+        stds = res["standards"]
+        need = 2 if res["degree"] == 1 else 3
+        if len(stds) < need:
+            QtWidgets.QMessageBox.warning(
+                self, "Calibration curve",
+                f"Need at least {need} standards with a concentration and a signal "
+                f"for a {'quadratic' if res['degree'] == 2 else 'linear'} fit; "
+                f"got {len(stds)}.")
+            return
+        try:
+            model = calibration.fit_calibration(
+                [c for c, _, _ in stds], [sig for _, sig, _ in stds],
+                degree=res["degree"], through_origin=res["through_origin"],
+                conc_unit=res["conc_unit"], signal_label=res["signal_label"])
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.warning(self, "Calibration failed", str(exc))
+            return
+        preds = []
+        for name, sig in res["unknowns"]:
+            preds.append({"name": name, "signal": sig,
+                          **model.predict_concentration(sig, res["replicates"])})
+        self._show_dialog(CalibrationWindow(model, preds, parent=self,
+                                            last_dir=self._last_dir))
+        unit = f" {model.conc_unit}" if model.conc_unit else ""
+        msg = f"Calibration: {model.equation()}  R²={model.r_squared:.4f}"
+        if model.lod is not None:
+            msg += f"  LOD={model.lod:.3g}{unit}"
+        self.status.showMessage(msg, 0)
 
     # ---- spectral library -----------------------------------------------
     def library_add(self) -> None:

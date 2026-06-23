@@ -364,5 +364,59 @@ _, homo_sync, _ = cos2d.correlation_from_spectra(sA, "mean")
 _, _, hsame, _ = cos2d.hetero_from_spectra(sA, sA, "mean")
 check("hetero(X,X) sync == generalized sync", np.allclose(hsame, homo_sync, atol=1e-9))
 
+print("== calibration curve ==")
+from specview import calibration as CAL  # noqa: E402
+
+# signal readers on a synthetic absorbance band (peak 0.8 at 280 nm + 0.05 offset)
+xcal = np.linspace(200, 400, 401)
+cal_band = 0.8 * np.exp(-(xcal - 280) ** 2 / (2 * 10 ** 2)) + 0.05
+sp_cal = Spectrum(xcal, cal_band, name="std 4 ppm", x_unit="nm", y_unit="absorbance")
+check("parse_concentration reads a number", CAL.parse_concentration("std 4 ppm") == 4.0)
+check("parse_concentration None when no number", CAL.parse_concentration("blank") is None)
+check("signal_at = value at x0", abs(CAL.signal_at(sp_cal, 280) - 0.85) < 1e-6)
+check("signal_height = max in range", abs(CAL.signal_height(sp_cal, 250, 310) - 0.85) < 1e-3)
+check("signal_height baseline-subtracted is smaller",
+      CAL.signal_height(sp_cal, 250, 310, True) < CAL.signal_height(sp_cal, 250, 310))
+check("signal_area positive over band", CAL.signal_area(sp_cal, 250, 310) > 0)
+check("read_signal dispatch (area)", CAL.read_signal(sp_cal, "area", lo=250, hi=310) > 0)
+
+# exact linear calibration: signal = 0.5*c + 0.02
+cc = np.array([0.0, 1.0, 2.0, 4.0, 8.0])
+ss = 0.5 * cc + 0.02
+mdl = CAL.fit_calibration(cc, ss, degree=1, conc_unit="ppm")
+check("linear slope ~ 0.5", abs(mdl.slope - 0.5) < 1e-9)
+check("linear intercept ~ 0.02", abs(mdl.intercept - 0.02) < 1e-9)
+check("linear R^2 ~ 1", abs(mdl.r_squared - 1.0) < 1e-12)
+check("equation text", mdl.equation().startswith("y = 0.5"))
+check("predict_signal at c=10 -> 5.02", abs(float(mdl.predict_signal(10.0)) - 5.02) < 1e-9)
+inv = mdl.predict_concentration(0.5 * 5 + 0.02)
+check("inverse predicts c=5 (in range)", abs(inv["conc"] - 5.0) < 1e-9 and inv["in_range"])
+check("out-of-range flagged", not mdl.predict_concentration(0.5 * 20 + 0.02)["in_range"])
+
+# noisy linear -> meaningful errors, LOD/LOQ, confidence interval
+rng = np.random.default_rng(0)
+ssn = 0.5 * cc + 0.02 + rng.normal(0, 0.01, cc.size)
+mdl2 = CAL.fit_calibration(cc, ssn, degree=1)
+check("noisy slope near 0.5", abs(mdl2.slope - 0.5) < 0.02)
+check("noisy se_slope > 0", mdl2.se_slope > 0)
+check("LOD>0 and LOQ>LOD", mdl2.lod is not None and mdl2.lod > 0 and mdl2.loq > mdl2.lod)
+check("LOQ/LOD ratio = 10/3.3", abs(mdl2.loq / mdl2.lod - 10.0 / 3.3) < 1e-9)
+check("inverse CI finite & positive", (ci := mdl2.predict_concentration(2.52)["ci"]) and ci > 0)
+
+# through-origin and quadratic
+mo = CAL.fit_calibration([1, 2, 3, 4], [0.5, 1.0, 1.5, 2.0], degree=1, through_origin=True)
+check("through-origin intercept is exactly 0", mo.intercept == 0.0)
+check("through-origin slope ~ 0.5", abs(mo.slope - 0.5) < 1e-9)
+check("through-origin CI is None", mo.predict_concentration(1.0)["ci"] is None)
+cq = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+mq = CAL.fit_calibration(cq, 2.0 + cq + 0.3 * cq ** 2, degree=2)
+check("quadratic R^2 ~ 1", abs(mq.r_squared - 1.0) < 1e-9)
+check("quadratic inverse predicts c=3", abs(mq.predict_concentration(2.0 + 3 + 0.3 * 9)["conc"] - 3.0) < 1e-6)
+try:
+    CAL.fit_calibration([1.0], [2.0], degree=1)
+    check("too-few-standards raises", False)
+except ValueError:
+    check("too-few-standards raises", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

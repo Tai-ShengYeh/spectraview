@@ -296,6 +296,56 @@ dlg.FormDialog.exec_form = _defaults
 check("hetero 2D-COS opened a map window",
       any(type(d).__name__ == "MapWindow" for d in win._dialogs))
 
+print("== calibration curve handler ==")
+from specview import calibration as _cal  # noqa: E402
+from specview.ui.calibration_view import CalibrationDialog, CalibrationWindow  # noqa: E402
+
+win.remove_all()
+xk = np.linspace(200, 400, 401)
+for conc in (1.0, 2.0, 4.0, 8.0):       # standards named with their concentration
+    yk = (0.1 * conc) * np.exp(-(xk - 280) ** 2 / (2 * 12 ** 2)) + 0.01
+    win.document.add(Spectrum(xk, yk, name=f"std {conc:g} ppm", x_unit="nm",
+                              y_unit="absorbance"))
+yu = 0.35 * np.exp(-(xk - 280) ** 2 / (2 * 12 ** 2)) + 0.01    # an unknown
+win.document.add(Spectrum(xk, yu, name="unknown A", x_unit="nm", y_unit="absorbance"))
+win._rebuild_table()
+
+
+def _calib_result(spectra, parent=None, last_dir=""):
+    stds, unknowns = [], []
+    for s in spectra:
+        sig = _cal.signal_at(s, 280.0)
+        c = _cal.parse_concentration(s.name)
+        (stds.append((c, sig, s.name)) if c is not None
+         else unknowns.append((s.name, sig)))
+    return {"standards": stds, "unknowns": unknowns, "degree": 1,
+            "through_origin": False, "replicates": 1, "conc_unit": "ppm",
+            "signal_label": "A @ 280"}
+
+
+CalibrationDialog.exec_dialog = staticmethod(_calib_result)
+sm4 = win.table.selectionModel()
+for r in range(len(win.document)):
+    sm4.select(win.table.model().index(r, 0),
+               QtCore.QItemSelectionModel.SelectionFlag.Select
+               | QtCore.QItemSelectionModel.SelectionFlag.Rows)
+win.calibration_curve()
+calw = [d for d in win._dialogs if isinstance(d, CalibrationWindow)]
+check("calibration window opened", bool(calw))
+check("calibration model linear, R^2 ~ 1",
+      bool(calw) and calw[-1].model.degree == 1 and calw[-1].model.r_squared > 0.99)
+check("unknown concentration predicted (~3.5 ppm)",
+      bool(calw) and calw[-1].predictions
+      and abs(calw[-1].predictions[0]["conc"] - 3.5) < 0.2)
+calw[-1]._show_standards()
+calw[-1]._show_predictions()
+check("calibration result tables opened",
+      sum(isinstance(d, dlg.TableDialog) for d in calw[-1]._extra) == 2)
+cal_png = os.path.join(tempfile.mkdtemp(), "cal.png")
+QtWidgets.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (cal_png, "PNG (*.png)"))
+calw[-1]._export_image()
+check("calibration image exported", os.path.exists(cal_png) and os.path.getsize(cal_png) > 200)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 app.quit()
 sys.exit(1 if FAIL else 0)
