@@ -20,6 +20,7 @@ from .mat_io import load_mat
 _READERS = {
     ".csv": load_ascii, ".txt": load_ascii, ".dat": load_ascii,
     ".tsv": load_ascii, ".asc": load_ascii, ".prn": load_ascii, ".xy": load_ascii,
+    ".spectrum": load_ascii,   # NeoSpectra export: tab-separated x/y with a unit header
     ".dx": load_jcamp, ".jdx": load_jcamp, ".jcm": load_jcamp, ".jcamp": load_jcamp,
     ".spc": load_spc,
     ".json": load_json,
@@ -28,9 +29,10 @@ _READERS = {
 
 # OPUS files often have numeric extensions (.0, .1, ...).
 OPEN_FILTER = (
-    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.dx *.jdx *.jcamp *.spc "
-    "*.json *.mat);;"
+    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.Spectrum *.dx *.jdx "
+    "*.jcamp *.spc *.json *.mat);;"
     "ASCII (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy);;"
+    "NeoSpectra (*.Spectrum);;"
     "JCAMP-DX (*.dx *.jdx *.jcamp);;"
     "JSON (*.json);;"
     "MATLAB (*.mat);;"

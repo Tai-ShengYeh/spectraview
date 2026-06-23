@@ -86,6 +86,11 @@ class MainWindow(QtWidgets.QMainWindow):
         splitter.setStretchFactor(1, 1)
         splitter.setSizes([300, 900])
         self.setCentralWidget(splitter)
+        self.left_panel = left   # the spectra-list sidebar (hideable via View menu)
+
+    def _set_list_visible(self, visible: bool) -> None:
+        """Show/hide the spectra-list sidebar so it stops taking up space."""
+        self.left_panel.setVisible(visible)
 
     def _build_actions(self) -> None:
         SP = QtWidgets.QStyle.StandardPixmap
@@ -114,6 +119,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.act_autoscale = QtGui.QAction(icon(SP.SP_FileDialogContentsView),
                                            "Auto-scale", self, shortcut="Ctrl+0",
                                            triggered=self.plotview.autoscale)
+        self.act_toggle_list = QtGui.QAction("Show spectra list", self,
+                                             checkable=True, checked=True,
+                                             shortcut="F9",
+                                             triggered=self._set_list_visible)
 
     def _build_menus(self) -> None:
         mb = self.menuBar()
@@ -150,6 +159,8 @@ class MainWindow(QtWidgets.QMainWindow):
         m_view.addActions([self.act_flip, self.act_grid, self.act_logy, self.act_dark])
         m_view.addAction(QtGui.QAction("Stack / offset…", self, triggered=self.set_stack))
         m_view.addAction(self.act_autoscale)
+        m_view.addSeparator()
+        m_view.addAction(self.act_toggle_list)
 
         m_proc = mb.addMenu("&Process")
         ms = m_proc.addMenu("Smoothing")

@@ -37,6 +37,8 @@ class PlotView(QtWidgets.QWidget):
         layout.addWidget(self.plot_widget)
 
         self._curves: list[pg.PlotDataItem] = []
+        #: (name, x, y_plotted) parallel to visible curves, for hover hit-testing
+        self._curve_data: list[tuple[str, np.ndarray, np.ndarray]] = []
         self._peak_items: list = []      # scatter + text markers from find_peaks
         self._fit_items: list = []       # fitted sum + component overlays
 
@@ -46,6 +48,15 @@ class PlotView(QtWidgets.QWidget):
         self.hline = pg.InfiniteLine(angle=0, movable=False, pen=pen)
         self.plot.addItem(self.vline, ignoreBounds=True)
         self.plot.addItem(self.hline, ignoreBounds=True)
+
+        # floating label that names the spectrum under the cursor
+        self._hover_label = pg.TextItem(color="#000000", anchor=(0, 1),
+                                        fill=pg.mkBrush(255, 255, 255, 220),
+                                        border=pg.mkPen(120, 120, 120))
+        self._hover_label.setZValue(100)
+        self.plot.addItem(self._hover_label, ignoreBounds=True)
+        self._hover_label.hide()
+
         self._proxy = pg.SignalProxy(self.plot.scene().sigMouseMoved,
                                      rateLimit=60, slot=self._on_mouse_move)
 
@@ -62,6 +73,8 @@ class PlotView(QtWidgets.QWidget):
         for c in self._curves:
             self.plot.removeItem(c)
         self._curves.clear()
+        self._curve_data.clear()
+        self._hover_label.hide()
         self.legend.clear()
 
         span = self._global_span()
@@ -71,11 +84,14 @@ class PlotView(QtWidgets.QWidget):
             if spec.npoints == 0:
                 continue
             offset = i * self.stack_offset * span
+            y_plot = spec.y + offset
             pen = pg.mkPen(color=spec.color or "#1f77b4",
                            width=float(spec.meta.get("line_width", 1.4)))
-            curve = self.plot.plot(spec.x, spec.y + offset, pen=pen, name=spec.name,
+            curve = self.plot.plot(spec.x, y_plot, pen=pen, name=spec.name,
                                    antialias=True)
             self._curves.append(curve)
+            self._curve_data.append((spec.name, np.asarray(spec.x),
+                                     np.asarray(y_plot)))
             x_label, y_label = spec.x_label, spec.y_label
 
         self.plot.setLabel("bottom", x_label or "x")
@@ -186,15 +202,50 @@ class PlotView(QtWidgets.QWidget):
         self.clear_fit()
 
     # ---- crosshair -------------------------------------------------------
+    #: how close (in screen pixels) the cursor must be to a line to name it
+    HOVER_TOLERANCE_PX = 8.0
+
+    def _nearest_curve_name(self, scene_pos, x: float) -> str | None:
+        """Return the name of the visible curve closest to the cursor, or None.
+
+        Closeness is measured in screen pixels so it behaves consistently
+        regardless of zoom or axis scaling.
+        """
+        vb = self.plot.getViewBox()
+        best_name, best_dist = None, self.HOVER_TOLERANCE_PX
+        for name, cx, cy in self._curve_data:
+            if cx.size == 0 or x < cx.min() or x > cx.max():
+                continue
+            # np.interp needs ascending x; flip for descending (e.g. IR) axes
+            if cx.size > 1 and cx[0] > cx[-1]:
+                yc = np.interp(x, cx[::-1], cy[::-1])
+            else:
+                yc = np.interp(x, cx, cy)
+            curve_scene = vb.mapViewToScene(QtCore.QPointF(x, float(yc)))
+            dist = (curve_scene - scene_pos)
+            dpx = (dist.x() ** 2 + dist.y() ** 2) ** 0.5
+            if dpx < best_dist:
+                best_name, best_dist = name, dpx
+        return best_name
+
     def _on_mouse_move(self, evt) -> None:
         pos = evt[0]
         if not self.plot.sceneBoundingRect().contains(pos):
+            self._hover_label.hide()
             return
         mp = self.plot.getViewBox().mapSceneToView(pos)
         x, y = mp.x(), mp.y()
         self.vline.setPos(x)
         self.hline.setPos(y)
         self.cursorMoved.emit(x, y)
+
+        name = self._nearest_curve_name(pos, x)
+        if name:
+            self._hover_label.setText(name)
+            self._hover_label.setPos(x, y)
+            self._hover_label.show()
+        else:
+            self._hover_label.hide()
 
     # ---- export ----------------------------------------------------------
     def export_image(self, path: str, width: int = 1920) -> None:
