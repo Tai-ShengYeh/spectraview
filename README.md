@@ -72,13 +72,13 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 ### 檢視核心
 - **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
   JSON（多種結構：x/y 陣列、別名鍵、pairs、`spectra` 多光譜）、MATLAB（.mat，含命名變數
-  與 N×2 / N×M 矩陣）、GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）。一個檔可含多條光譜。
+  與 N×2 / N×M 矩陣）、GRAMS SPC（.spc）、Bruker OPUS（.0/.1…）、NeoSpectra（.Spectrum，NIR 匯出）。一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
-- **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列）。
+- **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列），游標停在曲線上會浮現該光譜名稱。
 - **座標軸換算**
   - X：波長 nm ↔ 波數 cm⁻¹ ↔ 波長 µm ↔ Raman 位移 cm⁻¹（需雷射波長）↔ 能量 eV ↔ 頻率 THz
   - Y：穿透率 ↔ 穿透率% ↔ 吸光度 ↔ 反射率 ↔ Kubelka-Munk ↔ log(1/R)
-- **顯示選項**：堆疊位移（Scale & Shift）、翻轉 X 軸、格線、對數 Y、深色背景。
+- **顯示選項**：堆疊位移（Scale & Shift）、翻轉 X 軸、格線、對數 Y、深色背景、隱藏/顯示左側光譜清單（F9）。
 - **匯出**：圖檔 PNG（WYSIWYG）與 SVG / PDF / EPS 向量圖（publication 等級）；
   單一光譜存成 CSV 或 JCAMP-DX；**合併匯出**（File ▸ Export combined data）把多條
   光譜放到共用波長軸後輸出成一個 CSV——可選「波長欄 + 每條一欄」（可再載回）或
