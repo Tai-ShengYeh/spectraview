@@ -6,6 +6,7 @@ ImportError with a ``pip install`` hint is raised instead of crashing.
 from __future__ import annotations
 
 import os
+import struct
 
 import numpy as np
 
@@ -16,8 +17,49 @@ class MissingDependency(ImportError):
     """Raised when an optional reader's backend package is not installed."""
 
 
+def _is_shimadzu_spc(head: bytes) -> bool:
+    """Shimadzu UVProbe ``.SPC`` (UV-Vis) starts with 0x00 0x16; GRAMS/Galactic
+    ``.spc`` instead carries a version byte (0x4B/0x4C/0x4D) at offset 1."""
+    return len(head) >= 2 and head[0] == 0x00 and head[1] == 0x16
+
+
+def load_shimadzu_spc(path: str) -> list[Spectrum]:
+    """Shimadzu UV-Vis ``.SPC`` (e.g. UV-1900). Pure-Python, no dependency.
+
+    Little-endian layout: a 120-byte header (firstX float32 @10, lastX float32
+    @14) then the float32 values to end-of-file. The point count is taken from
+    the file size — there is no explicit NPOINTS field. The .SPC carries no
+    unit tag, so X is read as nm and Y as absorbance (or %T if values exceed
+    ~10, which absorbance never does but transmittance-% routinely does).
+    """
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    if len(raw) < 124 or not _is_shimadzu_spc(raw[:2]):
+        raise ValueError(f"{os.path.basename(path)} is not a Shimadzu .SPC file.")
+    first_x = float(struct.unpack_from("<f", raw, 10)[0])
+    last_x = float(struct.unpack_from("<f", raw, 14)[0])
+    body = len(raw) - 120
+    if body <= 0 or body % 4:
+        raise ValueError(
+            f"Unexpected Shimadzu .SPC body length in {os.path.basename(path)}.")
+    n = body // 4
+    y = np.frombuffer(raw, "<f4", n, 120).astype(float)
+    x = np.linspace(first_x, last_x, n)
+    y_unit = "%T" if float(np.nanmax(y)) > 10.0 else "absorbance"
+    base = os.path.splitext(os.path.basename(path))[0]
+    return [Spectrum(x=x, y=y, name=base, x_unit="nm", y_unit=y_unit,
+                     meta={"source": path, "format": "Shimadzu .SPC"})]
+
+
 def load_spc(path: str) -> list[Spectrum]:
-    """GRAMS/Galactic .spc — needs ``pip install spc-spectra``."""
+    """GRAMS/Galactic .spc (``pip install spc-spectra``) or Shimadzu UV-Vis .SPC.
+
+    The ``.spc`` extension is shared by two unrelated formats; Shimadzu UVProbe
+    files are detected by signature and parsed natively (no dependency needed).
+    """
+    with open(path, "rb") as fh:
+        if _is_shimadzu_spc(fh.read(8)):
+            return load_shimadzu_spc(path)
     try:
         import spc_spectra as spc  # type: ignore
     except ImportError:
@@ -104,8 +146,6 @@ def load_opus(path: str) -> list[Spectrum]:
 #   0x8b78  Y units   -> member tag (2 B) + uint16 len + ASCII
 #   0x8b7b  data type -> member tag (2 B) + uint16 len + ASCII ("Spectrum")
 #   0x8b7c  Y data    -> member tag (2 B) + int32 byte-count + float64[N]
-import struct
-
 _PE_SIG = b"PEPE"
 
 # PerkinElmer unit strings -> SpectraView canonical units.

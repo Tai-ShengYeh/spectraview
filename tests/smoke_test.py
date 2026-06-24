@@ -456,5 +456,34 @@ try:
 except ValueError:
     check("PE .sp rejects a non-PerkinElmer file", True)
 
+print("== Shimadzu .SPC reader ==")
+from specview.formats.binary_io import load_shimadzu_spc  # noqa: E402
+
+_yv = np.array([0.10, 0.20, 0.35, 0.30, 0.15, 0.05], dtype="<f4")
+_hdr = bytearray(120)
+_hdr[0:2] = b"\x00\x16"                            # Shimadzu UVProbe signature
+_struct.pack_into("<f", _hdr, 10, 900.0)           # firstX
+_struct.pack_into("<f", _hdr, 14, 200.0)           # lastX
+_shim_path = os.path.join(tempfile.mkdtemp(), "uv.SPC")
+open(_shim_path, "wb").write(bytes(_hdr) + _yv.tobytes())
+_shim = load_any(_shim_path)[0]                    # .spc -> load_spc -> Shimadzu branch
+check("Shimadzu .SPC point count from file size", _shim.npoints == _yv.size)
+check("Shimadzu .SPC units (nm / absorbance)",
+      _shim.x_unit == "nm" and _shim.y_unit == "absorbance")
+check("Shimadzu .SPC X axis from first/last",
+      abs(_shim.x.min() - 200) < 1e-3 and abs(_shim.x.max() - 900) < 1e-3)
+check("Shimadzu .SPC Y values round-trip",
+      np.allclose(np.sort(_shim.y), np.sort(_yv.astype(float)), atol=1e-6))
+_pt = os.path.join(tempfile.mkdtemp(), "uvt.SPC")    # %T heuristic for large values
+open(_pt, "wb").write(bytes(_hdr) + np.array([5., 50., 99., 80.], "<f4").tobytes())
+check("Shimadzu .SPC %T heuristic", load_shimadzu_spc(_pt)[0].y_unit == "%T")
+_bsp = os.path.join(tempfile.mkdtemp(), "bad.SPC")   # wrong signature -> clear error
+open(_bsp, "wb").write(b"\x4b\x4c" + bytes(200))
+try:
+    load_shimadzu_spc(_bsp)
+    check("Shimadzu .SPC rejects a non-Shimadzu file", False)
+except ValueError:
+    check("Shimadzu .SPC rejects a non-Shimadzu file", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
