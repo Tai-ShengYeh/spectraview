@@ -505,5 +505,35 @@ from specview.formats.ascii_io import _guess_units  # noqa: E402
 check("'Spectrum' in header no longer misread as um (micrometres)",
       _guess_units("Sample Spectrum data\n")[0] != "um")
 
+print("== transposed matrix CSV (one spectrum per row) ==")
+_axis = np.linspace(900, 1701, 12)
+_mat = ["class," + ",".join(f"{v:.3f}" for v in _axis)]
+for _cls, _scale in (("10", 1.0), ("10", 1.1), ("20", 2.0)):
+    _mat.append(_cls + "," + ",".join(f"{v:.5f}" for v in _scale * np.linspace(0.05, 0.5, 12)))
+_mp = os.path.join(tempfile.mkdtemp(), "matrix_df.csv")
+open(_mp, "w", encoding="utf-8").write("\n".join(_mat))
+_ms = load_any(_mp)
+check("matrix CSV -> one spectrum per row (3)", len(_ms) == 3)
+check("matrix CSV takes axis from header row (nm)",
+      _ms[0].npoints == 12 and _ms[0].x_unit == "nm"
+      and abs(_ms[0].x.min() - 900) < 1e-3 and abs(_ms[0].x.max() - 1701) < 1e-3)
+check("matrix CSV keeps the row label in the name", _ms[0].name.startswith("class=10"))
+check("matrix CSV reads per-row y values", abs(_ms[2].y.max() - 1.0) < 1e-6)
+
+# our own layout='rows' export must now round-trip back to the original spectra
+_r1 = Spectrum(np.linspace(1000, 1100, 16), np.linspace(0.1, 0.9, 16), name="S1",
+               x_unit="nm", y_unit="absorbance")
+_r2 = Spectrum(np.linspace(1000, 1100, 16), np.linspace(0.2, 0.7, 16), name="S2",
+               x_unit="nm", y_unit="absorbance")
+_rp = os.path.join(tempfile.mkdtemp(), "rows.csv")
+save_combined_csv([_r1, _r2], _rp, "rows")
+_rb = load_any(_rp)
+check("'rows' export round-trips to 2 spectra", len(_rb) == 2)
+check("'rows' export preserves the axis (nm)",
+      _rb[0].x_unit == "nm" and abs(_rb[0].x.max() - 1100) < 1e-6)
+check("'rows' export preserves the sample names",
+      _rb[0].name.startswith("S1") and _rb[1].name.startswith("S2"))
+check("'rows' export preserves the values", np.allclose(np.sort(_rb[0].y), _r1.y, atol=1e-6))
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

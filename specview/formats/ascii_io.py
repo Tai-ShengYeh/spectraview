@@ -121,11 +121,79 @@ def _load_perkinelmer_asc(path: str, lines: list[str]) -> list[Spectrum]:
                      x_unit=x_unit, y_unit=y_unit, meta={"source": path})]
 
 
+def _axis_like(tokens: list[str]) -> "np.ndarray | None":
+    """Return the values if ``tokens`` form a numeric, strictly monotonic axis
+    of at least 10 points — the tell-tale of a *transposed* spectra matrix where
+    the wavelength/wavenumber axis is the header row.
+    """
+    if len(tokens) < 10:
+        return None
+    try:
+        vals = np.array([float(t) for t in tokens], dtype=float)
+    except ValueError:
+        return None
+    d = np.diff(vals)
+    return vals if (np.all(d > 0) or np.all(d < 0)) else None
+
+
+def _try_matrix_layout(path: str, raw_lines: list[str]) -> "list[Spectrum] | None":
+    """Read a transposed spectra matrix, or return None if the file isn't one.
+
+    Layout — the axis is the HEADER row and every data row is one spectrum, whose
+    first cell is a name/class label (Orange / chemometrics exports, and our own
+    ``save_combined_csv(layout='rows')``)::
+
+        <label>,      x1, x2, … xN
+        <name/class>, y1, y2, … yN
+
+    Detection is strict (header tail is a ≥10-point monotonic numeric axis, and
+    every row matches its width) so ordinary column files fall through to the
+    normal reader.
+    """
+    lines = [ln for ln in raw_lines if ln.strip()]
+    if len(lines) < 2:
+        return None
+    delim = _sniff_delimiter(lines[0])
+
+    def split(s: str) -> list[str]:
+        return [t.strip() for t in (s.split(delim) if delim else s.split())]
+
+    htoks = split(lines[0])
+    axis = _axis_like(htoks[1:])
+    if axis is None:
+        return None
+    euro = delim == ";"
+    x_unit, y_unit = _guess_units(lines[0])
+    if x_unit == "pixel" and axis[0] < axis[-1] \
+            and 180.0 <= axis.min() and axis.max() <= 3500.0:
+        x_unit = "nm"          # unlabelled UV-Vis/NIR matrix -> wavelength in nm
+    label0 = htoks[0] or "row"
+    specs: list[Spectrum] = []
+    for i, ln in enumerate(lines[1:]):
+        toks = split(ln)
+        if len(toks) != len(htoks):
+            return None        # ragged -> not a clean matrix; let the normal reader try
+        try:
+            yv = np.array([float(t.replace(",", ".") if euro else t)
+                           for t in toks[1:]], dtype=float)
+        except ValueError:
+            return None
+        tag = toks[0]
+        nm = f"{label0}={tag}" if (tag and _NUMBER.match(tag)) else (tag or label0)
+        specs.append(Spectrum(x=axis.copy(), y=yv, name=f"{nm} #{i + 1}",
+                              x_unit=x_unit, y_unit=y_unit,
+                              meta={"source": path, "row": i}))
+    return specs or None
+
+
 def load_ascii(path: str) -> list[Spectrum]:
     with open(path, "r", encoding="utf-8", errors="replace") as fh:
         raw_lines = fh.read().splitlines()
     if raw_lines and _is_perkinelmer_asc(raw_lines[0]):
         return _load_perkinelmer_asc(path, raw_lines)
+    matrix = _try_matrix_layout(path, raw_lines)
+    if matrix is not None:
+        return matrix
 
     header_lines, data_lines = [], []
     started = False

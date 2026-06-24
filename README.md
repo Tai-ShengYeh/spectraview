@@ -84,8 +84,9 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **顯示選項**：堆疊位移（Scale & Shift）、翻轉 X 軸、格線、對數 Y、深色背景、隱藏/顯示左側光譜清單（F9）。
 - **匯出**：圖檔 PNG（WYSIWYG）與 SVG / PDF / EPS 向量圖（publication 等級）；
   單一光譜存成 CSV 或 JCAMP-DX；**合併匯出**（File ▸ Export combined data）把多條
-  光譜放到共用波長軸後輸出成一個 CSV——可選「波長欄 + 每條一欄」（可再載回）或
-  「每條一列的 X-matrix」（直接餵 sklearn PLS/PCA）。
+  光譜放到共用波長軸後輸出成一個 CSV——可選「波長欄 + 每條一欄」或「每條一列的 X-matrix」
+  （直接餵 sklearn PLS/PCA）。**兩種版面都能再載回**；外部工具（如 Orange）匯出的
+  矩陣 CSV（表頭為波長軸、每列一條光譜）也會自動辨識並逐列載入成多條光譜。
 
 ### 前處理（可作用於選取的光譜，未選取則套用全部）
 - **平滑**：Savitzky-Golay、移動平均
