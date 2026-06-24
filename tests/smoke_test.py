@@ -485,5 +485,25 @@ try:
 except ValueError:
     check("Shimadzu .SPC rejects a non-Shimadzu file", True)
 
+print("== PerkinElmer ASCII (PEDS) reader ==")
+_peds = "\n".join([
+    "PE IR      SPECTRUM    ASCII       PEDS        1.60",
+    "weiyi sample", "17/06/03", "#GR", "CM-1", "A", "#DATA",
+    "4000.0\t0.10", "3999.0\t0.12", "3998.0\t0.15", "3997.0\t0.11", "3996.0\t0.09",
+])
+_pe_asc = os.path.join(tempfile.mkdtemp(), "pe.asc")
+open(_pe_asc, "w", encoding="utf-8").write(_peds)
+_pa = load_any(_pe_asc)[0]                         # .asc -> load_ascii -> PEDS branch
+check("PE .asc reads #GR units (cm-1 / absorbance)",
+      _pa.x_unit == "cm-1" and _pa.y_unit == "absorbance")
+check("PE .asc reads #DATA pairs (5 pts)", _pa.npoints == 5)
+check("PE .asc X/Y values", abs(_pa.x.max() - 4000) < 1e-9 and abs(_pa.y.max() - 0.15) < 1e-9)
+_pet = os.path.join(tempfile.mkdtemp(), "pet.asc")
+open(_pet, "w", encoding="utf-8").write(_peds.replace("\nA\n", "\n%T\n"))
+check("PE .asc honours %T unit block", load_any(_pet)[0].y_unit == "%T")
+from specview.formats.ascii_io import _guess_units  # noqa: E402
+check("'Spectrum' in header no longer misread as um (micrometres)",
+      _guess_units("Sample Spectrum data\n")[0] != "um")
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

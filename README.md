@@ -70,11 +70,12 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 ## 功能（v1）
 
 ### 檢視核心
-- **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
+- **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN/ASC/XY）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
   JSON（多種結構：x/y 陣列、別名鍵、pairs、`spectra` 多光譜）、MATLAB（.mat，含命名變數
   與 N×2 / N×M 矩陣）、GRAMS／Shimadzu UV-Vis SPC（.spc，自動辨識兩種格式；Shimadzu 為純 Python）、
   Bruker OPUS（.0/.1…）、NeoSpectra（.Spectrum，NIR 匯出）、
-  PerkinElmer（.sp，純 Python 解析、免裝套件）。一個檔可含多條光譜。
+  PerkinElmer（.sp 二進位、.asc PEDS——皆純 Python；.asc 直接讀 #GR 座標單位、.dx 走 JCAMP）。
+  一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
 - **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列），游標停在曲線上會浮現該光譜名稱。
 - **座標軸換算**
