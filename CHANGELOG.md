@@ -5,6 +5,15 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
 
 格式參考 [Keep a Changelog](https://keepachangelog.com/)；目前以日期分節（尚未發行語意化版本號）。
 
+## 未發行（Unreleased）
+
+> 已在 `main` 分支、但尚未納入 [v0.2.0](https://github.com/Tai-ShengYeh/spectraview/releases/tag/v0.2.0) 發行標籤的變更。
+
+### 新增（Added）
+- 讀取**轉置／矩陣式 CSV**（波長軸在表頭、每一列是一條光譜）：自動辨識外部工具
+  （如 Orange）與化學計量學 ML 匯出的矩陣檔，以及本程式自己的 `layout='rows'`
+  合併匯出，逐列載入成多條光譜（列首的類別／樣品標籤會帶進光譜名稱）。
+
 ## 2026-06-24
 
 ### 新增（Added）
