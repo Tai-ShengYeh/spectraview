@@ -139,16 +139,17 @@ def _axis_like(tokens: list[str]) -> "np.ndarray | None":
 def _try_matrix_layout(path: str, raw_lines: list[str]) -> "list[Spectrum] | None":
     """Read a transposed spectra matrix, or return None if the file isn't one.
 
-    Layout — the axis is the HEADER row and every data row is one spectrum, whose
-    first cell is a name/class label (Orange / chemometrics exports, and our own
-    ``save_combined_csv(layout='rows')``)::
+    Layout — the axis is the numeric tail of the HEADER row and every data row is
+    one spectrum. Any text columns in front are per-row metadata (Sample ID,
+    Concentration, class, …). Covers Orange / chemometrics ML exports and our own
+    ``save_combined_csv(layout='rows')``::
 
-        <label>,      x1, x2, … xN
-        <name/class>, y1, y2, … yN
+        Sample ID, Concentration, x1, x2, … xN
+        sake_001,  13,            y1, y2, … yN
 
-    Detection is strict (header tail is a ≥10-point monotonic numeric axis, and
-    every row matches its width) so ordinary column files fall through to the
-    normal reader.
+    Detection is strict (header tail is a ≥10-point monotonic numeric axis, every
+    row matches its width) so ordinary column files fall through to the normal
+    reader.
     """
     lines = [ln for ln in raw_lines if ln.strip()]
     if len(lines) < 2:
@@ -159,7 +160,15 @@ def _try_matrix_layout(path: str, raw_lines: list[str]) -> "list[Spectrum] | Non
         return [t.strip() for t in (s.split(delim) if delim else s.split())]
 
     htoks = split(lines[0])
-    axis = _axis_like(htoks[1:])
+    # The axis is the numeric run at the END of the header; everything before the
+    # last non-numeric header cell is a leading metadata column.
+    k = 0
+    for i, t in enumerate(htoks):
+        try:
+            float(t)
+        except ValueError:
+            k = i + 1
+    axis = _axis_like(htoks[k:])
     if axis is None:
         return None
     euro = delim == ";"
@@ -167,22 +176,27 @@ def _try_matrix_layout(path: str, raw_lines: list[str]) -> "list[Spectrum] | Non
     if x_unit == "pixel" and axis[0] < axis[-1] \
             and 180.0 <= axis.min() and axis.max() <= 3500.0:
         x_unit = "nm"          # unlabelled UV-Vis/NIR matrix -> wavelength in nm
-    label0 = htoks[0] or "row"
+    labels = htoks[:k]         # metadata column headers
     specs: list[Spectrum] = []
-    for i, ln in enumerate(lines[1:]):
+    for r, ln in enumerate(lines[1:]):
         toks = split(ln)
         if len(toks) != len(htoks):
             return None        # ragged -> not a clean matrix; let the normal reader try
         try:
             yv = np.array([float(t.replace(",", ".") if euro else t)
-                           for t in toks[1:]], dtype=float)
+                           for t in toks[k:]], dtype=float)
         except ValueError:
             return None
-        tag = toks[0]
-        nm = f"{label0}={tag}" if (tag and _NUMBER.match(tag)) else (tag or label0)
-        specs.append(Spectrum(x=axis.copy(), y=yv, name=f"{nm} #{i + 1}",
+        meta_vals = toks[:k]
+        # Name from the metadata: qualify numeric values with their column
+        # ("Concentration=13"), keep text identifiers as-is ("sake_001").
+        bits = [f"{h}={v}" if (h and _NUMBER.match(v)) else v
+                for h, v in zip(labels, meta_vals) if v]
+        nm = " ".join(bits) if bits else "row"
+        specs.append(Spectrum(x=axis.copy(), y=yv, name=f"{nm} #{r + 1}",
                               x_unit=x_unit, y_unit=y_unit,
-                              meta={"source": path, "row": i}))
+                              meta={"source": path, "row": r,
+                                    **{h: v for h, v in zip(labels, meta_vals) if h}}))
     return specs or None
 
 

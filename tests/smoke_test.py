@@ -520,6 +520,19 @@ check("matrix CSV takes axis from header row (nm)",
 check("matrix CSV keeps the row label in the name", _ms[0].name.startswith("class=10"))
 check("matrix CSV reads per-row y values", abs(_ms[2].y.max() - 1.0) < 1e-6)
 
+# matrix with TWO leading metadata columns (Sample ID + Concentration)
+_mat2 = ["Sample ID,Concentration," + ",".join(f"{v:.3f}" for v in _axis)]
+_mat2.append("s1,13," + ",".join(f"{v:.5f}" for v in np.linspace(0.1, 0.6, 12)))
+_mat2.append("s2,38," + ",".join(f"{v:.5f}" for v in np.linspace(0.2, 0.7, 12)))
+_mp2 = os.path.join(tempfile.mkdtemp(), "meta2_df.csv")
+open(_mp2, "w", encoding="utf-8").write("\n".join(_mat2))
+_ms2 = load_any(_mp2)
+check("matrix CSV with 2 metadata cols -> 2 spectra", len(_ms2) == 2)
+check("matrix CSV finds axis after the metadata cols (12 pts, nm)",
+      _ms2[0].npoints == 12 and _ms2[0].x_unit == "nm")
+check("matrix CSV keeps both metadata fields (name + meta)",
+      "Concentration=13" in _ms2[0].name and _ms2[0].meta.get("Sample ID") == "s1")
+
 # our own layout='rows' export must now round-trip back to the original spectra
 _r1 = Spectrum(np.linspace(1000, 1100, 16), np.linspace(0.1, 0.9, 16), name="S1",
                x_unit="nm", y_unit="absorbance")
