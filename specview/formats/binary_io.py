@@ -97,17 +97,157 @@ def load_spc(path: str) -> list[Spectrum]:
     return spectra
 
 
+_OPUS_HEADER_LEN = 504
+_OPUS_FIRST_CURSOR = 24
+_OPUS_META_BLOCK_SIZE = 12
+_OPUS_PARAM_TYPES = {0: "int", 1: "float", 2: "str", 3: "str", 4: "str"}
+
+
+def _opus_entries(raw: bytes) -> list[dict]:
+    """Read the OPUS block directory from the fixed 504-byte header."""
+    if len(raw) < _OPUS_HEADER_LEN or raw[:4] != b"\x0a\x0a\xfe\xfe":
+        raise ValueError("Not a Bruker OPUS file.")
+    entries = []
+    for cursor in range(_OPUS_FIRST_CURSOR, _OPUS_HEADER_LEN, _OPUS_META_BLOCK_SIZE):
+        data_type = raw[cursor]
+        channel_type = raw[cursor + 1]
+        text_type = raw[cursor + 2]
+        chunk_size = struct.unpack_from("<I", raw, cursor + 4)[0]
+        offset = struct.unpack_from("<I", raw, cursor + 8)[0]
+        if offset <= 0:
+            break
+        stop = offset + 4 * chunk_size
+        if stop > len(raw):
+            raise ValueError("Invalid OPUS block directory.")
+        entries.append({
+            "data_type": data_type, "channel_type": channel_type,
+            "text_type": text_type, "chunk_size": chunk_size,
+            "offset": offset, "stop": stop,
+        })
+    return entries
+
+
+def _opus_parse_param(raw: bytes, entry: dict) -> dict:
+    """Parse an OPUS parameter block into a small dict."""
+    chunk = raw[entry["offset"]:entry["stop"]]
+    params = {}
+    cursor = 0
+    while cursor + 8 <= len(chunk):
+        name = chunk[cursor:cursor + 3].decode("latin1", errors="replace")
+        if name == "END":
+            break
+        type_index = struct.unpack_from("<H", chunk, cursor + 4)[0]
+        param_type = _OPUS_PARAM_TYPES.get(type_index)
+        param_size = struct.unpack_from("<H", chunk, cursor + 6)[0]
+        param_bytes = chunk[cursor + 8:cursor + 8 + 2 * param_size]
+        if param_type == "int" and len(param_bytes) >= 4:
+            value = struct.unpack_from("<i", param_bytes, 0)[0]
+        elif param_type == "float" and len(param_bytes) >= 8:
+            value = struct.unpack_from("<d", param_bytes, 0)[0]
+        elif param_type == "str":
+            value = param_bytes.split(b"\x00", 1)[0].decode("latin1", errors="replace")
+        else:
+            value = param_bytes
+        params[name] = value
+        cursor += 8 + 2 * param_size
+    return params
+
+
+def _opus_data_param_key(data_type: int, channel_type: int, text_type: int) -> tuple:
+    """Pair data blocks with their OPUS parameter block."""
+    if data_type == 15:
+        return (31, channel_type, text_type)      # AB Data Parameter
+    if data_type == 7:
+        return (23, channel_type, text_type)      # sample spectrum
+    if data_type == 11:
+        return (27, channel_type, text_type)      # reference spectrum
+    return (-1, -1, -1)
+
+
+def _opus_block_name(data_type: int, channel_type: int, text_type: int) -> str:
+    if data_type == 15:
+        return "AB"
+    prefix = {7: "ScSm", 11: "ScRf"}.get(data_type, f"Block{data_type}")
+    # Bruker channel type 132 appears in Raman OPUS files; keep it readable.
+    return prefix if text_type == 0 else f"{prefix} {text_type + 1}"
+
+
+def _load_opus_native(path: str) -> list[Spectrum]:
+    """Small native OPUS reader for processed 1-D spectra, including Raman."""
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    entries = _opus_entries(raw)
+    param_blocks = {
+        (e["data_type"], e["channel_type"], e["text_type"]): _opus_parse_param(raw, e)
+        for e in entries if e["data_type"] in (23, 27, 31)
+    }
+
+    spectra = []
+    base = os.path.basename(path)
+    for entry in entries:
+        data_type = entry["data_type"]
+        if data_type not in (7, 11, 15):
+            continue
+        params = param_blocks.get(_opus_data_param_key(
+            data_type, entry["channel_type"], entry["text_type"]), {})
+        n_meta = int(params.get("NPT", entry["chunk_size"]))
+        n = min(max(n_meta, 0), entry["chunk_size"])
+        if n <= 0:
+            continue
+        y = np.frombuffer(raw, "<f4", n, entry["offset"]).astype(float)
+        fx, lx = params.get("FXV"), params.get("LXV")
+        x = (np.linspace(float(fx), float(lx), n)
+             if fx is not None and lx is not None else np.arange(n, dtype=float))
+        block = _opus_block_name(data_type, entry["channel_type"], entry["text_type"])
+        name = f"{base} ({block})"
+        lower_name = base.lower()
+        is_raman = "raman" in lower_name
+        x_unit = "raman_cm-1" if is_raman else "cm-1"
+        y_unit = "intensity" if is_raman else (
+            "absorbance" if block == "AB" else "intensity")
+        spectra.append(Spectrum(x=x, y=y, name=name, x_unit=x_unit, y_unit=y_unit,
+                                meta={"source": path, "format": "Bruker OPUS",
+                                      "opus_block": block, **params}))
+    if not spectra:
+        raise ValueError(f"No recognised spectral block in {base}.")
+    # Prefer the processed AB block when present; raw sample/reference blocks
+    # remain available in unusual files without AB.
+    ab = [s for s in spectra if s.meta.get("opus_block") == "AB"]
+    return ab or spectra
+
+
 def load_opus(path: str) -> list[Spectrum]:
-    """Bruker OPUS (.0, .1, ...) — needs ``pip install brukeropusreader``."""
+    """Bruker OPUS (.0, .1, ...), with a native fallback for Raman files."""
+    try:
+        return _load_opus_native(path)
+    except Exception as native_exc:
+        native_error = native_exc
+
+    try:
+        from .ascii_io import load_ascii
+        spectra = load_ascii(path)
+        if "raman" in os.path.basename(path).lower():
+            for spec in spectra:
+                spec.x_unit = "raman_cm-1"
+                spec.y_unit = "intensity"
+                spec.meta["format"] = "ASCII spectrum"
+        return spectra
+    except Exception:
+        pass
+
     try:
         from brukeropusreader import read_file  # type: ignore
     except ImportError as exc:
         raise MissingDependency(
-            "Reading Bruker OPUS files needs the 'brukeropusreader' package.\n"
+            "Reading this Bruker OPUS file needs the 'brukeropusreader' package.\n"
             "Install it with:  pip install brukeropusreader"
         ) from exc
 
-    data = read_file(path)
+    try:
+        data = read_file(path)
+    except Exception as exc:
+        raise ValueError(f"Could not read {os.path.basename(path)} as Bruker OPUS: "
+                         f"{native_error}") from exc
     base = os.path.basename(path)
     spectra = []
     # OPUS files contain several blocks; pick the spectral ones we recognise.
@@ -130,6 +270,195 @@ def load_opus(path: str) -> list[Spectrum]:
     if not spectra:
         raise ValueError(f"No recognised spectral block in {base}.")
     return spectra
+
+
+# ---------------------------------------------------------------------------
+# Shimadzu LabSolutions / IRTracer spectrum project data (.ispd)
+# ---------------------------------------------------------------------------
+# ISPD files are B-tree containers. The FTIR files produced by IRTracer store the
+# processed absorbance spectrum as two little-endian float64 pages.
+_ISPD_NPOINTS_OFFSET = 15305
+_ISPD_FIRST_X_OFFSET = 15325
+_ISPD_LAST_X_OFFSET = 15341
+_ISPD_STEP_OFFSET = 15357
+_ISPD_Y_PAGE1_OFFSET = 49178
+_ISPD_Y_PAGE1_POINTS = 1020
+_ISPD_Y_PAGE2_OFFSET = 40980
+
+
+def load_ispd(path: str) -> list[Spectrum]:
+    """Shimadzu IRTracer/LabSolutions ``.ispd`` FTIR spectrum project data."""
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    base = os.path.splitext(os.path.basename(path))[0]
+    if b"_BTREE_DATA" not in raw or b"IRTracer" not in raw:
+        raise ValueError(f"{os.path.basename(path)} is not a recognised ISPD file.")
+    if len(raw) < _ISPD_Y_PAGE1_OFFSET + 8:
+        raise ValueError(f"{os.path.basename(path)} is too small for ISPD spectrum data.")
+
+    npoints = int(struct.unpack_from("<I", raw, _ISPD_NPOINTS_OFFSET)[0])
+    first_x = float(struct.unpack_from("<d", raw, _ISPD_FIRST_X_OFFSET)[0])
+    last_x = float(struct.unpack_from("<d", raw, _ISPD_LAST_X_OFFSET)[0])
+    step = float(struct.unpack_from("<d", raw, _ISPD_STEP_OFFSET)[0])
+    if not (10 <= npoints <= 200000 and np.isfinite(first_x) and np.isfinite(last_x)):
+        raise ValueError(f"Invalid ISPD spectral metadata in {os.path.basename(path)}.")
+
+    first_count = min(npoints, _ISPD_Y_PAGE1_POINTS)
+    second_count = npoints - first_count
+    if _ISPD_Y_PAGE1_OFFSET + 8 * first_count > len(raw):
+        raise ValueError(f"Truncated ISPD first data page in {os.path.basename(path)}.")
+    y_parts = [np.frombuffer(raw, "<f8", first_count, _ISPD_Y_PAGE1_OFFSET)]
+    if second_count:
+        if _ISPD_Y_PAGE2_OFFSET + 8 * second_count > len(raw):
+            raise ValueError(f"Truncated ISPD second data page in {os.path.basename(path)}.")
+        y_parts.append(np.frombuffer(raw, "<f8", second_count, _ISPD_Y_PAGE2_OFFSET))
+    y = np.concatenate(y_parts).astype(float)
+
+    x = first_x + step * np.arange(npoints, dtype=float)
+    if abs(x[-1] - last_x) > max(abs(step), 1e-9):
+        x = np.linspace(first_x, last_x, npoints)
+
+    return [Spectrum(x=x, y=y, name=base, x_unit="cm-1", y_unit="absorbance",
+                     meta={"source": path, "format": "Shimadzu ISPD",
+                           "npoints": npoints, "first_x": first_x,
+                           "last_x": last_x, "step": step})]
+
+
+# ---------------------------------------------------------------------------
+# Bruker handheld XRF (.pdz)  --  pure-Python, no external dependency.
+# ---------------------------------------------------------------------------
+# Bruker PDZ is a proprietary binary format. The common PDZ25 variant is a
+# sequence of blocks, each starting with <block-type:int16, block-size:int32>.
+# XRF spectra live in type-3 blocks; their last N int32 values are detector
+# counts, and the fixed metadata header contains eV/channel, eV start and N.
+_PDZ25_HEADER_FMT = "<hi3i9f7hfhfhfhf8hfhi"
+_PDZ25_HEADER_SIZE = struct.calcsize(_PDZ25_HEADER_FMT)
+
+
+def _pdz_blocks(raw: bytes) -> list[tuple[int, int, int, int]]:
+    """Return ``(start, stop, block_type, block_size)`` for PDZ25 blocks."""
+    blocks: list[tuple[int, int, int, int]] = []
+    start = 0
+    n = len(raw)
+    while start + 6 <= n:
+        block_type, block_size = struct.unpack_from("<hi", raw, start)
+        stop = start + block_size + 6
+        if block_size < 0 or stop <= start or stop > n:
+            raise ValueError("Invalid PDZ block table.")
+        blocks.append((start, stop, block_type, block_size))
+        start = stop
+    if start != n:
+        raise ValueError("Trailing bytes after PDZ block table.")
+    return blocks
+
+
+def _pdz_spectrum_from_pdz25_block(raw: bytes, path: str, block: tuple[int, int, int, int],
+                                   index: int, total: int) -> Spectrum:
+    start, stop, block_type, _block_size = block
+    if block_type != 3 or stop - start < _PDZ25_HEADER_SIZE:
+        raise ValueError("PDZ block is not a spectral data block.")
+
+    vals = struct.unpack_from(_PDZ25_HEADER_FMT, raw, start)
+    ev_per_channel = float(vals[25])
+    ev_start = float(vals[27])
+    n_channels = int(vals[37])
+    xray_voltage_kv = float(vals[12])
+    tube_current_ua = float(vals[13])
+    live_time_s = float(vals[11])
+    active_time_s = float(vals[7])
+    raw_counts = int(vals[3])
+    valid_counts = int(vals[4])
+
+    available_counts = (stop - start) // 4
+    if n_channels <= 0 or n_channels > available_counts:
+        for fallback in (2048, 1024):
+            if stop - fallback * 4 >= start:
+                n_channels = fallback
+                break
+        else:
+            raise ValueError("No PDZ spectral counts found.")
+
+    y_offset = stop - n_channels * 4
+    y = np.frombuffer(raw, "<i4", n_channels, y_offset).astype(float)
+    if ev_per_channel > 0 and abs(ev_start) < 1e6:
+        x = (ev_start + ev_per_channel * np.arange(n_channels, dtype=float)) / 1000.0
+        x_unit = "keV"
+    else:
+        x = np.arange(n_channels, dtype=float)
+        x_unit = "pixel"
+
+    base = os.path.splitext(os.path.basename(path))[0]
+    name = base if total == 1 else f"{base} [{index + 1}]"
+    return Spectrum(
+        x=x, y=y, name=name, x_unit=x_unit, y_unit="counts",
+        meta={
+            "source": path,
+            "format": "Bruker PDZ25 XRF",
+            "n_channels": n_channels,
+            "ev_per_channel": ev_per_channel,
+            "ev_start": ev_start,
+            "xray_voltage_kv": xray_voltage_kv,
+            "tube_current_ua": tube_current_ua,
+            "active_time_s": active_time_s,
+            "live_time_s": live_time_s,
+            "raw_counts": raw_counts,
+            "valid_counts": valid_counts,
+        },
+    )
+
+
+def _load_pdz25(raw: bytes, path: str) -> list[Spectrum]:
+    blocks = _pdz_blocks(raw)
+    spectral_blocks = [b for b in blocks if b[2] == 3]
+    if not spectral_blocks:
+        raise ValueError(f"No spectral data block found in {os.path.basename(path)}.")
+    return [_pdz_spectrum_from_pdz25_block(raw, path, b, i, len(spectral_blocks))
+            for i, b in enumerate(spectral_blocks)]
+
+
+def _load_pdz11(raw: bytes, path: str) -> list[Spectrum]:
+    """Read older PDZ11 files with 1024 or 2048 int32 channels."""
+    if len(raw) < 16:
+        raise ValueError(f"{os.path.basename(path)} is too small for a PDZ file.")
+    n_channels = int(struct.unpack_from("<h", raw, 6)[0])
+    if n_channels not in (1024, 2048):
+        raise ValueError(f"Unsupported PDZ11 channel count: {n_channels}.")
+
+    # Legacy files store the counts as a fixed-width int32 array after a fixed
+    # metadata header. The energy offset is not reliable, so start at 0 keV.
+    header_fmt = ("<2xih34x2d86x2i10x2f188x"
+                  if n_channels == 2048
+                  else "<2xih34x2d86x2i10x2f24x")
+    header_size = struct.calcsize(header_fmt)
+    if len(raw) < header_size + n_channels * 4:
+        raise ValueError(f"Truncated PDZ11 spectral data in {os.path.basename(path)}.")
+    ev_per_channel = float(struct.unpack_from("<d", raw, 42)[0])
+    y = np.frombuffer(raw, "<i4", n_channels, header_size).astype(float)
+    x = (ev_per_channel * np.arange(n_channels, dtype=float) / 1000.0
+         if ev_per_channel > 0 else np.arange(n_channels, dtype=float))
+    base = os.path.splitext(os.path.basename(path))[0]
+    return [Spectrum(x=x, y=y, name=base, x_unit="keV" if ev_per_channel > 0 else "pixel",
+                     y_unit="counts",
+                     meta={"source": path, "format": "Bruker PDZ11 XRF",
+                           "n_channels": n_channels,
+                           "ev_per_channel": ev_per_channel, "ev_start": 0.0})]
+
+
+def load_pdz(path: str) -> list[Spectrum]:
+    """Bruker handheld XRF ``.pdz`` files (PDZ25 and common legacy PDZ11)."""
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    if len(raw) < 8:
+        raise ValueError(f"{os.path.basename(path)} is too small for a PDZ file.")
+
+    signature = struct.unpack_from("<h", raw, 0)[0]
+    if signature == 25:
+        return _load_pdz25(raw, path)
+    if signature == 257:
+        return _load_pdz11(raw, path)
+    raise ValueError(
+        f"{os.path.basename(path)} is not a recognised Bruker PDZ XRF file."
+    )
 
 
 # ---------------------------------------------------------------------------
