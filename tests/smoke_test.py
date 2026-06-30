@@ -456,6 +456,75 @@ try:
 except ValueError:
     check("PE .sp rejects a non-PerkinElmer file", True)
 
+print("== Bruker OPUS Raman reader ==")
+_opus_y = np.array([1., 3., 2., 5., 4.], dtype="<f4")
+
+
+def _opus_param(name, typ, size, payload):  # noqa: E306
+    return name.encode("latin1") + b"\x00" + _struct.pack("<HH", typ, size) + payload
+
+
+_opus_params = b"".join([
+    _opus_param("NPT", 0, 2, _struct.pack("<i", _opus_y.size)),
+    _opus_param("FXV", 1, 4, _struct.pack("<d", 300.0)),
+    _opus_param("LXV", 1, 4, _struct.pack("<d", 308.0)),
+    _opus_param("DXU", 2, 2, b"WN\x00\x00"),
+    b"END\x00",
+])
+_opus_params += bytes((-len(_opus_params)) % 4)
+_opus_header = bytearray(504)
+_opus_header[:4] = b"\x0a\x0a\xfe\xfe"
+_opus_data_off = 504
+_opus_param_off = _opus_data_off + _opus_y.nbytes
+_struct.pack_into("<BBB", _opus_header, 24, 15, 40, 0)
+_struct.pack_into("<II", _opus_header, 28, _opus_y.size, _opus_data_off)
+_struct.pack_into("<BBB", _opus_header, 36, 31, 40, 0)
+_struct.pack_into("<II", _opus_header, 40, len(_opus_params) // 4, _opus_param_off)
+_opus_path = os.path.join(tempfile.mkdtemp(), "sample_RAMAN.0")
+open(_opus_path, "wb").write(bytes(_opus_header) + _opus_y.tobytes() + _opus_params)
+_opus = load_any(_opus_path)[0]
+check("OPUS Raman reads AB points", _opus.npoints == _opus_y.size)
+check("OPUS Raman units", _opus.x_unit == "raman_cm-1" and _opus.y_unit == "intensity")
+check("OPUS Raman axis from FXV/LXV",
+      abs(_opus.x[0] - 300) < 1e-9 and abs(_opus.x[-1] - 308) < 1e-9)
+check("OPUS Raman values round-trip", np.allclose(_opus.y, _opus_y.astype(float)))
+
+_ascii0_path = os.path.join(tempfile.mkdtemp(), "fallback_RAMAN.0")
+open(_ascii0_path, "w", encoding="utf-8").write("300,1\n302,2\n304,4\n")
+_ascii0 = load_any(_ascii0_path)[0]
+check(".0 ASCII fallback reads numeric text",
+      _ascii0.npoints == 3 and _ascii0.x_unit == "raman_cm-1")
+
+print("== Shimadzu ISPD reader ==")
+from specview.formats.binary_io import (_ISPD_FIRST_X_OFFSET, _ISPD_LAST_X_OFFSET,  # noqa: E402
+                                        _ISPD_NPOINTS_OFFSET, _ISPD_STEP_OFFSET,
+                                        _ISPD_Y_PAGE1_OFFSET, _ISPD_Y_PAGE1_POINTS,
+                                        _ISPD_Y_PAGE2_OFFSET)
+_ispd_n = 1100
+_ispd_x0 = 650.0
+_ispd_step = 2.0
+_ispd_y = np.linspace(0.35, -0.08, _ispd_n)
+_ispd_raw = bytearray(_ISPD_Y_PAGE1_OFFSET + 8 * _ISPD_Y_PAGE1_POINTS + 1024)
+_ispd_raw[200:211] = b"_BTREE_DATA"
+_ispd_raw[240:248] = b"IRTracer"
+_struct.pack_into("<I", _ispd_raw, _ISPD_NPOINTS_OFFSET, _ispd_n)
+_struct.pack_into("<d", _ispd_raw, _ISPD_FIRST_X_OFFSET, _ispd_x0)
+_struct.pack_into("<d", _ispd_raw, _ISPD_LAST_X_OFFSET, _ispd_x0 + _ispd_step * (_ispd_n - 1))
+_struct.pack_into("<d", _ispd_raw, _ISPD_STEP_OFFSET, _ispd_step)
+_ispd_first = min(_ispd_n, _ISPD_Y_PAGE1_POINTS)
+_ispd_raw[_ISPD_Y_PAGE1_OFFSET:_ISPD_Y_PAGE1_OFFSET + 8 * _ispd_first] = \
+    _ispd_y[:_ispd_first].astype("<f8").tobytes()
+_ispd_raw[_ISPD_Y_PAGE2_OFFSET:_ISPD_Y_PAGE2_OFFSET + 8 * (_ispd_n - _ispd_first)] = \
+    _ispd_y[_ispd_first:].astype("<f8").tobytes()
+_ispd_path = os.path.join(tempfile.mkdtemp(), "ftir.ispd")
+open(_ispd_path, "wb").write(_ispd_raw)
+_ispd = load_any(_ispd_path)[0]
+check("ISPD reads FTIR points", _ispd.npoints == _ispd_n)
+check("ISPD units", _ispd.x_unit == "cm-1" and _ispd.y_unit == "absorbance")
+check("ISPD axis from metadata",
+      abs(_ispd.x[0] - _ispd_x0) < 1e-9 and abs(_ispd.x[-1] - (_ispd_x0 + _ispd_step * (_ispd_n - 1))) < 1e-9)
+check("ISPD values round-trip", np.allclose(_ispd.y, _ispd_y))
+
 print("== Shimadzu .SPC reader ==")
 from specview.formats.binary_io import load_shimadzu_spc  # noqa: E402
 
@@ -547,6 +616,39 @@ check("'rows' export preserves the axis (nm)",
 check("'rows' export preserves the sample names",
       _rb[0].name.startswith("S1") and _rb[1].name.startswith("S2"))
 check("'rows' export preserves the values", np.allclose(np.sort(_rb[0].y), _r1.y, atol=1e-6))
+
+print("== Bruker PDZ XRF reader ==")
+from specview.formats.binary_io import _PDZ25_HEADER_FMT  # noqa: E402
+_pdz_n = 2048
+_pdz_counts = np.arange(_pdz_n, dtype="<i4")
+_pdz_header_size = _struct.calcsize(_PDZ25_HEADER_FMT)
+_pdz_block_size = (_pdz_header_size - 6) + 16 + _pdz_counts.nbytes
+_pdz_vals = [
+    3, _pdz_block_size, 0, int(_pdz_counts.sum()), int(_pdz_counts.sum()),
+    0.0, 0.0, 60.0, 51.0, 1.0, 2.0, 58.0, 40.0, 40.0,
+    22, 25, 13, 300, 0, 0, 1, -27.0, 0, 0.0, 0,
+    20.0, 1, 500.0, 2026, 6, 1, 30, 10, 11, 12, 0, 1000.0,
+    _pdz_n, 42,
+]
+_pdz_head = bytearray(_pdz_header_size)
+_struct.pack_into(_PDZ25_HEADER_FMT, _pdz_head, 0, *_pdz_vals)
+_pdz_payload3 = bytes(_pdz_head[6:]) + bytes(16) + _pdz_counts.tobytes()
+_pdz_blob = (
+    _struct.pack("<hi", 25, 10) + "pdz25".encode("utf-16le")
+    + _struct.pack("<hi", 3, len(_pdz_payload3)) + _pdz_payload3
+)
+_pdz_path = os.path.join(tempfile.mkdtemp(), "sample.pdz")
+open(_pdz_path, "wb").write(_pdz_blob)
+_pdz_spec = load_any(_pdz_path)[0]
+check("PDZ reads one XRF spectrum", _pdz_spec.npoints == _pdz_n)
+check("PDZ units are keV / counts",
+      _pdz_spec.x_unit == "keV" and _pdz_spec.y_unit == "counts")
+check("PDZ builds energy axis from calibration",
+      abs(_pdz_spec.x[0] - 0.5) < 1e-9 and abs(_pdz_spec.x[-1] - 41.44) < 1e-9)
+check("PDZ counts round-trip", np.allclose(_pdz_spec.y, _pdz_counts.astype(float)))
+check("PDZ metadata includes acquisition settings",
+      _pdz_spec.meta.get("xray_voltage_kv") == 40.0
+      and _pdz_spec.meta.get("n_channels") == _pdz_n)
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

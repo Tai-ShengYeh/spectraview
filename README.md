@@ -25,7 +25,8 @@ pip install -r requirements.txt
 ```
 
 核心套件：`numpy`、`scipy`、`PySide6`、`pyqtgraph`、`matplotlib`。
-二進位格式（SPC、Bruker OPUS）為選用套件，未安裝時程式會給清楚的安裝提示而非崩潰。
+二進位格式（SPC、較特殊的 Bruker OPUS 變體）為選用套件，未安裝時程式會給清楚的安裝提示而非崩潰；
+Bruker OPUS 一維光譜、Bruker PDZ XRF、Shimadzu SPC/ISPD 與 PerkinElmer SP/ASC 可純 Python 讀取。
 （`spc-spectra` 的舊式建置會在隔離環境找不到 numpy，請用
 `pip install --no-build-isolation spc-spectra`。）
 
@@ -73,7 +74,8 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 - **多格式載入**：ASCII（CSV/TXT/DAT/TSV/PRN/ASC/XY）、JCAMP-DX（.dx/.jdx，含 ASDF 壓縮）、
   JSON（多種結構：x/y 陣列、別名鍵、pairs、`spectra` 多光譜）、MATLAB（.mat，含命名變數
   與 N×2 / N×M 矩陣）、GRAMS／Shimadzu UV-Vis SPC（.spc，自動辨識兩種格式；Shimadzu 為純 Python）、
-  Bruker OPUS（.0/.1…）、NeoSpectra（.Spectrum，NIR 匯出）、
+  Bruker OPUS（.0/.1…，含 Raman 一維光譜）、Bruker PDZ XRF（.pdz，純 Python）、
+  Shimadzu ISPD（.ispd，FTIR）、NeoSpectra（.Spectrum，NIR 匯出）、
   PerkinElmer（.sp 二進位、.asc PEDS——皆純 Python；.asc 直接讀 #GR 座標單位、.dx 走 JCAMP）。
   一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
@@ -203,7 +205,7 @@ spectra_viewer/
     │   ├── json_io.py      JSON 讀寫（多結構）
     │   ├── mat_io.py       MATLAB .mat 讀取（scipy.io）
     │   ├── _hints.py       JSON/MAT 共用：鍵名別名 + 單位正規化
-    │   └── binary_io.py    GRAMS SPC / OPUS（選用套件）+ Shimadzu .SPC / PerkinElmer .sp（純 Python）
+    │   └── binary_io.py    GRAMS SPC（選用套件）+ OPUS / Shimadzu .SPC/.ispd / PerkinElmer .sp / PDZ（純 Python）
     └── ui/                 PySide6 + pyqtgraph 介面
         ├── main_window.py  主視窗、選單、工具列、清單、復原
         ├── plotview.py     繪圖區、十字游標、堆疊、匯出
