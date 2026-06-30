@@ -710,6 +710,19 @@ check("HTML page -> follows CSV link -> 1 spectrum", len(_oi2) == 1 and _oi2[0].
 check("followed-link source URL recorded",
       _oi2[0].meta.get("source", "").endswith("/files/spec_99.csv"))
 
+# An IRUG-style detail page whose "Download" button is an EXTENSIONLESS
+# endpoint (download-jcamp?id=4119), not a *.jdx link.
+_page2 = (b"<html><body><a class='btn' "
+          b"href='/download-jcamp?id=4119'>Download JCAMP</a></body></html>")
+def _btn_step(url):  # noqa: E306
+    return (_jdx_body, "chemical/x-jcamp-dx") if "download-jcamp" in url \
+        else (_page2, "text/html")
+_oi4 = load_online("http://www.irug.org/jcamp-details?id=4119", fetch=_btn_step)
+check("HTML page -> follows extensionless download endpoint",
+      len(_oi4) == 1 and _oi4[0].npoints == 5)
+check("extensionless endpoint: JCAMP body sniffed despite no extension",
+      _oi4[0].x_unit == "cm-1")
+
 # An HTML page with an *inline* JCAMP block (nothing extra to fetch).
 _inline = (b"<html><body><pre>##TITLE=Inline\n##XYPOINTS=(XY..XY)\n"
            b"10,1\n11,2\n12,3\n##END=</pre></body></html>")

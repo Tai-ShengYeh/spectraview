@@ -98,16 +98,36 @@ def _extract_inline_jcamp(html: str) -> str | None:
 
 
 def _find_data_link(html: str, base_url: str) -> str | None:
-    """Find a link to a downloadable spectrum file in page HTML."""
-    candidates = re.findall(
+    """Find a link to a downloadable spectrum on a detail page.
+
+    Two passes, most specific first:
+      1. a URL ending in a known spectrum extension (.jdx/.dx/.csv/.txt/…);
+      2. an extensionless download endpoint — a URL whose path or query
+         mentions ``download`` / ``jcamp`` (e.g. a "Download" button that
+         points at ``download-jcamp?id=4119``).
+    """
+    # Pass 1: explicit file extension.
+    m = re.findall(
         r"""(?:href|src|data-[\w-]+)\s*=\s*['"]([^'"]+?\."""
         r"""(?:jdx|dx|jcamp|jcm|csv|txt|spc))(?:\?[^'"]*)?['"]""",
         html,
         re.IGNORECASE,
     )
-    if not candidates:
-        return None
-    return urllib.request.urljoin(base_url, candidates[0])
+    if m:
+        return urllib.request.urljoin(base_url, m[0])
+
+    # Pass 2: extensionless download/jcamp endpoint (href or onclick).
+    m = re.findall(
+        r"""(?:href|data-[\w-]+|onclick)\s*=\s*['"][^'"]*?"""
+        r"""((?:https?:/|/)?[^'" ()]*(?:download|jcamp)[^'" ()]*)['"]""",
+        html,
+        re.IGNORECASE,
+    )
+    for cand in m:
+        cand = cand.strip()
+        if cand and not cand.lower().startswith("javascript"):
+            return urllib.request.urljoin(base_url, cand)
+    return None
 
 
 def _ext_for(text: str, url: str) -> str:
