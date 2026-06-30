@@ -11,8 +11,8 @@ from .. import (__app_name__, __version__, analysis, axes, calibration, cos2d,
                 eem, processing, xrf)
 from ..demo import demo_cos_series, demo_eem, demo_eem_stack, load_demo_set
 from ..library import SpectralLibrary
-from ..formats import (OPEN_FILTER, MissingDependency, load_any, save_combined_csv,
-                       save_csv, save_jcamp, save_json)
+from ..formats import (OPEN_FILTER, MissingDependency, load_any, load_soprano_url,
+                       save_combined_csv, save_csv, save_jcamp, save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
 from .calibration_view import CalibrationDialog, CalibrationWindow
 from .dialogs import FormDialog, TableDialog
@@ -101,6 +101,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return self.style().standardIcon(sp)
         self.act_open = QtGui.QAction(icon(SP.SP_DialogOpenButton), "&Open…", self,
                                       shortcut="Ctrl+O", triggered=self.open_files)
+        self.act_open_soprano = QtGui.QAction("Open SOPRANO URL…", self,
+                                              triggered=self.open_soprano_url)
         self.act_demo = QtGui.QAction("Load &demo spectra", self, triggered=self.load_demo)
         self.act_save = QtGui.QAction(icon(SP.SP_DialogSaveButton), "&Save spectrum…",
                                       self, shortcut="Ctrl+S", triggered=self.save_spectrum)
@@ -129,7 +131,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _build_menus(self) -> None:
         mb = self.menuBar()
         m_file = mb.addMenu("&File")
-        m_file.addActions([self.act_open, self.act_demo])
+        m_file.addActions([self.act_open, self.act_open_soprano, self.act_demo])
         m_file.addSeparator()
         m_file.addActions([self.act_save, self.act_export_data, self.act_export])
         m_file.addSeparator()
@@ -338,6 +340,24 @@ class MainWindow(QtWidgets.QMainWindow):
         if errors:
             QtWidgets.QMessageBox.warning(self, "Some files could not be read",
                                           "\n\n".join(errors))
+
+    def open_soprano_url(self) -> None:
+        default = "https://soprano.kikirpa.be/index.php?lib=sop&id=PR1_E_785_kikirpa"
+        url, ok = QtWidgets.QInputDialog.getText(
+            self, "Open SOPRANO URL", "SOPRANO spectrum URL:", text=default)
+        if not ok or not url.strip():
+            return
+        try:
+            specs = load_soprano_url(url.strip())
+            self.document.add_many(specs)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QMessageBox.critical(self, "SOPRANO read failed", str(exc))
+            return
+        self._rebuild_table()
+        self.plotview.suggest_flip()
+        self.plotview.refresh()
+        self.plotview.autoscale()
+        self.status.showMessage(f"Loaded {len(specs)} SOPRANO spectrum(s).", 5000)
 
     def load_demo(self) -> None:
         self.document.add_many(load_demo_set())

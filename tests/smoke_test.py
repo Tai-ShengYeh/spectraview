@@ -14,6 +14,7 @@ from specview import axes, processing  # noqa: E402
 from specview.demo import load_demo_set  # noqa: E402
 from specview.formats import load_any, save_csv, save_jcamp  # noqa: E402
 from specview.formats.jcamp import load_jcamp  # noqa: E402
+from specview.formats.soprano_io import parse_soprano_html  # noqa: E402
 from specview.spectrum import Spectrum  # noqa: E402
 
 PASS, FAIL = 0, 0
@@ -156,6 +157,24 @@ save_jcamp(ftir, dx_path)
 r2 = load_any(dx_path)[0]
 check("JCAMP round trip length", r2.npoints == ftir.npoints)
 check("JCAMP round trip values", np.allclose(np.sort(r2.y), np.sort(ftir.y), atol=1e-3))
+
+print("== SOPRANO page reader ==")
+_soprano_html = """
+<h1 class="title">PR1</h1><h2 class="subtitle">Raman 785nm</h2>
+<script>
+g = new Dygraph(document.getElementById("graph"),
+[[101.0,0],[102.0,4.5],[103.0,-1.25]],
+{labels: ["Raman shift (cm<sup>-1</sup>)","PR1"],
+ xlabel: "Raman shift (cm<sup>-1</sup>)", ylabel: "Intensity (Arbitrary Units)"});
+</script>
+"""
+_sop = parse_soprano_html(
+    _soprano_html,
+    "https://soprano.kikirpa.be/index.php?lib=sop&id=PR1_E_785_kikirpa")
+check("SOPRANO parser reads Dygraph points", _sop.npoints == 3)
+check("SOPRANO parser units", _sop.x_unit == "raman_cm-1" and _sop.y_unit == "intensity")
+check("SOPRANO parser values", np.allclose(_sop.y, [0, 4.5, -1.25]))
+check("SOPRANO parser metadata", _sop.meta["soprano_id"] == "PR1_E_785_kikirpa")
 
 print("== combined export ==")
 from specview.formats import save_combined_csv  # noqa: E402

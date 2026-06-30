@@ -65,6 +65,7 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
 ```
 
 或在程式啟動後，直接把檔案**拖放**到視窗，或用 **File ▸ Load demo spectra** 載入內建示範光譜立即試玩。
+SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後直接讀取並繪圖。
 
 ---
 
@@ -76,7 +77,8 @@ python run.py file1.dx a.csv  # 開啟並直接載入這些光譜
   與 N×2 / N×M 矩陣）、GRAMS／Shimadzu UV-Vis SPC（.spc，自動辨識兩種格式；Shimadzu 為純 Python）、
   Bruker OPUS（.0/.1…，含 Raman 一維光譜）、Bruker PDZ XRF（.pdz，純 Python）、
   Shimadzu ISPD（.ispd，FTIR）、NeoSpectra（.Spectrum，NIR 匯出）、
-  PerkinElmer（.sp 二進位、.asc PEDS——皆純 Python；.asc 直接讀 #GR 座標單位、.dx 走 JCAMP）。
+  PerkinElmer（.sp 二進位、.asc PEDS——皆純 Python；.asc 直接讀 #GR 座標單位、.dx 走 JCAMP），
+  以及 SOPRANO 線上光譜庫頁面（從網址讀取內嵌 Dygraph 光譜資料）。
   一個檔可含多條光譜。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
 - **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列），游標停在曲線上會浮現該光譜名稱。
