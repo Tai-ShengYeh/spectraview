@@ -723,6 +723,37 @@ check("HTML page -> follows extensionless download endpoint",
 check("extensionless endpoint: JCAMP body sniffed despite no extension",
       _oi4[0].x_unit == "cm-1")
 
+# The real IRUG case: data is embedded in the interactive jqPlot viewer as
+# quoted "wavenumber:intensity" pairs inside a <script>. Config options
+# (min:/max:/size:) are word:number and must NOT be picked up as data points.
+_irug_page = (
+    "<html><head><title>Interactive IRUG Spectrum | IRUG</title></head><body>"
+    "<p>Spectrum Type: Raman</p>"
+    "<script type='text/javascript'>\n"
+    "  var jqPlotData = {};\n"
+    "  jqPlotData.series = [{ data: ["
+    '"1900:0.10","1899:0.12","1898:0.20","1897:0.15","1896:0.05"'
+    "] }];\n"
+    "  $.jqplot('chartdiv', [jqPlotData.series], "
+    "{ axes:{ xaxis:{ min:100, max:1900 } }, "
+    "seriesDefaults:{ markerOptions:{ size:7 } } });\n"
+    "</script></body></html>"
+).encode("utf-8")
+_pj = load_online("http://www.irug.org/jcamp-details?id=4119",
+                  fetch=lambda u: (_irug_page, "text/html"))
+check("IRUG jqPlot page -> 1 spectrum", len(_pj) == 1)
+check("IRUG jqPlot parses all 5 points (config not counted)", _pj[0].npoints == 5)
+check("IRUG jqPlot x is wavenumber cm-1", _pj[0].x_unit == "cm-1")
+check("IRUG jqPlot Raman -> intensity y-unit", _pj[0].y_unit == "intensity")
+check("IRUG jqPlot x sorted ascending 1896..1900",
+      abs(_pj[0].x.min() - 1896) < 1e-9 and abs(_pj[0].x.max() - 1900) < 1e-9)
+check("IRUG jqPlot y paired correctly (y@1900=0.10)",
+      abs(_pj[0].value_at(1900) - 0.10) < 1e-9)
+check("IRUG jqPlot records source + origin",
+      _pj[0].meta.get("source", "").endswith("id=4119")
+      and _pj[0].meta.get("origin") == "IRUG")
+check("IRUG jqPlot names the spectrum from its id", _pj[0].name == "IRUG 4119")
+
 # An HTML page with an *inline* JCAMP block (nothing extra to fetch).
 _inline = (b"<html><body><pre>##TITLE=Inline\n##XYPOINTS=(XY..XY)\n"
            b"10,1\n11,2\n12,3\n##END=</pre></body></html>")

@@ -21,6 +21,8 @@ import re
 import tempfile
 import urllib.request
 
+import numpy as np
+
 from ..spectrum import Spectrum
 
 USER_AGENT = (
@@ -95,6 +97,51 @@ def _extract_inline_jcamp(html: str) -> str | None:
     """Return a JCAMP-DX block embedded directly in a page, if present."""
     m = re.search(r"(##TITLE\s*=.*?##END\s*=\s*)", html, re.DOTALL | re.IGNORECASE)
     return m.group(1) if m else None
+
+
+def parse_irug_jqplot(html: str):
+    """Extract the spectrum IRUG embeds in its interactive (jqPlot) viewer.
+
+    IRUG detail pages don't link a JCAMP/CSV file — the data is written into a
+    ``<script>`` block as ``jqPlotData.series``: a brace-wrapped, comma-separated
+    list of quoted ``"wavenumber:intensity"`` pairs. This mirrors the working
+    rvest recipe (grep the ``jqPlotData.series`` script, take the ``{...}``
+    region, split the ``wn:int`` pairs).
+
+    Returns ``(x, y)`` arrays, or ``None`` if no jqPlot series is present.
+    """
+    scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", html,
+                         re.DOTALL | re.IGNORECASE)
+    blob = next((s for s in scripts if "jqplotdata" in s.lower()), None)
+    if blob is None:
+        blob = html if "jqplotdata" in html.lower() else None
+    if blob is None:
+        return None
+
+    # The data points are ``number:number`` pairs. jqPlot config options are all
+    # ``word:number`` (min:, max:, size:…), so they never match this pattern —
+    # scanning the whole series script is safe and avoids brace-matching games.
+    pairs = re.findall(
+        r"(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)", blob)
+    if len(pairs) < 2:
+        return None
+    x = np.array([float(a) for a, _ in pairs])
+    y = np.array([float(b) for _, b in pairs])
+    return x, y
+
+
+def _sniff_irug_meta(html: str, url: str) -> tuple[str, str]:
+    """Best-effort (name, y_unit) for an IRUG page; x is always cm-1 wavenumber."""
+    low = html.lower()
+    if "transmittance" in low:
+        yunit = "%T" if "%" in low.split("transmittance")[0][-3:] else "transmittance"
+    elif "absorb" in low:
+        yunit = "absorbance"
+    else:                                   # Raman and unknowns -> generic intensity
+        yunit = "intensity"
+    m = re.search(r"jcamp-details\?id=(\d+)", url) or re.search(r"id=(\d+)", url)
+    name = f"IRUG {m.group(1)}" if m else "IRUG spectrum"
+    return name, yunit
 
 
 def _find_data_link(html: str, base_url: str) -> str | None:
@@ -172,10 +219,21 @@ def load_online(id_or_url, fetch=_default_fetch) -> list[Spectrum]:
         if inline:
             text, raw = inline, inline.encode("utf-8")
         else:
+            # IRUG embeds the spectrum in its interactive (jqPlot) viewer; parse
+            # that directly into a Spectrum (no separate file to download).
+            xy = parse_irug_jqplot(text)
+            if xy is not None:
+                x, y = xy
+                name, yunit = _sniff_irug_meta(text, url)
+                spec = Spectrum(x=x, y=y, name=name, x_unit="cm-1", y_unit=yunit,
+                                meta={"source": url, "origin": "IRUG"})
+                if spec.npoints < 2:
+                    raise ValueError(f"Parsed too few points from {url}")
+                return [spec]
             link = _find_data_link(text, url)
             if not link:
                 raise ValueError(
-                    "Could not find a downloadable spectrum on the page:\n"
+                    "Could not find a spectrum on the page:\n"
                     f"  {url}\n"
                     "Open it in a browser, use its Download button to save the "
                     "JCAMP-DX/CSV file, then load that file via File ▸ Open."
@@ -203,4 +261,4 @@ def load_online(id_or_url, fetch=_default_fetch) -> list[Spectrum]:
     return spectra
 
 
-__all__ = ["load_online", "resolve_source", "IRUG_DETAIL_URL"]
+__all__ = ["load_online", "resolve_source", "parse_irug_jqplot", "IRUG_DETAIL_URL"]
