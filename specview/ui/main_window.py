@@ -11,8 +11,9 @@ from .. import (__app_name__, __version__, analysis, axes, calibration, cos2d,
                 eem, processing, xrf)
 from ..demo import demo_cos_series, demo_eem, demo_eem_stack, load_demo_set
 from ..library import SpectralLibrary
-from ..formats import (OPEN_FILTER, MissingDependency, load_any, load_soprano_url,
-                       save_combined_csv, save_csv, save_jcamp, save_json)
+from ..formats import (OPEN_FILTER, MissingDependency, load_any, load_online,
+                       load_soprano_url, save_combined_csv, save_csv, save_jcamp,
+                       save_json)
 from ..spectrum import Spectrum, SpectrumSet, X_UNIT_LABELS, Y_UNIT_LABELS
 from .calibration_view import CalibrationDialog, CalibrationWindow
 from .dialogs import FormDialog, TableDialog
@@ -101,6 +102,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return self.style().standardIcon(sp)
         self.act_open = QtGui.QAction(icon(SP.SP_DialogOpenButton), "&Open…", self,
                                       shortcut="Ctrl+O", triggered=self.open_files)
+        self.act_import_url = QtGui.QAction("Import from &URL / IRUG…", self,
+                                            triggered=self.import_from_url)
         self.act_open_soprano = QtGui.QAction("Open SOPRANO URL…", self,
                                               triggered=self.open_soprano_url)
         self.act_demo = QtGui.QAction("Load &demo spectra", self, triggered=self.load_demo)
@@ -131,7 +134,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def _build_menus(self) -> None:
         mb = self.menuBar()
         m_file = mb.addMenu("&File")
-        m_file.addActions([self.act_open, self.act_open_soprano, self.act_demo])
+        m_file.addActions([self.act_open, self.act_import_url, self.act_open_soprano,
+                           self.act_demo])
         m_file.addSeparator()
         m_file.addActions([self.act_save, self.act_export_data, self.act_export])
         m_file.addSeparator()
@@ -317,6 +321,31 @@ class MainWindow(QtWidgets.QMainWindow):
             self, "Open spectra", self._last_dir, OPEN_FILTER)
         if paths:
             self._load_paths(paths)
+
+    def import_from_url(self) -> None:
+        """Download a spectrum from IRUG (by id/URL) or any direct URL."""
+        text, ok = QtWidgets.QInputDialog.getText(
+            self, "Import from URL / IRUG",
+            "IRUG spectrum id, IRUG page URL, or a direct spectrum URL:\n"
+            "(e.g.  3537   or   http://www.irug.org/jcamp-details?id=3537 )")
+        if not ok or not text.strip():
+            return
+        self.status.showMessage(f"Downloading {text.strip()}…", 0)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
+        try:
+            specs = load_online(text.strip())
+            self.document.add_many(specs)
+        except Exception as exc:  # noqa: BLE001
+            QtWidgets.QApplication.restoreOverrideCursor()
+            self.status.clearMessage()
+            QtWidgets.QMessageBox.warning(self, "Import failed", str(exc))
+            return
+        QtWidgets.QApplication.restoreOverrideCursor()
+        self._rebuild_table()
+        self.plotview.suggest_flip()
+        self.plotview.refresh()
+        self.plotview.autoscale()
+        self.status.showMessage(f"Imported {len(specs)} spectrum(s) from the web.", 5000)
 
     def _load_paths(self, paths: list[str]) -> None:
         if paths:

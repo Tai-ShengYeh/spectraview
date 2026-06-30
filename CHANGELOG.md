@@ -10,6 +10,11 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
 > 已在 `main` 分支、但尚未納入 [v0.2.0](https://github.com/Tai-ShengYeh/spectraview/releases/tag/v0.2.0) 發行標籤的變更。
 
 ### 新增（Added）
+- **線上匯入（File ▸ Import from URL / IRUG…）**：直接從 [IRUG 光譜資料庫](http://www.irug.org)
+  或任何網址抓光譜進來。輸入可以是 **IRUG 編號**（如 `3537`）、**IRUG 詳情頁網址**，
+  或**直接的 JCAMP-DX／CSV 檔網址**；程式會下載、自動判斷格式（JCAMP-DX 走 ASDF
+  解析、CSV/TXT 走 ASCII），並把來源網址記進光譜 meta。詳情頁會自動找頁面內嵌的
+  JCAMP 或下載連結。只用 Python 標準庫（urllib），免裝額外套件。
 - 讀取**轉置／矩陣式 CSV**（波長軸在表頭、每一列是一條光譜）：自動辨識外部工具
   （如 Orange）與化學計量學 ML 匯出的矩陣檔，以及本程式自己的 `layout='rows'`
   合併匯出，逐列載入成多條光譜。支援多個前導中繼欄（如 Sample ID、Concentration），

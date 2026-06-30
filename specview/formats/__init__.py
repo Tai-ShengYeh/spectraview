@@ -16,6 +16,7 @@ from .jcamp import load_jcamp
 from .json_io import load_json, save_json
 from .mat_io import load_mat
 from .soprano_io import load_soprano_url
+from .online import load_online
 
 # Map file extensions to reader functions.
 _READERS = {
@@ -156,5 +157,6 @@ def save_combined_csv(spectra, path: str, layout: str = "columns") -> dict:
             "resampled": resampled}
 
 
-__all__ = ["load_any", "load_soprano_url", "save_csv", "save_jcamp", "save_json",
-           "save_combined_csv", "merge_spectra", "OPEN_FILTER", "MissingDependency"]
+__all__ = ["load_any", "load_soprano_url", "load_online", "save_csv", "save_jcamp",
+           "save_json", "save_combined_csv", "merge_spectra", "OPEN_FILTER",
+           "MissingDependency"]
