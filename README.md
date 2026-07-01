@@ -80,6 +80,11 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
   PerkinElmer（.sp 二進位、.asc PEDS——皆純 Python；.asc 直接讀 #GR 座標單位、.dx 走 JCAMP），
   以及 SOPRANO 線上光譜庫頁面（從網址讀取內嵌 Dygraph 光譜資料）。
   一個檔可含多條光譜。
+- **線上匯入**（File ▸ Import from URL / IRUG…）：直接從 [IRUG 光譜資料庫](http://www.irug.org)
+  或任何網址抓譜。輸入 **IRUG 編號**（如 `4119`）、**詳情頁網址**或**直接檔案網址**即可。
+  IRUG 詳情頁的資料藏在互動圖（jqPlot）的 `<script>` 裡（`"波數:強度"` 配對），程式直接
+  解析還原成 x／y（cm⁻¹）；其他網址則辨識 JCAMP-DX／CSV 交給上述讀取器。來源網址記進
+  meta，只用標準庫 urllib。
 - **疊圖檢視**：多光譜同圖、各自顏色與圖例；左側清單可勾選顯示/隱藏、雙擊改色、改名。
 - **互動**：滑鼠縮放/平移、自動縮放（Ctrl+0）、十字游標即時讀出座標（狀態列），游標停在曲線上會浮現該光譜名稱。
 - **座標軸換算**
@@ -204,6 +209,7 @@ spectra_viewer/
     │   ├── __init__.py     依副檔名派發載入 + 存檔
     │   ├── ascii_io.py     ASCII 解析（偵測分隔符/表頭/多欄/歐規小數）
     │   ├── jcamp.py        自寫 JCAMP-DX 解析（AFFN/PAC/SQZ/DIF/DUP）
+    │   ├── online.py       線上匯入（IRUG 編號／網址 → 下載 → 交給上面的讀取器）
     │   ├── json_io.py      JSON 讀寫（多結構）
     │   ├── mat_io.py       MATLAB .mat 讀取（scipy.io）
     │   ├── _hints.py       JSON/MAT 共用：鍵名別名 + 單位正規化

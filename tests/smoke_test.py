@@ -669,5 +669,105 @@ check("PDZ metadata includes acquisition settings",
       _pdz_spec.meta.get("xray_voltage_kv") == 40.0
       and _pdz_spec.meta.get("n_channels") == _pdz_n)
 
+print("== online import (IRUG / URL) ==")
+from specview.formats.online import load_online, resolve_source  # noqa: E402
+
+# id / URL resolution (no network).
+check("bare id -> IRUG detail URL",
+      resolve_source(3537) == "http://www.irug.org/jcamp-details?id=3537")
+check("irug: prefix -> IRUG detail URL", resolve_source("irug:42").endswith("id=42"))
+check("direct URL is passed through",
+      resolve_source("https://x.org/a.jdx") == "https://x.org/a.jdx")
+_bad = False
+try:
+    resolve_source("not a url")
+except ValueError:
+    _bad = True
+check("garbage source raises ValueError", _bad)
+
+# A direct JCAMP-DX body served by a fake fetch (network injected, none used).
+_jdx_body = (
+    "##TITLE=Fake IRUG spectrum\n##JCAMP-DX=4.24\n##XUNITS=1/CM\n"
+    "##YUNITS=ABSORBANCE\n##FIRSTX=4000\n##LASTX=3996\n##NPOINTS=5\n"
+    "##XFACTOR=1\n##YFACTOR=1\n##XYPOINTS=(XY..XY)\n"
+    "4000,0.10\n3999,0.20\n3998,0.30\n3997,0.25\n3996,0.15\n##END=\n"
+).encode("utf-8")
+_oi = load_online(7, fetch=lambda url: (_jdx_body, "chemical/x-jcamp-dx"))
+check("online JCAMP body -> 1 spectrum", len(_oi) == 1)
+check("online JCAMP parsed (5 pts, cm-1, absorbance)",
+      _oi[0].npoints == 5 and _oi[0].x_unit == "cm-1" and _oi[0].y_unit == "absorbance")
+check("online import records the source URL",
+      _oi[0].meta.get("source") == "http://www.irug.org/jcamp-details?id=7")
+
+# An HTML detail page that links to a CSV; fetch is called twice.
+_page = (b"<html><head><title>IRUG</title></head><body>"
+         b"<a href='/files/spec_99.csv'>Download</a></body></html>")
+_csv = b"wavenumber,absorbance\n4000,0.1\n3999,0.2\n3998,0.4\n"
+def _two_step(url):  # noqa: E306
+    return (_csv, "text/csv") if url.endswith(".csv") else (_page, "text/html")
+_oi2 = load_online("http://www.irug.org/jcamp-details?id=99", fetch=_two_step)
+check("HTML page -> follows CSV link -> 1 spectrum", len(_oi2) == 1 and _oi2[0].npoints == 3)
+check("followed-link source URL recorded",
+      _oi2[0].meta.get("source", "").endswith("/files/spec_99.csv"))
+
+# An IRUG-style detail page whose "Download" button is an EXTENSIONLESS
+# endpoint (download-jcamp?id=4119), not a *.jdx link.
+_page2 = (b"<html><body><a class='btn' "
+          b"href='/download-jcamp?id=4119'>Download JCAMP</a></body></html>")
+def _btn_step(url):  # noqa: E306
+    return (_jdx_body, "chemical/x-jcamp-dx") if "download-jcamp" in url \
+        else (_page2, "text/html")
+_oi4 = load_online("http://www.irug.org/jcamp-details?id=4119", fetch=_btn_step)
+check("HTML page -> follows extensionless download endpoint",
+      len(_oi4) == 1 and _oi4[0].npoints == 5)
+check("extensionless endpoint: JCAMP body sniffed despite no extension",
+      _oi4[0].x_unit == "cm-1")
+
+# The real IRUG case: data is embedded in the interactive jqPlot viewer as
+# quoted "wavenumber:intensity" pairs inside a <script>. Config options
+# (min:/max:/size:) are word:number and must NOT be picked up as data points.
+_irug_page = (
+    "<html><head><title>Interactive IRUG Spectrum | IRUG</title></head><body>"
+    "<p>Spectrum Type: Raman</p>"
+    "<script type='text/javascript'>\n"
+    "  var jqPlotData = {};\n"
+    "  jqPlotData.series = [{ data: ["
+    '"1900:0.10","1899:0.12","1898:0.20","1897:0.15","1896:0.05"'
+    "] }];\n"
+    "  $.jqplot('chartdiv', [jqPlotData.series], "
+    "{ axes:{ xaxis:{ min:100, max:1900 } }, "
+    "seriesDefaults:{ markerOptions:{ size:7 } } });\n"
+    "</script></body></html>"
+).encode("utf-8")
+_pj = load_online("http://www.irug.org/jcamp-details?id=4119",
+                  fetch=lambda u: (_irug_page, "text/html"))
+check("IRUG jqPlot page -> 1 spectrum", len(_pj) == 1)
+check("IRUG jqPlot parses all 5 points (config not counted)", _pj[0].npoints == 5)
+check("IRUG jqPlot x is wavenumber cm-1", _pj[0].x_unit == "cm-1")
+check("IRUG jqPlot Raman -> intensity y-unit", _pj[0].y_unit == "intensity")
+check("IRUG jqPlot x sorted ascending 1896..1900",
+      abs(_pj[0].x.min() - 1896) < 1e-9 and abs(_pj[0].x.max() - 1900) < 1e-9)
+check("IRUG jqPlot y paired correctly (y@1900=0.10)",
+      abs(_pj[0].value_at(1900) - 0.10) < 1e-9)
+check("IRUG jqPlot records source + origin",
+      _pj[0].meta.get("source", "").endswith("id=4119")
+      and _pj[0].meta.get("origin") == "IRUG")
+check("IRUG jqPlot names the spectrum from its id", _pj[0].name == "IRUG 4119")
+
+# An HTML page with an *inline* JCAMP block (nothing extra to fetch).
+_inline = (b"<html><body><pre>##TITLE=Inline\n##XYPOINTS=(XY..XY)\n"
+           b"10,1\n11,2\n12,3\n##END=</pre></body></html>")
+_oi3 = load_online("https://example.org/page", fetch=lambda u: (_inline, "text/html"))
+check("HTML page with inline JCAMP -> 1 spectrum", len(_oi3) == 1 and _oi3[0].npoints == 3)
+
+# A page with no spectrum at all must fail clearly, not silently.
+_none = False
+try:
+    load_online("https://example.org/none",
+                fetch=lambda u: (b"<html><body>nothing here</body></html>", "text/html"))
+except ValueError:
+    _none = True
+check("page with no data raises a clear error", _none)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
