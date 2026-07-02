@@ -36,3 +36,15 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python tests/gui_smoke_test.py
+
+  orange-addon-core:
+    # Pure-logic tests for the Orange add-on (numpy/scipy only — the full
+    # widget suite needs orange3 and is run locally / on release).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy scipy
+      - run: python orange-spectra/tests/test_core.py

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orange-spectra"
+version = "0.1.0"
+description = "Orange Data Mining widgets for spectroscopy: import spectra from IRUG/SOPRANO URLs, similarity search, spectral libraries (.speclib) and NNLS mixture analysis."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Tai-Sheng Yeh" }]
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "Orange3>=3.34",
+]
+
+[project.entry-points."orange.widgets"]
+Spectra = "orangespectra.widgets"
+
+[project.entry-points."orange3.addon"]
+orange-spectra = "orangespectra"
+
+[tool.setuptools.packages.find]
+include = ["orangespectra*"]
+
+[tool.setuptools.package-data]
+"orangespectra.widgets" = ["icons/*.svg"]

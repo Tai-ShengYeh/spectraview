@@ -10,6 +10,12 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
 > 已在 `main` 分支、但尚未納入 [v0.2.0](https://github.com/Tai-ShengYeh/spectraview/releases/tag/v0.2.0) 發行標籤的變更。
 
 ### 新增（Added）
+- **Orange Data Mining 附加元件（`orange-spectra/`）**：四個光譜學 widgets——
+  **Import Spectrum URL**（貼 IRUG 編號／SOPRANO 網址匯入並畫光譜）、**Spectra
+  Similarity**（correlation／cosine／SAM／Euclidean 相似度）、**Spectral Library**
+  （建庫、存讀與 SpectraView 互通的 `.speclib`、對庫比對排名）、**Mixture Analysis**
+  （NNLS 混合光譜成分分析）。輸出資料表採 Orange-Spectroscopy 慣例（欄＝波數、
+  列＝光譜），可直接接 PCA/PLS。附教學網頁 `docs/orange.html`。
 - **線上匯入（File ▸ Import from URL / IRUG…）**：直接從 [IRUG 光譜資料庫](http://www.irug.org)
   或任何網址抓光譜進來。輸入可以是 **IRUG 編號**（如 `4119`）、**IRUG 詳情頁網址**，
   或**直接的 JCAMP-DX／CSV 檔網址**；程式會下載並自動判斷來源：
