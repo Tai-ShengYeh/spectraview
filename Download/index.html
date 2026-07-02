@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1017">
+<title>SpectraView Web — 光譜檢視與處理</title>
+<style>
+:root{
+  --bg:#0d1017; --surface:#151b26; --surface2:#1d2533; --line:#2a3446;
+  --ink:#e9edf4; --muted:#8b96ab; --accent:#7db4ff; --accent2:#ffb454;
+  --danger:#ff6b6b; --ok:#5fd4a0;
+  --radius:14px;
+  font-synthesis-weight:none;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Space Grotesk","IBM Plex Sans","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;}
+
+/* ── header ── */
+header{flex:0 0 auto;padding:calc(env(safe-area-inset-top) + 8px) 12px 0;background:var(--bg);}
+.hrow{display:flex;align-items:center;gap:8px;}
+.brand{font-weight:700;font-size:17px;letter-spacing:.02em;white-space:nowrap;}
+.brand small{color:var(--muted);font-weight:400;font-size:11px;margin-left:6px;}
+.hbtns{margin-left:auto;display:flex;gap:6px;}
+.ibtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;
+  min-width:38px;height:36px;padding:0 10px;font-size:15px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;}
+.ibtn:active{background:var(--surface2);}
+.ibtn.on{border-color:var(--accent);color:var(--accent);}
+.ibtn:disabled{opacity:.35;}
+/* signature: visible-spectrum strip */
+.spectrum-strip{height:3px;margin-top:8px;border-radius:2px;
+  background:linear-gradient(90deg,#3b0a59 0%,#4a2bd4 12%,#2f7bff 26%,#19c8c8 40%,#3fd05e 54%,#e8e13a 68%,#ff9a2e 82%,#e6382e 94%,#7a0f1e 100%);}
+
+/* ── plot ── */
+#plotwrap{flex:1 1 auto;position:relative;min-height:0;}
+#plot{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;}
+#readout{position:absolute;left:10px;top:8px;max-width:calc(100% - 20px);pointer-events:none;
+  background:rgba(13,16,23,.82);border:1px solid var(--line);border-radius:10px;padding:5px 10px;
+  font-size:12px;color:var(--ink);display:none;backdrop-filter:blur(4px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#emptystate{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;color:var(--muted);padding:24px;text-align:center;}
+#emptystate .big{font-size:15px;line-height:1.6;}
+.pillbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;
+  padding:10px 20px;font-size:14px;cursor:pointer;}
+.pillbtn.primary{border-color:transparent;background:linear-gradient(90deg,#2f7bff,#19c8c8);color:#06131f;font-weight:600;}
+#toast{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(21,27,38,.95);
+  border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:13px;
+  max-width:88%;display:none;z-index:30;text-align:center;}
+
+/* ── bottom nav ── */
+nav{flex:0 0 auto;display:flex;border-top:1px solid var(--line);background:var(--surface);
+  padding-bottom:env(safe-area-inset-bottom);}
+nav button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;padding:7px 2px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;}
+nav button .nic{font-size:17px;line-height:1;}
+nav button.on{color:var(--accent);}
+
+/* ── bottom sheet panels ── */
+#sheet{flex:0 0 auto;background:var(--surface);border-top:1px solid var(--line);
+  max-height:52dvh;overflow-y:auto;display:none;overscroll-behavior:contain;}
+#sheet.open{display:block;}
+.panel{display:none;padding:12px 14px 18px;}
+.panel.on{display:block;}
+.ptitle{display:flex;align-items:center;font-size:13px;color:var(--muted);margin:2px 0 10px;letter-spacing:.05em;}
+.ptitle .x{margin-left:auto;color:var(--muted);font-size:18px;background:none;border:none;cursor:pointer;padding:2px 6px;}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap;}
+.row label{font-size:13px;color:var(--ink);}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.5;margin:6px 0;}
+select,input[type=number],input[type=text]{background:var(--surface2);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;padding:9px 10px;font-size:14px;font-family:inherit;max-width:100%;}
+input[type=number]{width:88px;}
+select{flex:1;min-width:120px;}
+.btn{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;
+  padding:10px 16px;font-size:14px;cursor:pointer;font-family:inherit;}
+.btn.primary{background:linear-gradient(90deg,#2f7bff,#19c8c8);border-color:transparent;color:#06131f;font-weight:600;}
+.btn.warn{color:var(--danger);border-color:#553;}
+.btn:active{filter:brightness(1.15);}
+.chk{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink);}
+.chk input{width:17px;height:17px;accent-color:var(--accent);}
+hr{border:none;border-top:1px solid var(--line);margin:14px 0;}
+.sec{font-size:12.5px;color:var(--accent);margin:12px 0 4px;font-weight:600;letter-spacing:.04em;}
+
+/* spectrum list */
+#speclist{display:flex;flex-direction:column;gap:6px;}
+.spec{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--line);
+  border-radius:11px;padding:9px 10px;cursor:pointer;}
+.spec.sel{border-color:var(--accent);background:#1c2c45;}
+.spec .dot{width:15px;height:15px;border-radius:50%;flex:0 0 auto;border:2px solid rgba(255,255,255,.25);}
+.spec .nm{flex:1;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spec .un{font-size:10.5px;color:var(--muted);}
+.spec .eye,.spec .more{background:none;border:none;font-size:16px;cursor:pointer;padding:3px 5px;color:var(--ink);}
+.spec .eye.off{opacity:.3;}
+.specact{display:flex;gap:6px;padding:4px 2px 8px 34px;flex-wrap:wrap;}
+.specact .btn{padding:6px 11px;font-size:12.5px;border-radius:8px;}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:12px;margin-top:8px;}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:right;white-space:nowrap;}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--surface);}
+td:first-child,th:first-child{text-align:left;}
+.tblwrap{max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:8px;}
+.result{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+  font-size:13px;margin-top:8px;line-height:1.55;display:none;}
+input[type=range]{flex:1;accent-color:var(--accent);}
+#fileinput{display:none;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hrow">
+      <div class="brand">SpectraView<small>Web</small></div>
+      <div class="hbtns">
+        <button class="ibtn" id="btnOpen" title="開啟檔案">📂</button>
+        <button class="ibtn" id="btnCursor" title="游標讀值模式">✛</button>
+        <button class="ibtn" id="btnUndo" title="復原">↩</button>
+        <button class="ibtn" id="btnRedo" title="重做">↪</button>
+        <button class="ibtn" id="btnFit" title="自動縮放">⛶</button>
+      </div>
+    </div>
+    <div class="spectrum-strip"></div>
+  </header>
+
+  <div id="plotwrap">
+    <canvas id="plot"></canvas>
+    <div id="readout"></div>
+    <div id="emptystate">
+      <div class="big">尚未載入光譜。<br>開啟 CSV / TXT / JCAMP-DX (.dx/.jdx) / JSON 檔,<br>或先用內建示範光譜試玩。</div>
+      <button class="pillbtn primary" id="btnDemo">載入示範光譜 (FTIR / Raman / UV-Vis / XRF)</button>
+      <button class="pillbtn" id="btnOpen2">開啟檔案…</button>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="sheet">
+    <!-- 光譜清單 -->
+    <div class="panel" id="p-list">
+      <div class="ptitle">光譜清單 — 點選列可多選(處理/分析作用對象)<button class="x" data-close>✕</button></div>
+      <div id="speclist"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="btnDemo2">載入示範</button>
+        <button class="btn" id="btnSelAll">全選</button>
+        <button class="btn" id="btnSelNone">取消選取</button>
+        <button class="btn warn" id="btnDelSel">刪除選取</button>
+      </div>
+    </div>
+
+    <!-- 前處理 -->
+    <div class="panel" id="p-proc">
+      <div class="ptitle">前處理 — 作用於選取光譜(未選取則套用全部可見)<button class="x" data-close>✕</button></div>
+      <div class="row">
+        <select id="opSel"></select>
+      </div>
+      <div id="opParams"></div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="asNew">以新光譜加入(保留原始)</label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="btnApply">套用</button>
+      </div>
+      <div class="hint" id="opHint"></div>
+    </div>
+
+    <!-- 分析 -->
+    <div class="panel" id="p-ana">
+      <div class="ptitle">分析<button class="x" data-close>✕</button></div>
+      <div class="sec">尋峰</div>
+      <div class="row">
+        <label>最小突出度(%最大值)</label><input type="number" id="pkProm" value="5" min="0.1" step="0.5">
+        <label>最小間距(點)</label><input type="number" id="pkDist" value="8" min="1" step="1">
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="pkValley">找谷(倒峰)</label>
+        <button class="btn primary" id="btnPeaks">尋峰</button>
+        <button class="btn" id="btnClearPeaks">清除標記</button>
+        <button class="btn" id="btnPeakCSV">峰表→CSV</button>
+      </div>
+      <div class="tblwrap" id="pkTblWrap" style="display:none"><table id="pkTbl"></table></div>
+      <hr>
+      <div class="sec">區間積分</div>
+      <div class="row">
+        <label>x₁</label><input type="number" id="intX1" step="any">
+        <label>x₂</label><input type="number" id="intX2" step="any">
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="intBase" checked>扣端點線性基線</label>
+        <button class="btn primary" id="btnIntegrate">積分</button>
+        <button class="btn" id="btnClearInt">清除區域</button>
+      </div>
+      <div class="result" id="intResult"></div>
+      <hr>
+      <div class="sec">光譜運算(取「前兩個選取」的光譜 A、B)</div>
+      <div class="row">
+        <select id="mathOp" style="flex:0 1 150px">
+          <option value="sub">A − B</option><option value="add">A + B</option>
+          <option value="mul">A × B</option><option value="div">A ÷ B</option>
+          <option value="mean">選取光譜平均</option>
+        </select>
+        <button class="btn primary" id="btnMath">計算 → 新光譜</button>
+      </div>
+    </div>
+
+    <!-- 座標軸與顯示 -->
+    <div class="panel" id="p-axes">
+      <div class="ptitle">座標軸換算與顯示<button class="x" data-close>✕</button></div>
+      <div class="sec">X 軸單位(轉換選取/全部可見光譜的資料)</div>
+      <div class="row">
+        <select id="xUnitSel">
+          <option value="nm">波長 nm</option>
+          <option value="cm-1">波數 cm⁻¹</option>
+          <option value="um">波長 µm</option>
+          <option value="raman">Raman 位移 cm⁻¹</option>
+          <option value="eV">能量 eV</option>
+          <option value="THz">頻率 THz</option>
+          <option value="keV">能量 keV (XRF)</option>
+        </select>
+        <button class="btn primary" id="btnXConv">轉換</button>
+      </div>
+      <div class="row" id="laserRow" style="display:none">
+        <label>雷射波長 (nm)</label><input type="number" id="laserNm" value="532" step="any">
+      </div>
+      <div class="sec">Y 軸單位</div>
+      <div class="row">
+        <select id="yUnitSel">
+          <option value="A">吸光度 A</option>
+          <option value="T">穿透率 T (0–1)</option>
+          <option value="%T">穿透率 %T</option>
+          <option value="R">反射率 R (0–1)</option>
+          <option value="KM">Kubelka-Munk</option>
+          <option value="log1R">log(1/R)</option>
+          <option value="counts">強度 / counts (不轉換)</option>
+        </select>
+        <button class="btn primary" id="btnYConv">轉換</button>
+      </div>
+      <div class="hint">轉換以光譜目前標示的單位為準;「強度」視為不可換算。</div>
+      <hr>
+      <div class="sec">顯示</div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="flipX">翻轉 X 軸(IR 慣例)</label>
+        <label class="chk"><input type="checkbox" id="showGrid" checked>格線</label>
+        <label class="chk"><input type="checkbox" id="logY">對數 Y</label>
+        <label class="chk"><input type="checkbox" id="showLegend" checked>圖例</label>
+      </div>
+      <div class="row">
+        <label>堆疊位移</label><input type="range" id="stackOff" min="0" max="100" value="0"><span id="stackVal" style="font-size:12px;color:var(--muted)">0%</span>
+      </div>
+    </div>
+
+    <!-- 匯出 -->
+    <div class="panel" id="p-export">
+      <div class="ptitle">匯出<button class="x" data-close>✕</button></div>
+      <div class="row"><button class="btn primary" id="btnPNG">圖檔 PNG</button></div>
+      <div class="row"><button class="btn" id="btnCSVsel">選取光譜 → CSV(各別檔)</button></div>
+      <div class="row"><button class="btn" id="btnCSVmerge">合併匯出 CSV(共用 X 軸,每條一欄)</button></div>
+      <div class="row"><button class="btn" id="btnSession">儲存工作階段 JSON(可再開啟)</button></div>
+      <div class="hint">合併匯出會把所有可見光譜重採樣到共同 X 網格;輸出可直接餵 PLS/PCA。工作階段 JSON 用「開啟檔案」即可載回。</div>
+    </div>
+  </div>
+
+  <nav>
+    <button data-tab="p-list" class="on"><span class="nic">☰</span>光譜</button>
+    <button data-tab="p-proc"><span class="nic">⚗</span>處理</button>
+    <button data-tab="p-ana"><span class="nic">🜚</span>分析</button>
+    <button data-tab="p-axes"><span class="nic">⇄</span>座標軸</button>
+    <button data-tab="p-export"><span class="nic">⇩</span>匯出</button>
+  </nav>
+</div>
+<input type="file" id="fileinput" multiple accept=".csv,.txt,.dat,.tsv,.prn,.dx,.jdx,.json,.asc">
+<script>
+"use strict";
+/* ═══════════════ 數值核心 ═══════════════ */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function linspace(a,b,n){const o=new Float64Array(n);for(let i=0;i<n;i++)o[i]=a+(b-a)*i/(n-1);return o;}
+function interp1(x,y,xq){ // x 遞增,線性內插,外插取端點
+  const n=x.length,m=xq.length,out=new Float64Array(m);let j=0;
+  for(let i=0;i<m;i++){const q=xq[i];
+    if(q<=x[0]){out[i]=y[0];continue;} if(q>=x[n-1]){out[i]=y[n-1];continue;}
+    while(x[j+1]<q)j++; while(j>0&&x[j]>q)j--;
+    const t=(q-x[j])/(x[j+1]-x[j]);out[i]=y[j]+t*(y[j+1]-y[j]);}
+  return out;}
+function trapz(x,y,i0,i1){let s=0;for(let i=i0;i<i1;i++)s+=(x[i+1]-x[i])*(y[i]+y[i+1])/2;return s;}
+
+/* 小型線性系統 (Gaussian elimination, partial pivot) */
+function solveLin(A,b){const n=b.length,M=A.map((r,i)=>[...r,b[i]]);
+  for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;
+    [M[c],M[p]]=[M[p],M[c]];const pv=M[c][c]||1e-30;
+    for(let r=c+1;r<n;r++){const f=M[r][c]/pv;for(let k=c;k<=n;k++)M[r][k]-=f*M[c][k];}}
+  const x=new Float64Array(n);
+  for(let r=n-1;r>=0;r--){let s=M[r][n];for(let k=r+1;k<n;k++)s-=M[r][k]*x[k];x[r]=s/(M[r][r]||1e-30);}
+  return x;}
+
+/* 多項式擬合 (x 縮放到 [-1,1] 以利條件數) */
+function polyfitEval(x,y,deg){const n=x.length,x0=x[0],x1=x[n-1],sc=v=>2*(v-x0)/(x1-x0)-1;
+  const m=deg+1,A=Array.from({length:m},()=>new Float64Array(m)),b=new Float64Array(m);
+  for(let i=0;i<n;i++){const t=sc(x[i]);let pw=new Float64Array(m);pw[0]=1;
+    for(let k=1;k<m;k++)pw[k]=pw[k-1]*t;
+    for(let r=0;r<m;r++){b[r]+=pw[r]*y[i];for(let c=0;c<m;c++)A[r][c]+=pw[r]*pw[c];}}
+  const cf=solveLin(A.map(r=>Array.from(r)),Array.from(b));
+  const out=new Float64Array(n);
+  for(let i=0;i<n;i++){const t=sc(x[i]);let v=0,pw=1;for(let k=0;k<m;k++){v+=cf[k]*pw;pw*=t;}out[i]=v;}
+  return out;}
+
+/* Savitzky-Golay:回傳係數卷積結果;deriv 為微分階數 */
+function savgol(y,win,order,deriv=0,dx=1){
+  win=Math.max(3,win|0); if(win%2===0)win++;
+  order=clamp(order|0,1,win-1); deriv=clamp(deriv|0,0,order);
+  const h=(win-1)/2,m=order+1;
+  const A=Array.from({length:m},()=>new Float64Array(m)),Bt=Array.from({length:m},()=>new Float64Array(win));
+  for(let j=-h;j<=h;j++){let pw=new Float64Array(m);pw[0]=1;
+    for(let k=1;k<m;k++)pw[k]=pw[k-1]*j;
+    for(let r=0;r<m;r++){Bt[r][j+h]=pw[r];for(let c=0;c<m;c++)A[r][c]+=pw[r]*pw[c];}}
+  // 係數 = e_deriv^T (A)^-1 B^T * deriv!
+  const e=new Float64Array(m);e[deriv]=1;
+  const row=solveLin(A.map(r=>Array.from(r)),Array.from(e)); // (A)^-1 e
+  const coef=new Float64Array(win);let fact=1;for(let k=2;k<=deriv;k++)fact*=k;
+  for(let j=0;j<win;j++){let s=0;for(let r=0;r<m;r++)s+=row[r]*Bt[r][j];coef[j]=s*fact;}
+  const n=y.length,out=new Float64Array(n),scale=Math.pow(dx,deriv);
+  for(let i=0;i<n;i++){let s=0;
+    for(let j=-h;j<=h;j++){let idx=i+j; if(idx<0)idx=-idx; if(idx>=n)idx=2*n-2-idx; s+=coef[j+h]*y[idx];}
+    out[i]=s/scale;}
+  return out;}
+
+function movAvg(y,win){win=Math.max(3,win|0);if(win%2===0)win++;const h=(win-1)/2,n=y.length,out=new Float64Array(n);
+  for(let i=0;i<n;i++){let s=0;for(let j=-h;j<=h;j++){let k=clamp(i+j,0,n-1);s+=y[k];}out[i]=s/win;}return out;}
+
+/* 對稱五對角 LDLᵀ 解 (W + λD₂ᵀD₂) z = W y  → ALS / airPLS 共用 */
+function smoothSolve(y,w,lam){
+  const n=y.length;
+  const d0=new Float64Array(n),d1=new Float64Array(n),d2=new Float64Array(n);
+  for(let k=0;k<n-2;k++){ // 累加 D2ᵀD2
+    d0[k]+=1; d0[k+1]+=4; d0[k+2]+=1;
+    d1[k]+=-2; d1[k+1]+=-2; d2[k]+=1;}
+  const a=new Float64Array(n),b=new Float64Array(n),c=new Float64Array(n),rhs=new Float64Array(n);
+  for(let i=0;i<n;i++){a[i]=w[i]+lam*d0[i];b[i]=lam*d1[i];c[i]=lam*d2[i];rhs[i]=w[i]*y[i];}
+  // LDLᵀ (帶寬2)
+  const D=new Float64Array(n),L1=new Float64Array(n),L2=new Float64Array(n);
+  for(let i=0;i<n;i++){
+    let di=a[i];
+    if(i>=1)di-=L1[i-1]*L1[i-1]*D[i-1];
+    if(i>=2)di-=L2[i-2]*L2[i-2]*D[i-2];
+    D[i]=di||1e-30;
+    if(i<n-1){let v=b[i];if(i>=1)v-=L2[i-1]*L1[i-1]*D[i-1];L1[i]=v/D[i];}
+    if(i<n-2)L2[i]=c[i]/D[i];}
+  const z=new Float64Array(n);
+  for(let i=0;i<n;i++){let v=rhs[i];if(i>=1)v-=L1[i-1]*z[i-1];if(i>=2)v-=L2[i-2]*z[i-2];z[i]=v;}
+  for(let i=0;i<n;i++)z[i]/=D[i];
+  for(let i=n-1;i>=0;i--){if(i<n-1)z[i]-=L1[i]*z[i+1];if(i<n-2)z[i]-=L2[i]*z[i+2];}
+  return z;}
+
+function baselineALS(y,lam=1e5,p=0.01,iters=10){
+  const n=y.length;let w=new Float64Array(n).fill(1),z=null;
+  for(let t=0;t<iters;t++){z=smoothSolve(y,w,lam);
+    for(let i=0;i<n;i++)w[i]=y[i]>z[i]?p:1-p;}
+  return z;}
+
+function baselineAirPLS(y,lam=1e5,iters=15,porder=2){
+  // porder 併入 λ 的量級近似;主要照 Zhang 2010 權重更新
+  const n=y.length;let w=new Float64Array(n).fill(1),z=new Float64Array(n);
+  let ay=0;for(let i=0;i<n;i++)ay+=Math.abs(y[i]);
+  for(let t=1;t<=iters;t++){
+    z=smoothSolve(y,w,lam);
+    let dssn=0;for(let i=0;i<n;i++){const d=y[i]-z[i];if(d<0)dssn+=-d;}
+    if(dssn<1e-3*ay)break;
+    for(let i=0;i<n;i++){const d=y[i]-z[i];
+      w[i]=d>=0?0:Math.exp(t*(-d)/dssn);}
+    w[0]=Math.exp(t*maxNeg(y,z)/dssn);w[n-1]=w[0];}
+  return z;
+  function maxNeg(y,z){let m=0;for(let i=0;i<y.length;i++){const d=z[i]-y[i];if(d>m)m=d;}return m;}}
+
+function baselineRubberband(x,y){ // 下凸包
+  const n=x.length,hull=[];
+  for(let i=0;i<n;i++){
+    while(hull.length>=2){const a=hull[hull.length-2],b=hull[hull.length-1];
+      if((x[b]-x[a])*(y[i]-y[a])-(y[b]-y[a])*(x[i]-x[a])<=0)hull.pop();else break;}
+    hull.push(i);}
+  const hx=hull.map(i=>x[i]),hy=hull.map(i=>y[i]);
+  return interp1(Float64Array.from(hx),Float64Array.from(hy),x);}
+
+function baselineModPoly(x,y,deg=3,iters=60){
+  let yw=Float64Array.from(y),prev=Infinity;
+  let fit=null;
+  for(let t=0;t<iters;t++){
+    fit=polyfitEval(x,yw,deg);
+    let dev=0;for(let i=0;i<yw.length;i++){if(fit[i]<yw[i])yw[i]=fit[i];dev+=Math.abs(yw[i]-fit[i]);}
+    if(Math.abs(prev-dev)<1e-6*(Math.abs(prev)+1e-12))break;prev=dev;}
+  return fit;}
+
+/* 尋峰:突出度 + 最小間距;回傳含 FWHM 與近似面積 */
+function findPeaks(x,y,minProm,minDist,valley=false){
+  const n=y.length,yy=valley?y.map(v=>-v):Float64Array.from(y);
+  let ymax=-Infinity,ymin=Infinity;for(let i=0;i<n;i++){if(yy[i]>ymax)ymax=yy[i];if(yy[i]<ymin)ymin=yy[i];}
+  const promAbs=minProm/100*(ymax-ymin);
+  const cand=[];
+  for(let i=1;i<n-1;i++){if(yy[i]>yy[i-1]&&yy[i]>=yy[i+1])cand.push(i);}
+  const peaks=[];
+  for(const i of cand){
+    // 突出度:向左右走到更高點或邊界,取途中最小
+    let lmin=yy[i],j=i-1;while(j>=0&&yy[j]<=yy[i]){if(yy[j]<lmin)lmin=yy[j];j--;}
+    let rmin=yy[i];j=i+1;while(j<n&&yy[j]<=yy[i]){if(yy[j]<rmin)rmin=yy[j];j++;}
+    const base=Math.max(lmin,rmin),prom=yy[i]-base;
+    if(prom>=promAbs)peaks.push({i,prom});}
+  // 最小間距:高的優先
+  peaks.sort((a,b)=>yy[b.i]-yy[a.i]);
+  const keep=[],used=new Uint8Array(n);
+  for(const p of peaks){let ok=true;
+    for(let d=Math.max(0,p.i-minDist);d<=Math.min(n-1,p.i+minDist);d++)if(used[d]){ok=false;break;}
+    if(ok){keep.push(p);used[p.i]=1;}}
+  keep.sort((a,b)=>a.i-b.i);
+  return keep.map(p=>{
+    const i=p.i,half=yy[i]-p.prom/2;
+    let li=i;while(li>0&&yy[li]>half)li--;
+    let ri=i;while(ri<n-1&&yy[ri]>half)ri++;
+    const xl=li<i? x[li]+(half-yy[li])/(yy[li+1]-yy[li]||1e-30)*(x[li+1]-x[li]) : x[li];
+    const xr=ri>i? x[ri-1]+(half-yy[ri-1])/(yy[ri]-yy[ri-1]||1e-30)*(x[ri]-x[ri-1]) : x[ri];
+    // 近似面積:半高範圍再外擴到突出度基準,對線性基線積分
+    let ai0=li,ai1=ri;
+    let area=trapz(x,Array.from({length:n},(_,k)=>yy[k]),ai0,ai1)
+      -((yy[ai0]+yy[ai1])/2)*(x[ai1]-x[ai0]);
+    if(valley)area=-area;
+    return {idx:i,x:x[i],y:y[i],fwhm:Math.abs(xr-xl),area,prom:valley?-p.prom:p.prom};});}
+
+/* ═══════════════ 檔案解析 ═══════════════ */
+function parseASCII(text,name){
+  const lines=text.split(/\r\n|\r|\n/);
+  const rows=[];let delim=null;
+  for(let raw of lines){
+    let ln=raw.trim();
+    if(!ln||/^[#%;/!]/.test(ln))continue;
+    if(delim===null){
+      if(ln.includes("\t"))delim="\t";
+      else if(ln.includes(";"))delim=";";
+      else if(ln.includes(","))delim=",";
+      else delim=/\s+/;}
+    let parts=ln.split(delim).map(s=>s.trim()).filter(s=>s!=="");
+    if(delim===";")parts=parts.map(s=>s.replace(",","."));// 歐規小數
+    const nums=parts.map(Number);
+    if(nums.length>=2&&nums.every(v=>isFinite(v)))rows.push(nums);}
+  if(rows.length<3)throw new Error("找不到數值資料欄");
+  const ncol=Math.min(...rows.map(r=>r.length));
+  const x=Float64Array.from(rows.map(r=>r[0]));
+  const specs=[];
+  for(let c=1;c<ncol;c++){
+    const y=Float64Array.from(rows.map(r=>r[c]));
+    specs.push({name:ncol>2?`${name} [${c}]`:name,x:Float64Array.from(x),y});}
+  return specs;}
+
+/* JCAMP-DX:AFFN/PAC + SQZ/DIF/DUP 壓縮 */
+function parseJCAMP(text,name){
+  const specs=[];const blocks=text.split(/##END\s*=?/i);
+  for(const blk of blocks){
+    if(!/##XYDATA|##XYPOINTS|##PEAK\s*TABLE/i.test(blk))continue;
+    const get=k=>{const m=blk.match(new RegExp("##"+k+"\\s*=\\s*([^\\n\\r]*)","i"));return m?m[1].trim():null;};
+    const title=get("TITLE")||name;
+    const xf=parseFloat(get("XFACTOR")||"1"),yf=parseFloat(get("YFACTOR")||"1");
+    const firstX=parseFloat(get("FIRSTX")||"NaN"),lastX=parseFloat(get("LASTX")||"NaN");
+    const npt=parseInt(get("NPOINTS")||"0");
+    const xun=(get("XUNITS")||"").toUpperCase(),yun=(get("YUNITS")||"").toUpperCase();
+    let m=blk.match(/##(XYDATA|XYPOINTS|PEAK\s*TABLE)\s*=[^\n\r]*[\n\r]+([\s\S]*)/i);
+    if(!m)continue;
+    const kind=m[1].toUpperCase(),body=m[2];
+    let xs=[],ys=[];
+    if(/XYPOINTS|PEAK/.test(kind)){
+      const toks=body.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g)||[];
+      for(let i=0;i+1<toks.length;i+=2){xs.push(+toks[i]*xf);ys.push(+toks[i+1]*yf);}
+    }else{ // XYDATA (X++(Y..Y)) — 逐行解 ASDF
+      const SQZ={"@":0,A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,a:-1,b:-2,c:-3,d:-4,e:-5,f:-6,g:-7,h:-8,i:-9};
+      const DIF={"%":0,J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,j:-1,k:-2,l:-3,m:-4,n:-5,o:-6,p:-7,q:-8,r:-9};
+      const DUP={S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8,s:9};
+      const dx=(npt>1&&isFinite(firstX)&&isFinite(lastX))?(lastX-firstX)/(npt-1):null;
+      for(let raw of body.split(/[\n\r]+/)){
+        const ln=raw.trim();if(!ln||ln.startsWith("##"))break;
+        // tokenize
+        const toks=[];let cur="";
+        const flush=()=>{if(cur!==""){toks.push(cur);cur="";}};
+        for(const ch of ln){
+          if(ch===" "||ch==="\t"||ch===","||ch===";"){flush();}
+          else if(ch==="+"||ch==="-"){flush();cur=ch;}
+          else if(SQZ[ch]!==undefined||DIF[ch]!==undefined||DUP[ch]!==undefined){flush();cur=ch;}
+          else cur+=ch;}
+        flush();
+        if(!toks.length)continue;
+        const lineX=parseFloat(toks[0]);let lastY=null,lastTok=null,started=false;
+        let yline=[];
+        for(let ti=1;ti<toks.length;ti++){
+          const t=toks[ti],h=t[0];
+          if(DUP[h]!==undefined){
+            const cnt=DUP[h]* (t.length>1?Math.pow(10,0):1);let times=DUP[h];
+            if(t.length>1)times=parseInt(String(DUP[h])+t.slice(1));
+            for(let r=1;r<times;r++){ // 重複上一 token 效果
+              if(lastTok&&DIF[lastTok[0]]!==undefined){
+                const v=parseInt((DIF[lastTok[0]]<0?"-":"")+Math.abs(DIF[lastTok[0]])+lastTok.slice(1));
+                lastY+=v;yline.push(lastY);}
+              else if(lastY!==null)yline.push(lastY);}
+            continue;}
+          let v;
+          if(SQZ[h]!==undefined){v=parseInt((SQZ[h]<0?"-":"")+Math.abs(SQZ[h])+t.slice(1));lastY=v;yline.push(v);}
+          else if(DIF[h]!==undefined){v=parseInt((DIF[h]<0?"-":"")+Math.abs(DIF[h])+t.slice(1));lastY=(lastY??0)+v;yline.push(lastY);}
+          else{v=parseFloat(t);if(!isFinite(v))continue;lastY=v;yline.push(v);}
+          lastTok=t;}
+        // DIF 模式行首 Y 為校驗值(與上一行末重複)
+        if(ys.length&&yline.length&&/[%J-Rj-r]/.test(ln.slice(String(toks[0]).length)))
+          if(Math.abs(yline[0]-ys[ys.length-1]/yf)<1e-6*Math.max(1,Math.abs(yline[0])))yline.shift();
+        for(let k=0;k<yline.length;k++){
+          const xi=dx!==null?lineX+k*dx:lineX+k;
+          xs.push(xi*xf);ys.push(yline[k]*yf);}}
+    }
+    if(xs.length>2){
+      let X=Float64Array.from(xs),Y=Float64Array.from(ys);
+      specs.push({name:title,x:X,y:Y,
+        xUnit:/1\/CM|CM-1|WAVENUMBER/.test(xun)?"cm-1":/NANOMETER|NM/.test(xun)?"nm":/MICROMETER/.test(xun)?"um":"",
+        yUnit:/ABSORBANCE/.test(yun)?"A":/TRANSMITTANCE/.test(yun)?(/％|%/.test(yun)?"%T":"T"):"counts"});}}
+  if(!specs.length)throw new Error("JCAMP 內找不到光譜資料");
+  return specs;}
+
+function parseJSONfile(text,name){
+  const j=JSON.parse(text);const out=[];
+  const grab=(o,nm)=>{
+    const xk=["x","X","wavelength","wavenumber","energy","axis"].find(k=>Array.isArray(o[k]));
+    const yk=["y","Y","intensity","absorbance","transmittance","counts","signal"].find(k=>Array.isArray(o[k]));
+    if(xk&&yk)out.push({name:o.name||o.title||nm,x:Float64Array.from(o[xk]),y:Float64Array.from(o[yk]),
+      xUnit:o.xUnit||o.x_unit||"",yUnit:o.yUnit||o.y_unit||"counts",color:o.color});};
+  if(Array.isArray(j)){ // [[x,y],...] pairs 或物件陣列
+    if(j.length&&Array.isArray(j[0])&&j[0].length>=2&&typeof j[0][0]==="number"){
+      out.push({name:nm0(),x:Float64Array.from(j.map(p=>p[0])),y:Float64Array.from(j.map(p=>p[1]))});}
+    else j.forEach((o,i)=>grab(o,name+" ["+(i+1)+"]"));}
+  else if(Array.isArray(j.spectra))j.spectra.forEach((o,i)=>grab(o,name+" ["+(i+1)+"]"));
+  else grab(j,name);
+  function nm0(){return name;}
+  if(!out.length)throw new Error("JSON 結構無法辨識");
+  return out;}
+
+/* ═══════════════ 資料模型 ═══════════════ */
+const PALETTE=["#4fc3f7","#ff7043","#ab47bc","#9ccc65","#ffca28","#26c6da","#ec407a","#8d9bff","#66bb6a","#ffa726"];
+let doc={specs:[],nextColor:0};
+let undoStack=[],redoStack=[];
+let peakMarks=null;   // {id,peaks:[...]}
+let intRegion=null;   // {id,x1,x2}
+const XUNIT_LBL={nm:"波長 (nm)","cm-1":"波數 (cm⁻¹)",um:"波長 (µm)",raman:"Raman 位移 (cm⁻¹)",eV:"能量 (eV)",THz:"頻率 (THz)",keV:"能量 (keV)","":"X"};
+const YUNIT_LBL={A:"吸光度",T:"穿透率","%T":"穿透率 (%)",R:"反射率",KM:"K-M",log1R:"log(1/R)",counts:"強度"};
+
+function newSpec(o){
+  const s={id:Math.random().toString(36).slice(2),name:o.name||"spectrum",
+    x:o.x,y:o.y,color:o.color||PALETTE[doc.nextColor++%PALETTE.length],
+    visible:true,selected:false,xUnit:o.xUnit||"",yUnit:o.yUnit||"counts"};
+  sortSpec(s);return s;}
+function sortSpec(s){ // x 一律遞增
+  let asc=true;for(let i=1;i<s.x.length;i++)if(s.x[i]<s.x[i-1]){asc=false;break;}
+  if(!asc){const idx=Array.from(s.x.keys()).sort((a,b)=>s.x[a]-s.x[b]);
+    s.x=Float64Array.from(idx,i=>s.x[i]);s.y=Float64Array.from(idx,i=>s.y[i]);}}
+function snapshot(){
+  undoStack.push(doc.specs.map(s=>({...s,x:s.x.slice(),y:s.y.slice()})));
+  if(undoStack.length>15)undoStack.shift();
+  redoStack.length=0;updateUndoBtns();}
+function restore(list){doc.specs=list.map(s=>({...s,x:s.x.slice(),y:s.y.slice()}));
+  peakMarks=null;intRegion=null;renderList();fitView();updateUndoBtns();}
+function targets(){ // 選取者;否則全部可見
+  const sel=doc.specs.filter(s=>s.selected);
+  return sel.length?sel:doc.specs.filter(s=>s.visible);}
+
+/* 示範光譜 */
+function gauss(x,c,w,h){return h*Math.exp(-Math.pow((x-c)/w,2)/2);}
+function loadDemo(){
+  snapshot();
+  // FTIR (%T, 4000→400 cm-1)
+  {const x=linspace(400,4000,1800),y=new Float64Array(x.length);
+   const bands=[[3300,120,55],[2920,40,45],[2850,35,30],[1740,25,70],[1460,30,25],[1160,45,40],[1090,35,35],[720,20,15]];
+   for(let i=0;i<x.length;i++){let a=0.02+0.00002*(x[i]-400);
+     for(const[c,w,h]of bands)a+=gauss(x[i],c,w,h)/100;
+     y[i]=100*Math.pow(10,-a)+ (Math.random()-.5)*0.6;}
+   doc.specs.push(newSpec({name:"示範 FTIR (油脂)",x,y,xUnit:"cm-1",yUnit:"%T"}));}
+  // Raman + 螢光背景
+  {const x=linspace(200,3200,1500),y=new Float64Array(x.length);
+   const pk=[[520,8,900],[1001,6,1400],[1340,25,700],[1585,18,1100],[2900,60,500]];
+   for(let i=0;i<x.length;i++){let v=800*Math.exp(-Math.pow((x[i]-1400)/1500,2))+300+0.15*x[i];
+     for(const[c,w,h]of pk)v+=gauss(x[i],c,w,h);
+     y[i]=v+(Math.random()-.5)*40;}
+   doc.specs.push(newSpec({name:"示範 Raman (含螢光)",x,y,xUnit:"raman",yUnit:"counts"}));}
+  // UV-Vis 吸光度
+  {const x=linspace(200,800,900),y=new Float64Array(x.length);
+   for(let i=0;i<x.length;i++)y[i]=gauss(x[i],265,18,1.1)+gauss(x[i],340,30,0.45)+gauss(x[i],520,45,0.25)+0.02+(Math.random()-.5)*0.006;
+   doc.specs.push(newSpec({name:"示範 UV-Vis",x,y,xUnit:"nm",yUnit:"A"}));}
+  // XRF
+  {const x=linspace(0.5,15,1400),y=new Float64Array(x.length);
+   const el=[[3.31,0.05,600,"K"],[3.69,0.05,900,"Ca"],[6.40,0.06,1500,"Fe"],[7.06,0.06,220,"Fe Kβ"],[8.05,0.06,500,"Cu"],[8.64,0.06,700,"Zn"]];
+   for(let i=0;i<x.length;i++){let v=120*Math.exp(-x[i]/4)+20;
+     for(const[c,w,h]of el)v+=gauss(x[i],c,w,h);
+     y[i]=v+(Math.random()-.5)*12;}
+   doc.specs.push(newSpec({name:"示範 XRF (食品礦物)",x,y,xUnit:"keV",yUnit:"counts"}));}
+  renderList();fitView();toast("已載入 4 條示範光譜");}
+
+/* ═══════════════ 座標軸換算 ═══════════════ */
+function xToNm(v,unit,laser){switch(unit){
+  case"nm":return v; case"um":return v*1000; case"cm-1":return 1e7/v;
+  case"eV":return 1239.841984/v; case"THz":return 299792.458/v; case"keV":return 1.239841984/v;
+  case"raman":return 1e7/(1e7/laser - v); default:return v;}}
+function nmToX(nm,unit,laser){switch(unit){
+  case"nm":return nm; case"um":return nm/1000; case"cm-1":return 1e7/nm;
+  case"eV":return 1239.841984/nm; case"THz":return 299792.458/nm; case"keV":return 1.239841984/nm;
+  case"raman":return 1e7/laser - 1e7/nm; default:return nm;}}
+function convertX(spec,to,laser){
+  if(!spec.xUnit||spec.xUnit===to)
+    {if(!spec.xUnit){spec.xUnit=to;return true;}return false;}
+  const n=spec.x.length,nx=new Float64Array(n);
+  for(let i=0;i<n;i++){const nm=xToNm(spec.x[i],spec.xUnit,laser);nx[i]=nmToX(nm,to,laser);}
+  spec.x=nx;spec.xUnit=to;sortSpec(spec);return true;}
+function yToT(v,u){switch(u){ // 統一到 T/R 數值
+  case"T":case"R":return v; case"%T":return v/100; case"A":return Math.pow(10,-v);
+  case"KM":{const K=Math.max(v,0);return 1+K-Math.sqrt(K*K+2*K);} case"log1R":return Math.pow(10,-v);
+  default:return null;}}
+function tToY(t,u){t=clamp(t,1e-8,1e8);switch(u){
+  case"T":case"R":return t; case"%T":return 100*t; case"A":return -Math.log10(t);
+  case"KM":return (1-t)*(1-t)/(2*t); case"log1R":return -Math.log10(t); default:return t;}}
+function convertY(spec,to){
+  if(spec.yUnit===to)return false;
+  if(to==="counts"){spec.yUnit="counts";return true;}
+  if(spec.yUnit==="counts"){spec.yUnit=to;return true;} // 僅改標示
+  const n=spec.y.length,ny=new Float64Array(n);
+  for(let i=0;i<n;i++){const t=yToT(spec.y[i],spec.yUnit);ny[i]=tToY(t,to);}
+  spec.y=ny;spec.yUnit=to;return true;}
+
+/* ═══════════════ 繪圖引擎 ═══════════════ */
+const cv=document.getElementById("plot"),ctx=cv.getContext("2d");
+let view=null; // {x0,x1,y0,y1}
+const disp={flipX:false,grid:true,logY:false,legend:true,stack:0};
+let cursorMode=false,cursorPt=null;
+const M={l:52,r:12,t:10,b:34};
+
+function resizeCanvas(){
+  const r=cv.parentElement.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);draw();}
+window.addEventListener("resize",resizeCanvas);
+
+function dataBounds(){
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity,vi=0;
+  const vis=doc.specs.filter(s=>s.visible);
+  let gy0=Infinity,gy1=-Infinity;
+  for(const s of vis)for(let i=0;i<s.y.length;i++){if(s.y[i]<gy0)gy0=s.y[i];if(s.y[i]>gy1)gy1=s.y[i];}
+  const off=disp.stack/100*(gy1-gy0||1);
+  for(const s of vis){
+    for(let i=0;i<s.x.length;i++){
+      const yv=s.y[i]+off*vi;
+      if(s.x[i]<x0)x0=s.x[i];if(s.x[i]>x1)x1=s.x[i];
+      if(disp.logY&&yv<=0)continue;
+      if(yv<y0)y0=yv;if(yv>y1)y1=yv;}
+    vi++;}
+  if(!isFinite(x0))return null;
+  if(x0===x1){x0-=1;x1+=1;} if(y0===y1){y0-=1;y1+=1;}
+  const py=(y1-y0)*0.06;return {x0,x1,y0:y0-py,y1:y1+py};}
+function fitView(){const b=dataBounds();if(b)view=b;draw();}
+function stackOffVal(){
+  const vis=doc.specs.filter(s=>s.visible);
+  let gy0=Infinity,gy1=-Infinity;
+  for(const s of vis)for(let i=0;i<s.y.length;i++){if(s.y[i]<gy0)gy0=s.y[i];if(s.y[i]>gy1)gy1=s.y[i];}
+  return disp.stack/100*(gy1-gy0||1);}
+function tY(v){return disp.logY?Math.log10(Math.max(v,1e-12)):v;}
+function px(xv){const W=cv.clientWidth-M.l-M.r;
+  let f=(xv-view.x0)/(view.x1-view.x0);if(disp.flipX)f=1-f;return M.l+f*W;}
+function py(yv){const H=cv.clientHeight-M.t-M.b;
+  const a=tY(view.y0),b=tY(view.y1);
+  return M.t+(1-(tY(yv)-a)/(b-a))*H;}
+function invX(p){const W=cv.clientWidth-M.l-M.r;let f=(p-M.l)/W;if(disp.flipX)f=1-f;return view.x0+f*(view.x1-view.x0);}
+function invY(p){const H=cv.clientHeight-M.t-M.b;const a=tY(view.y0),b=tY(view.y1);
+  const t=a+(1-(p-M.t)/H)*(b-a);return disp.logY?Math.pow(10,t):t;}
+
+function niceTicks(a,b,n){const span=b-a,step0=span/n,mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  let step=mag;for(const m of[1,2,2.5,5,10])if(step0<=m*mag){step=m*mag;break;}
+  const t=[];for(let v=Math.ceil(a/step)*step;v<=b+1e-9*span;v+=step)t.push(v);return {t,step};}
+function fmt(v,step){const d=Math.max(0,-Math.floor(Math.log10(step||1)));
+  return Math.abs(v)>=1e5||((Math.abs(v)<1e-4)&&v!==0)?v.toExponential(1):v.toFixed(Math.min(d,6));}
+
+function draw(){
+  const W=cv.clientWidth,H=cv.clientHeight;if(!W)return;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#0d1017";ctx.fillRect(0,0,W,H);
+  document.getElementById("emptystate").style.display=doc.specs.length?"none":"flex";
+  if(!doc.specs.length||!view)return;
+  const pw=W-M.l-M.r,ph=H-M.t-M.b;
+  // 積分區域
+  if(intRegion){const s=doc.specs.find(q=>q.id===intRegion.id);
+    if(s&&s.visible){ctx.fillStyle="rgba(125,180,255,.12)";
+      const a=px(intRegion.x1),b=px(intRegion.x2);
+      ctx.fillRect(Math.min(a,b),M.t,Math.abs(b-a),ph);}}
+  // 格線與刻度
+  const xt=niceTicks(view.x0,view.x1,Math.max(3,Math.floor(pw/70)));
+  let yTicks;
+  if(disp.logY){yTicks={t:[],step:1};
+    for(let e=Math.floor(tY(view.y0));e<=Math.ceil(tY(view.y1));e++)yTicks.t.push(Math.pow(10,e));}
+  else yTicks=niceTicks(view.y0,view.y1,Math.max(3,Math.floor(ph/48)));
+  ctx.font="10.5px 'Space Grotesk',sans-serif";ctx.fillStyle="#8b96ab";
+  ctx.strokeStyle="#232c3d";ctx.lineWidth=1;
+  for(const v of xt.t){const p=px(v);if(p<M.l-1||p>W-M.r+1)continue;
+    if(disp.grid){ctx.beginPath();ctx.moveTo(p,M.t);ctx.lineTo(p,H-M.b);ctx.stroke();}
+    ctx.textAlign="center";ctx.fillText(fmt(v,xt.step),p,H-M.b+14);}
+  for(const v of yTicks.t){const p=py(v);if(p<M.t-1||p>H-M.b+1)continue;
+    if(disp.grid){ctx.beginPath();ctx.moveTo(M.l,p);ctx.lineTo(W-M.r,p);ctx.stroke();}
+    ctx.textAlign="right";ctx.fillText(disp.logY?v.toExponential(0):fmt(v,yTicks.step),M.l-6,p+3.5);}
+  // 邊框
+  ctx.strokeStyle="#2a3446";ctx.strokeRect(M.l+.5,M.t+.5,pw-1,ph-1);
+  // 軸標籤
+  const vis=doc.specs.filter(s=>s.visible);
+  const xu=[...new Set(vis.map(s=>s.xUnit))],yu=[...new Set(vis.map(s=>s.yUnit))];
+  ctx.fillStyle="#8b96ab";ctx.textAlign="center";ctx.font="11px sans-serif";
+  ctx.fillText(xu.length===1?(XUNIT_LBL[xu[0]]||"X"):"X (單位混合)",M.l+pw/2,H-6);
+  ctx.save();ctx.translate(12,M.t+ph/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(yu.length===1?(YUNIT_LBL[yu[0]]||"Y"):"Y",0,0);ctx.restore();
+  // 光譜曲線
+  ctx.save();ctx.beginPath();ctx.rect(M.l,M.t,pw,ph);ctx.clip();
+  const off=stackOffVal();let vi=0;
+  for(const s of vis){
+    ctx.strokeStyle=s.color;ctx.lineWidth=s.selected?2.2:1.4;
+    ctx.beginPath();let started=false;
+    const o=off*vi;
+    for(let i=0;i<s.x.length;i++){
+      const yv=s.y[i]+o;
+      if(disp.logY&&yv<=0){started=false;continue;}
+      const X=px(s.x[i]),Y=py(yv);
+      if(!started){ctx.moveTo(X,Y);started=true;}else ctx.lineTo(X,Y);}
+    ctx.stroke();vi++;}
+  // 峰標記
+  if(peakMarks){const s=doc.specs.find(q=>q.id===peakMarks.id);
+    if(s&&s.visible){const o=off*vis.indexOf(s);
+      ctx.fillStyle="#ffb454";ctx.strokeStyle="#ffb454";ctx.font="10px 'Space Grotesk',sans-serif";
+      for(const p of peakMarks.peaks){const X=px(p.x),Y=py(p.y+o);
+        ctx.beginPath();ctx.moveTo(X,Y-7);ctx.lineTo(X-4,Y-14);ctx.lineTo(X+4,Y-14);ctx.closePath();ctx.fill();
+        ctx.textAlign="center";ctx.fillText(fmt(p.x,Math.abs(p.x)/1e4||0.01),X,Y-18);}}}
+  ctx.restore();
+  // 圖例
+  if(disp.legend&&vis.length){ctx.font="11px sans-serif";let ly=M.t+14;
+    for(const s of vis.slice(0,8)){
+      const label=s.name.length>22?s.name.slice(0,21)+"…":s.name;
+      const tw=ctx.measureText(label).width;
+      const lx=W-M.r-tw-22;
+      ctx.fillStyle="rgba(13,16,23,.6)";ctx.fillRect(lx-4,ly-9,tw+24,14);
+      ctx.strokeStyle=s.color;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(lx,ly-2);ctx.lineTo(lx+13,ly-2);ctx.stroke();
+      ctx.fillStyle="#c8d0de";ctx.textAlign="left";ctx.fillText(label,lx+17,ly+1);
+      ly+=16;}}
+  // 游標
+  if(cursorMode&&cursorPt){
+    const {sx,sy,spec}=cursorPt;const X=px(sx),Y=py(sy);
+    ctx.strokeStyle="rgba(233,237,244,.45)";ctx.setLineDash([4,4]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(X,M.t);ctx.lineTo(X,H-M.b);ctx.moveTo(M.l,Y);ctx.lineTo(W-M.r,Y);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=spec.color;ctx.beginPath();ctx.arc(X,Y,4,0,7);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.stroke();}
+}
+
+/* ═══════════════ 觸控 / 滑鼠互動 ═══════════════ */
+const pointers=new Map();let pinchStart=null,lastTap=0;
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+  if(pointers.size===2){const p=[...pointers.values()];
+    pinchStart={p0:{...p[0]},p1:{...p[1]},view:{...view}};}
+  else if(pointers.size===1){
+    const now=Date.now();
+    if(now-lastTap<300){fitView();lastTap=0;return;}
+    lastTap=now;
+    if(cursorMode)updateCursor(e.offsetX,e.offsetY);}
+});
+cv.addEventListener("pointermove",e=>{
+  if(!pointers.has(e.pointerId)||!view)return;
+  const prev=pointers.get(e.pointerId);
+  const cur={x:e.offsetX,y:e.offsetY};
+  if(pointers.size===1){
+    if(cursorMode){updateCursor(cur.x,cur.y);}
+    else{ // 平移
+      const dx=invX(prev.x)-invX(cur.x),dyv=invY(prev.y)-invY(cur.y);
+      view.x0+=dx;view.x1+=dx;
+      if(!disp.logY){view.y0+=dyv;view.y1+=dyv;}
+      else{const f=Math.pow(10,(tY(invY(prev.y))-tY(invY(cur.y))));view.y0*=f;view.y1*=f;}
+      draw();}
+  }else if(pointers.size===2&&pinchStart){
+    pointers.set(e.pointerId,cur);
+    const p=[...pointers.values()];
+    const dx0=Math.abs(pinchStart.p1.x-pinchStart.p0.x),dx1=Math.abs(p[1].x-p[0].x);
+    const dy0=Math.abs(pinchStart.p1.y-pinchStart.p0.y),dy1=Math.abs(p[1].y-p[0].y);
+    const cx=(p[0].x+p[1].x)/2,cyp=(p[0].y+p[1].y)/2;
+    const v=pinchStart.view;
+    const fx=clamp((dx0+18)/(dx1+18),0.05,20),fy=clamp((dy0+18)/(dy1+18),0.05,20);
+    // 以捏合中心為錨
+    const ax=v.x0+((disp.flipX?( (cv.clientWidth-M.r-cx)):(cx-M.l))/(cv.clientWidth-M.l-M.r))*(v.x1-v.x0);
+    view.x0=ax-(ax-v.x0)*fx; view.x1=ax+(v.x1-ax)*fx;
+    const a0=disp.logY?Math.log10(Math.max(v.y0,1e-12)):v.y0,a1=disp.logY?Math.log10(Math.max(v.y1,1e-12)):v.y1;
+    const ay=a0+(1-(cyp-M.t)/(cv.clientHeight-M.t-M.b))*(a1-a0);
+    let n0=ay-(ay-a0)*fy,n1=ay+(a1-ay)*fy;
+    if(disp.logY){view.y0=Math.pow(10,n0);view.y1=Math.pow(10,n1);}else{view.y0=n0;view.y1=n1;}
+    draw();return;}
+  pointers.set(e.pointerId,cur);
+});
+function endPointer(e){pointers.delete(e.pointerId);if(pointers.size<2)pinchStart=null;}
+cv.addEventListener("pointerup",endPointer);cv.addEventListener("pointercancel",endPointer);
+cv.addEventListener("wheel",e=>{e.preventDefault();if(!view)return;
+  const f=e.deltaY>0?1.15:1/1.15;
+  const ax=invX(e.offsetX);view.x0=ax-(ax-view.x0)*f;view.x1=ax+(view.x1-ax)*f;
+  if(!e.shiftKey){const ay=invY(e.offsetY);
+    if(disp.logY){const la=Math.log10(ay);const l0=tY(view.y0),l1=tY(view.y1);
+      view.y0=Math.pow(10,la-(la-l0)*f);view.y1=Math.pow(10,la+(l1-la)*f);}
+    else{view.y0=ay-(ay-view.y0)*f;view.y1=ay+(view.y1-ay)*f;}}
+  draw();},{passive:false});
+
+function updateCursor(pxl,pyl){
+  const xq=invX(pxl);let best=null;
+  const vis=doc.specs.filter(s=>s.visible),off=stackOffVal();
+  vis.forEach((s,vi)=>{
+    // 二分找最近 x
+    let lo=0,hi=s.x.length-1;
+    while(hi-lo>1){const m=(lo+hi)>>1;if(s.x[m]<xq)lo=m;else hi=m;}
+    for(const i of[lo,hi]){
+      const dx=px(s.x[i])-pxl,dy=py(s.y[i]+off*vi)-pyl,d=dx*dx+dy*dy;
+      if(!best||d<best.d)best={d,sx:s.x[i],sy:s.y[i]+off*vi,rawy:s.y[i],spec:s};}});
+  if(best){cursorPt=best;
+    const ro=document.getElementById("readout");
+    ro.style.display="block";
+    ro.innerHTML=`<span style="color:${best.spec.color}">●</span> ${esc(best.spec.name)} &nbsp; x = <b>${sig(best.sx)}</b> &nbsp; y = <b>${sig(best.rawy)}</b>`;
+    draw();}}
+function sig(v){return Math.abs(v)>=1e5||(Math.abs(v)<1e-3&&v!==0)?v.toExponential(4):(+v.toFixed(4)).toString();}
+function esc(s){return s.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));}
+
+/* ═══════════════ UI:面板/清單 ═══════════════ */
+const sheet=document.getElementById("sheet");
+let activeTab=null,openSpecMenu=null;
+document.querySelectorAll("nav button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    const t=b.dataset.tab;
+    if(activeTab===t&&sheet.classList.contains("open")){closeSheet();return;}
+    activeTab=t;
+    document.querySelectorAll("nav button").forEach(q=>q.classList.toggle("on",q===b));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id===t));
+    sheet.classList.add("open");
+    setTimeout(resizeCanvas,50);});});
+document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",closeSheet));
+function closeSheet(){sheet.classList.remove("open");
+  document.querySelectorAll("nav button").forEach(q=>q.classList.remove("on"));
+  activeTab=null;setTimeout(resizeCanvas,50);}
+
+function renderList(){
+  const el=document.getElementById("speclist");el.innerHTML="";
+  if(!doc.specs.length){el.innerHTML='<div class="hint">尚無光譜。用右上 📂 開檔或載入示範。</div>';draw();return;}
+  doc.specs.forEach(s=>{
+    const row=document.createElement("div");row.className="spec"+(s.selected?" sel":"");
+    row.innerHTML=`<span class="dot" style="background:${s.color}"></span>
+      <span class="nm">${esc(s.name)}<br><span class="un">${s.x.length} 點 · ${XUNIT_LBL[s.xUnit]||"X"} / ${YUNIT_LBL[s.yUnit]||s.yUnit}</span></span>
+      <button class="eye ${s.visible?"":"off"}">👁</button>
+      <button class="more">⋯</button>`;
+    row.querySelector(".dot").addEventListener("click",e=>{e.stopPropagation();
+      s.color=PALETTE[(PALETTE.indexOf(s.color)+1+PALETTE.length)%PALETTE.length];renderList();});
+    row.querySelector(".eye").addEventListener("click",e=>{e.stopPropagation();s.visible=!s.visible;renderList();fitView();});
+    row.querySelector(".more").addEventListener("click",e=>{e.stopPropagation();
+      openSpecMenu=openSpecMenu===s.id?null:s.id;renderList();});
+    row.addEventListener("click",()=>{s.selected=!s.selected;renderList();draw();});
+    el.appendChild(row);
+    if(openSpecMenu===s.id){
+      const act=document.createElement("div");act.className="specact";
+      act.innerHTML=`<button class="btn" data-a="rename">改名</button>
+        <button class="btn" data-a="csv">存 CSV</button>
+        <button class="btn" data-a="dup">複製</button>
+        <button class="btn warn" data-a="del">刪除</button>`;
+      act.addEventListener("click",e=>{
+        const a=e.target.dataset.a;if(!a)return;
+        if(a==="rename"){const nm=prompt("新名稱:",s.name);if(nm){s.name=nm;renderList();draw();}}
+        if(a==="csv")exportCSV(s);
+        if(a==="dup"){snapshot();doc.specs.push(newSpec({name:s.name+" (副本)",x:s.x.slice(),y:s.y.slice(),xUnit:s.xUnit,yUnit:s.yUnit}));renderList();draw();}
+        if(a==="del"){snapshot();doc.specs=doc.specs.filter(q=>q.id!==s.id);openSpecMenu=null;renderList();fitView();}});
+      el.appendChild(act);}});
+  draw();}
+
+/* ═══════════════ 前處理 UI ═══════════════ */
+const OPS=[
+ {id:"sg",name:"平滑:Savitzky-Golay",params:[["win","窗寬(點,奇數)",11],["ord","多項式階",3]],
+  hint:"以區域多項式擬合平滑,保峰形。",
+  run:(s,p)=>({y:savgol(s.y,p.win,p.ord)})},
+ {id:"ma",name:"平滑:移動平均",params:[["win","窗寬(點)",7]],hint:"",
+  run:(s,p)=>({y:movAvg(s.y,p.win)})},
+ {id:"airpls",name:"基線:airPLS (Zhang 2010)",params:[["lam","λ (平滑度)",1e5]],
+  hint:"對 Raman 螢光背景特別有效;λ 越大基線越平。",
+  run:(s,p)=>{const b=baselineAirPLS(s.y,p.lam);return{y:s.y.map((v,i)=>v-b[i])};}},
+ {id:"als",name:"基線:非對稱最小平方 ALS",params:[["lam","λ",1e5],["p","不對稱 p",0.01]],
+  hint:"Eilers ALS;p 越小越貼谷底。",
+  run:(s,p)=>{const b=baselineALS(s.y,p.lam,p.p);return{y:s.y.map((v,i)=>v-b[i])};}},
+ {id:"rb",name:"基線:Rubberband (凸包)",params:[],hint:"以下凸包當基線,適合寬緩背景。",
+  run:s=>{const b=baselineRubberband(s.x,s.y);return{y:s.y.map((v,i)=>v-b[i])};}},
+ {id:"poly",name:"基線:多項式 (ModPoly 疊代)",params:[["deg","階數",3]],hint:"",
+  run:(s,p)=>{const b=baselineModPoly(s.x,s.y,p.deg);return{y:s.y.map((v,i)=>v-b[i])};}},
+ {id:"deriv",name:"微分 (Savitzky-Golay)",params:[["d","階數 1–4",1],["win","窗寬",11],["ord","多項式階",3]],
+  hint:"以平均點距作 Δx。",
+  run:(s,p)=>{const dx=(s.x[s.x.length-1]-s.x[0])/(s.x.length-1);
+    return{y:savgol(s.y,p.win,Math.max(p.ord,p.d),p.d,dx),yUnit:"counts"};}},
+ {id:"nmax",name:"正規化:最大值 = 1",params:[],hint:"",
+  run:s=>{let m=-Infinity;for(const v of s.y)if(v>m)m=v;return{y:s.y.map(v=>v/(m||1)),yUnit:"counts"};}},
+ {id:"nmm",name:"正規化:Min-Max (0..1)",params:[],hint:"",
+  run:s=>{let a=Infinity,b=-Infinity;for(const v of s.y){if(v<a)a=v;if(v>b)b=v;}
+    return{y:s.y.map(v=>(v-a)/((b-a)||1)),yUnit:"counts"};}},
+ {id:"narea",name:"正規化:面積 = 1",params:[],hint:"",
+  run:s=>{const A=Math.abs(trapz(s.x,s.y,0,s.y.length-1))||1;return{y:s.y.map(v=>v/A),yUnit:"counts"};}},
+ {id:"nvec",name:"正規化:向量 (L2)",params:[],hint:"",
+  run:s=>{let q=0;for(const v of s.y)q+=v*v;q=Math.sqrt(q)||1;return{y:s.y.map(v=>v/q),yUnit:"counts"};}},
+ {id:"snv",name:"散射校正:SNV",params:[],hint:"逐條標準化 (y−mean)/sd;NIR 常用。",
+  run:s=>{const n=s.y.length;let m=0;for(const v of s.y)m+=v;m/=n;
+    let sd=0;for(const v of s.y)sd+=(v-m)*(v-m);sd=Math.sqrt(sd/(n-1))||1;
+    return{y:s.y.map(v=>(v-m)/sd),yUnit:"counts"};}},
+ {id:"msc",name:"散射校正:MSC (對可見平均譜)",params:[],hint:"每條對平均譜線性回歸後校正;需 ≥2 條可見光譜。",
+  run:null},
+ {id:"detrend",name:"Detrend (扣一次趨勢)",params:[],hint:"",
+  run:s=>{const b=polyfitEval(s.x,s.y,1);return{y:s.y.map((v,i)=>v-b[i])};}},
+ {id:"crop",name:"裁切 X 範圍",params:[["x1","x₁",0],["x2","x₂",100]],hint:"保留 x₁–x₂ 之間。",
+  run:(s,p)=>{const lo=Math.min(p.x1,p.x2),hi=Math.max(p.x1,p.x2);
+    const idx=[];for(let i=0;i<s.x.length;i++)if(s.x[i]>=lo&&s.x[i]<=hi)idx.push(i);
+    if(idx.length<3)throw new Error("裁切後點數不足");
+    return{x:Float64Array.from(idx,i=>s.x[i]),y:Float64Array.from(idx,i=>s.y[i])};}},
+ {id:"resample",name:"重採樣到均勻格點",params:[["n","點數",1000]],hint:"",
+  run:(s,p)=>{const nx=linspace(s.x[0],s.x[s.x.length-1],Math.max(8,p.n|0));
+    return{x:nx,y:interp1(s.x,s.y,nx)};}},
+];
+const opSel=document.getElementById("opSel");
+OPS.forEach(o=>{const e=document.createElement("option");e.value=o.id;e.textContent=o.name;opSel.appendChild(e);});
+function renderOpParams(){
+  const o=OPS.find(q=>q.id===opSel.value),d=document.getElementById("opParams");
+  d.innerHTML="";
+  o.params.forEach(([k,lbl,def])=>{
+    const r=document.createElement("div");r.className="row";
+    r.innerHTML=`<label>${lbl}</label><input type="number" step="any" data-k="${k}" value="${def}">`;
+    d.appendChild(r);});
+  document.getElementById("opHint").textContent=o.hint||"";}
+opSel.addEventListener("change",renderOpParams);renderOpParams();
+
+document.getElementById("btnApply").addEventListener("click",()=>{
+  const o=OPS.find(q=>q.id===opSel.value);
+  const p={};document.querySelectorAll("#opParams input").forEach(i=>p[i.dataset.k]=parseFloat(i.value));
+  const tg=targets();
+  if(!tg.length){toast("沒有可處理的光譜");return;}
+  const asNew=document.getElementById("asNew").checked;
+  snapshot();
+  try{
+    if(o.id==="msc"){applyMSC(tg,asNew);}
+    else for(const s of tg){
+      const r=o.run(s,p);
+      if(asNew){doc.specs.push(newSpec({name:s.name+" ▸"+o.name.split(":").pop().trim(),
+        x:r.x||s.x.slice(),y:Float64Array.from(r.y),xUnit:s.xUnit,yUnit:r.yUnit||s.yUnit}));}
+      else{if(r.x)s.x=r.x;s.y=Float64Array.from(r.y);if(r.yUnit)s.yUnit=r.yUnit;}}
+    renderList();fitView();toast(`已套用「${o.name}」到 ${tg.length} 條光譜`);
+  }catch(err){undoStack.pop();updateUndoBtns();toast("錯誤:"+err.message);}});
+function applyMSC(tg,asNew){
+  const vis=doc.specs.filter(s=>s.visible);
+  if(vis.length<2)throw new Error("MSC 需要至少 2 條可見光譜");
+  // 共同網格 = 第一條
+  const gx=vis[0].x;
+  const mats=vis.map(s=>interp1(s.x,s.y,gx));
+  const mean=new Float64Array(gx.length);
+  mats.forEach(v=>{for(let i=0;i<v.length;i++)mean[i]+=v[i]/mats.length;});
+  for(const s of tg){
+    const yv=interp1(s.x,s.y,gx);
+    let sxy=0,sxx=0,sx=0,sy=0;const n=gx.length;
+    for(let i=0;i<n;i++){sx+=mean[i];sy+=yv[i];sxy+=mean[i]*yv[i];sxx+=mean[i]*mean[i];}
+    const b=(n*sxy-sx*sy)/((n*sxx-sx*sx)||1e-30),a=(sy-b*sx)/n;
+    const yc=Float64Array.from(yv,(v)=>(v-a)/(b||1e-30));
+    if(asNew)doc.specs.push(newSpec({name:s.name+" ▸MSC",x:gx.slice(),y:yc,xUnit:s.xUnit,yUnit:"counts"}));
+    else{s.x=gx.slice();s.y=yc;s.yUnit="counts";}}}
+
+/* ═══════════════ 分析 UI ═══════════════ */
+let lastPeaks=null;
+document.getElementById("btnPeaks").addEventListener("click",()=>{
+  const tg=targets();if(!tg.length){toast("沒有光譜");return;}
+  const s=tg[0];
+  const prom=parseFloat(document.getElementById("pkProm").value)||5;
+  const dist=parseInt(document.getElementById("pkDist").value)||8;
+  const valley=document.getElementById("pkValley").checked;
+  const pk=findPeaks(s.x,s.y,prom,dist,valley);
+  peakMarks={id:s.id,peaks:pk};lastPeaks={spec:s,peaks:pk};
+  const tw=document.getElementById("pkTblWrap"),tb=document.getElementById("pkTbl");
+  if(!pk.length){tw.style.display="none";toast("找不到符合條件的峰");draw();return;}
+  tb.innerHTML="<tr><th>#</th><th>x</th><th>y</th><th>FWHM</th><th>面積≈</th></tr>"+
+    pk.map((p,i)=>`<tr><td>${i+1}</td><td>${sig(p.x)}</td><td>${sig(p.y)}</td><td>${sig(p.fwhm)}</td><td>${sig(p.area)}</td></tr>`).join("");
+  tw.style.display="block";
+  toast(`「${s.name}」找到 ${pk.length} 個${valley?"谷":"峰"}`);draw();});
+document.getElementById("btnClearPeaks").addEventListener("click",()=>{peakMarks=null;
+  document.getElementById("pkTblWrap").style.display="none";draw();});
+document.getElementById("btnPeakCSV").addEventListener("click",()=>{
+  if(!lastPeaks){toast("請先尋峰");return;}
+  const rows=["index,x,y,FWHM,area"]
+    .concat(lastPeaks.peaks.map((p,i)=>[i+1,p.x,p.y,p.fwhm,p.area].join(",")));
+  download(lastPeaks.spec.name.replace(/\W+/g,"_")+"_peaks.csv",rows.join("\n"),"text/csv");});
+
+document.getElementById("btnIntegrate").addEventListener("click",()=>{
+  const tg=targets();if(!tg.length){toast("沒有光譜");return;}
+  const s=tg[0];
+  let x1=parseFloat(document.getElementById("intX1").value),
+      x2=parseFloat(document.getElementById("intX2").value);
+  if(!isFinite(x1)||!isFinite(x2)){toast("請輸入 x₁ 與 x₂");return;}
+  if(x1>x2)[x1,x2]=[x2,x1];
+  let i0=0,i1=s.x.length-1;
+  while(i0<s.x.length&&s.x[i0]<x1)i0++;
+  while(i1>0&&s.x[i1]>x2)i1--;
+  if(i1-i0<2){toast("區間內點數不足");return;}
+  let area=trapz(s.x,s.y,i0,i1);
+  const useBase=document.getElementById("intBase").checked;
+  let baseArea=0;
+  if(useBase){baseArea=(s.y[i0]+s.y[i1])/2*(s.x[i1]-s.x[i0]);area-=baseArea;}
+  // 重心
+  let num=0,den=0;
+  for(let i=i0;i<i1;i++){
+    const yb1=useBase? s.y[i]-(s.y[i0]+(s.y[i1]-s.y[i0])*(s.x[i]-s.x[i0])/(s.x[i1]-s.x[i0])):s.y[i];
+    num+=s.x[i]*yb1;den+=yb1;}
+  intRegion={id:s.id,x1,x2};
+  const R=document.getElementById("intResult");
+  R.style.display="block";
+  R.innerHTML=`<b>${esc(s.name)}</b><br>面積 = <b>${sig(area)}</b>${useBase?"(已扣線性基線)":""}<br>重心 x̄ = ${sig(den?num/den:NaN)}`;
+  draw();});
+document.getElementById("btnClearInt").addEventListener("click",()=>{intRegion=null;
+  document.getElementById("intResult").style.display="none";draw();});
+
+document.getElementById("btnMath").addEventListener("click",()=>{
+  const op=document.getElementById("mathOp").value;
+  const sel=doc.specs.filter(s=>s.selected);
+  snapshot();
+  try{
+    if(op==="mean"){
+      const tg=sel.length?sel:doc.specs.filter(s=>s.visible);
+      if(tg.length<2)throw new Error("平均需要 ≥2 條光譜(先選取)");
+      const gx=tg[0].x;const acc=new Float64Array(gx.length);
+      tg.forEach(s=>{const v=interp1(s.x,s.y,gx);for(let i=0;i<v.length;i++)acc[i]+=v[i]/tg.length;});
+      doc.specs.push(newSpec({name:"平均("+tg.length+"條)",x:gx.slice(),y:acc,xUnit:tg[0].xUnit,yUnit:tg[0].yUnit}));
+    }else{
+      if(sel.length<2)throw new Error("請先選取兩條光譜(A=第一、B=第二)");
+      const A=sel[0],B=sel[1];
+      // 重疊區
+      const lo=Math.max(A.x[0],B.x[0]),hi=Math.min(A.x[A.x.length-1],B.x[B.x.length-1]);
+      if(hi<=lo)throw new Error("兩條光譜 X 範圍不重疊");
+      const idx=[];for(let i=0;i<A.x.length;i++)if(A.x[i]>=lo&&A.x[i]<=hi)idx.push(i);
+      const gx=Float64Array.from(idx,i=>A.x[i]);
+      const ya=Float64Array.from(idx,i=>A.y[i]),yb=interp1(B.x,B.y,gx);
+      const f={sub:(a,b)=>a-b,add:(a,b)=>a+b,mul:(a,b)=>a*b,div:(a,b)=>a/(b||1e-30)}[op];
+      const sym={sub:"−",add:"+",mul:"×",div:"÷"}[op];
+      const y=Float64Array.from(ya,(v,i)=>f(v,yb[i]));
+      doc.specs.push(newSpec({name:`${A.name} ${sym} ${B.name}`,x:gx,y,xUnit:A.xUnit,yUnit:A.yUnit}));}
+    renderList();fitView();toast("已建立新光譜");
+  }catch(err){undoStack.pop();updateUndoBtns();toast(err.message);}});
+
+/* ═══════════════ 座標軸 UI ═══════════════ */
+const xUnitSel=document.getElementById("xUnitSel");
+xUnitSel.addEventListener("change",()=>{
+  document.getElementById("laserRow").style.display=
+    (xUnitSel.value==="raman"||doc.specs.some(s=>s.xUnit==="raman"))?"flex":"none";});
+document.getElementById("btnXConv").addEventListener("click",()=>{
+  const to=xUnitSel.value,laser=parseFloat(document.getElementById("laserNm").value)||532;
+  const tg=targets();if(!tg.length){toast("沒有光譜");return;}
+  const needLaser=to==="raman"||tg.some(s=>s.xUnit==="raman");
+  if(needLaser)document.getElementById("laserRow").style.display="flex";
+  snapshot();let n=0;
+  for(const s of tg)if(convertX(s,to,laser))n++;
+  if(!n){undoStack.pop();updateUndoBtns();toast("單位相同,未轉換");}
+  else{renderList();fitView();toast(`已轉換 ${n} 條光譜 X → ${XUNIT_LBL[to]}`);}});
+document.getElementById("btnYConv").addEventListener("click",()=>{
+  const to=document.getElementById("yUnitSel").value;
+  const tg=targets();if(!tg.length){toast("沒有光譜");return;}
+  snapshot();let n=0;
+  for(const s of tg)if(convertY(s,to))n++;
+  if(!n){undoStack.pop();updateUndoBtns();toast("單位相同,未轉換");}
+  else{renderList();fitView();toast(`已轉換 ${n} 條光譜 Y → ${YUNIT_LBL[to]}`);}});
+["flipX","showGrid","logY","showLegend"].forEach(id=>{
+  document.getElementById(id).addEventListener("change",e=>{
+    if(id==="flipX")disp.flipX=e.target.checked;
+    if(id==="showGrid")disp.grid=e.target.checked;
+    if(id==="logY"){disp.logY=e.target.checked;fitView();return;}
+    if(id==="showLegend")disp.legend=e.target.checked;
+    draw();});});
+document.getElementById("stackOff").addEventListener("input",e=>{
+  disp.stack=+e.target.value;
+  document.getElementById("stackVal").textContent=disp.stack+"%";fitView();});
+
+/* ═══════════════ 檔案開啟 / 匯出 ═══════════════ */
+const fileInput=document.getElementById("fileinput");
+document.getElementById("btnOpen").addEventListener("click",()=>fileInput.click());
+document.getElementById("btnOpen2").addEventListener("click",()=>fileInput.click());
+fileInput.addEventListener("change",async e=>{
+  const files=[...e.target.files];if(!files.length)return;
+  snapshot();let ok=0,fail=[];
+  for(const f of files){
+    try{
+      const text=await f.text();
+      const ext=(f.name.split(".").pop()||"").toLowerCase();
+      const base=f.name.replace(/\.[^.]+$/,"");
+      let specs;
+      if(ext==="dx"||ext==="jdx")specs=parseJCAMP(text,base);
+      else if(ext==="json"){
+        const j=JSON.parse(text);
+        if(j&&j.__spectraview__){ // 工作階段
+          doc.specs=j.spectra.map(o=>newSpec({name:o.name,x:Float64Array.from(o.x),y:Float64Array.from(o.y),xUnit:o.xUnit,yUnit:o.yUnit,color:o.color}));
+          renderList();fitView();toast("已載入工作階段");fileInput.value="";return;}
+        specs=parseJSONfile(text,base);}
+      else specs=parseASCII(text,base);
+      specs.forEach(sp=>doc.specs.push(newSpec(sp)));ok+=specs.length;
+    }catch(err){fail.push(f.name+"("+err.message+")");}}
+  fileInput.value="";
+  renderList();fitView();
+  toast(`載入 ${ok} 條光譜`+(fail.length?`;失敗:${fail.join("、")}`:""));});
+
+function download(name,content,mime){
+  const blob=content instanceof Blob?content:new Blob([content],{type:mime});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+function exportCSV(s){
+  const rows=[`# ${s.name}`,`# x:${XUNIT_LBL[s.xUnit]||"X"}  y:${YUNIT_LBL[s.yUnit]||s.yUnit}`,"x,y"];
+  for(let i=0;i<s.x.length;i++)rows.push(s.x[i]+","+s.y[i]);
+  download(s.name.replace(/\W+/g,"_")+".csv",rows.join("\n"),"text/csv");}
+document.getElementById("btnCSVsel").addEventListener("click",()=>{
+  const tg=targets();if(!tg.length){toast("沒有光譜");return;}
+  tg.forEach(exportCSV);toast(`已匯出 ${tg.length} 個 CSV`);});
+document.getElementById("btnCSVmerge").addEventListener("click",()=>{
+  const vis=doc.specs.filter(s=>s.visible);
+  if(!vis.length){toast("沒有可見光譜");return;}
+  const lo=Math.max(...vis.map(s=>s.x[0])),hi=Math.min(...vis.map(s=>s.x[s.x.length-1]));
+  if(hi<=lo){toast("光譜 X 範圍沒有共同區段");return;}
+  const n=Math.min(2000,Math.max(...vis.map(s=>s.x.length)));
+  const gx=linspace(lo,hi,n);
+  const cols=vis.map(s=>interp1(s.x,s.y,gx));
+  const rows=["x,"+vis.map(s=>'"'+s.name.replace(/"/g,"'")+'"').join(",")];
+  for(let i=0;i<n;i++)rows.push(gx[i]+","+cols.map(c=>c[i]).join(","));
+  download("merged_spectra.csv",rows.join("\n"),"text/csv");toast("已匯出合併 CSV");});
+document.getElementById("btnPNG").addEventListener("click",()=>{
+  cv.toBlob(b=>download("spectra.png",b),"image/png");});
+document.getElementById("btnSession").addEventListener("click",()=>{
+  const j={__spectraview__:1,spectra:doc.specs.map(s=>({name:s.name,color:s.color,
+    xUnit:s.xUnit,yUnit:s.yUnit,x:Array.from(s.x),y:Array.from(s.y)}))};
+  download("session.spectraview.json",JSON.stringify(j),"application/json");});
+
+/* ═══════════════ 其他控制 ═══════════════ */
+document.getElementById("btnDemo").addEventListener("click",loadDemo);
+document.getElementById("btnDemo2").addEventListener("click",loadDemo);
+document.getElementById("btnFit").addEventListener("click",fitView);
+document.getElementById("btnCursor").addEventListener("click",e=>{
+  cursorMode=!cursorMode;e.currentTarget.classList.toggle("on",cursorMode);
+  if(!cursorMode){cursorPt=null;document.getElementById("readout").style.display="none";draw();}
+  else toast("游標模式:在圖上拖曳讀取座標");});
+document.getElementById("btnUndo").addEventListener("click",()=>{
+  if(!undoStack.length)return;
+  redoStack.push(doc.specs.map(s=>({...s,x:s.x.slice(),y:s.y.slice()})));
+  restore(undoStack.pop());toast("已復原");});
+document.getElementById("btnRedo").addEventListener("click",()=>{
+  if(!redoStack.length)return;
+  undoStack.push(doc.specs.map(s=>({...s,x:s.x.slice(),y:s.y.slice()})));
+  restore(redoStack.pop());toast("已重做");});
+function updateUndoBtns(){
+  document.getElementById("btnUndo").disabled=!undoStack.length;
+  document.getElementById("btnRedo").disabled=!redoStack.length;}
+document.getElementById("btnSelAll").addEventListener("click",()=>{doc.specs.forEach(s=>s.selected=true);renderList();});
+document.getElementById("btnSelNone").addEventListener("click",()=>{doc.specs.forEach(s=>s.selected=false);renderList();});
+document.getElementById("btnDelSel").addEventListener("click",()=>{
+  const sel=doc.specs.filter(s=>s.selected);if(!sel.length){toast("未選取光譜");return;}
+  snapshot();doc.specs=doc.specs.filter(s=>!s.selected);renderList();fitView();});
+
+let toastTimer=null;
+function toast(msg){const t=document.getElementById("toast");
+  t.textContent=msg;t.style.display="block";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display="none",2600);}
+
+/* 拖放 */
+document.addEventListener("dragover",e=>e.preventDefault());
+document.addEventListener("drop",e=>{e.preventDefault();
+  if(e.dataTransfer&&e.dataTransfer.files.length){
+    fileInput.files=e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event("change"));}});
+
+updateUndoBtns();renderList();resizeCanvas();
+</script>
+</body>
+</html>
