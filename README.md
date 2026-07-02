@@ -3,7 +3,7 @@
 [![tests](https://github.com/Tai-ShengYeh/spectraview/actions/workflows/tests.yml/badge.svg)](https://github.com/Tai-ShengYeh/spectraview/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-📖 **教學頁：[光譜 × 食品分析（化學計量學）](https://tai-shengyeh.github.io/spectraview/)** ｜ 課程入口：[食品科學教學課程](https://tai-shengyeh.github.io/) ｜ 📝 [更新說明（Changelog）](CHANGELOG.md)
+📖 **教學頁：[光譜 × 食品分析（化學計量學）](https://tai-shengyeh.github.io/spectraview/)** ｜ 課程入口：[食品科學教學課程](https://tai-shengyeh.github.io/) ｜ 📝 [更新說明（Changelog）](CHANGELOG.md) ｜ 🍊 [Orange 光譜 widgets](orange-spectra/)（[教學](https://tai-shengyeh.github.io/spectraview/orange.html)）
 
 一個受 [SpectraGryph](https://www.effemm2.de/spectragryph/) 啟發、用 Python 寫的**桌面光譜檢視與處理程式**。
 專為食品分析 / 儀器分析教學與研究設計，可載入、疊圖檢視、換算座標軸、做前處理的
@@ -180,6 +180,20 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
 ![2D-COS](docs/cos2d.png)
 
 > 2D-COS 同步（對角自相關峰＋off-diagonal 交叉峰）與異步（反對稱、顯示變化先後）相關圖。
+
+---
+
+## Orange Data Mining widgets（orange-spectra）
+
+[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：四個光譜學
+widgets（貼 IRUG/SOPRANO 網址匯入光譜、相似度比對、`.speclib` 光譜庫建立與搜尋、NNLS
+混合光譜成分分析），演算法與光譜庫格式跟 SpectraView 完全互通。
+
+```bash
+pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+```
+
+📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>
 
 ---
 
