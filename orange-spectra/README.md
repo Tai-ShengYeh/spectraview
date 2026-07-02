@@ -45,4 +45,4 @@ QT_QPA_PLATFORM=offscreen python tests/test_widgets.py      # widget 煙霧測�
 - URL 匯入支援 IRUG 詳情頁（jqPlot 內嵌資料）、SOPRANO 頁（Dygraph 內嵌資料）、
   JCAMP-DX（AFFN 純數字格式）與兩欄 CSV/TSV。壓縮的 JCAMP（SQZ/DIF）請改用
   SpectraView 開啟後匯出。
-- 教學網頁：<https://tai-shengyeh.github.io/spectraview/docs/orange.html>
+- 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>
