@@ -13,6 +13,7 @@ authors = [{ name = "Tai-Sheng Yeh" }]
 dependencies = [
     "numpy>=1.23",
     "scipy>=1.9",
+    "matplotlib>=3.6",
     "Orange3>=3.34",
 ]
 

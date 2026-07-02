@@ -143,5 +143,52 @@ gx, ys = core.merge_spectra([core.make_spectrum([0, 1, 2], [1, 2, 3]),
                              core.make_spectrum([0.5, 1.5, 2.5], [5, 6, 7])])
 check("merge overlap grid", gx[0] >= 0.5 and gx[-1] <= 2.0 and len(ys) == 2)
 
+print("== aquagram (aquaphotomics) ==")
+check("12 standard WAMACs", len(core.WAMACS) == 12)
+# NIR spectra over the water region; two "groups" differing at one water band.
+wl = np.linspace(1300, 1600, 300)
+base = 0.5 + 0.1 * np.exp(-((wl - 1440) ** 2) / (2 * 30 ** 2))
+specs_a = [core.make_spectrum(wl, base + 0.02 * i + rng_noise, name=f"A{i}",
+                              x_label="wavelength (nm)")
+           for i, rng_noise in enumerate([0.0, 0.001, -0.001])]
+bumped = base + 0.05 * np.exp(-((wl - 1492) ** 2) / (2 * 8 ** 2))
+specs_b = [core.make_spectrum(wl, bumped + 0.02 * i, name=f"B{i}",
+                              x_label="wavelength (nm)") for i in range(3)]
+allspec = specs_a + specs_b
+
+raw = core.aquagram_coordinates(allspec, normalization="raw")
+check("raw: n×12 matrix", raw["values"].shape == (6, 12))
+check("raw: values are the absorbance (~0.5)", 0.4 < raw["values"][0].mean() < 0.8)
+check("raw: WAMACs covered by 1300-1600 range", raw["covered"])
+
+aq = core.aquagram_coordinates(allspec, normalization="aquagram")
+check("aquagram: each band standardized (col mean ~0)",
+      np.allclose(aq["values"].mean(axis=0), 0, atol=1e-9))
+check("aquagram: each band unit std",
+      np.allclose(aq["values"].std(axis=0), 1, atol=1e-9))
+# 1492 nm band separates group B (bumped) from A -> its column splits by sign
+i1492 = list(core.WAMACS).index(1492.0)
+colA = aq["values"][:3, i1492].mean()
+colB = aq["values"][3:, i1492].mean()
+check("aquagram: 1492nm band separates the two groups", colB - colA > 1.0)
+
+snv = core.aquagram_coordinates(allspec, normalization="snv")
+check("snv: n×12 matrix, not standardized across set",
+      snv["values"].shape == (6, 12)
+      and not np.allclose(snv["values"].mean(axis=0), 0, atol=1e-6))
+
+check("custom bands honored",
+      core.aquagram_coordinates(allspec, wamacs=[1400, 1450, 1500])
+      ["values"].shape == (6, 3))
+try:
+    core.aquagram_coordinates(allspec, normalization="nope")
+    check("bad normalization raises", False)
+except ValueError:
+    check("bad normalization raises", True)
+# WAMACs outside the measured range -> covered flag False
+oor = core.aquagram_coordinates([core.make_spectrum(np.linspace(1400, 1450, 50),
+                                 np.ones(50), name="narrow")])
+check("out-of-range WAMACs flagged (covered=False)", not oor["covered"])
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

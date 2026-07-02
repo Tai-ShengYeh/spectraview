@@ -365,3 +365,62 @@ def merge_spectra(spectra: list):
     n = max(s["x"].size for s in spectra)
     gx = np.linspace(lo, hi, n)
     return gx, [np.interp(gx, s["x"], s["y"]) for s in spectra]
+
+
+# ================================================================ aquagram
+# The 12 water matrix coordinates (WAMACs, nm) — Tsenkova aquaphotomics.
+WAMACS = [1342.0, 1364.0, 1372.0, 1382.0, 1398.0, 1410.0,
+          1438.0, 1444.0, 1464.0, 1474.0, 1492.0, 1516.0]
+
+AQUAGRAM_NORMS = ["raw", "snv", "aquagram"]
+
+
+def _snv(y: np.ndarray) -> np.ndarray:
+    """Standard Normal Variate: centre and scale each spectrum by its own stats."""
+    mu = y.mean()
+    sd = y.std()
+    return (y - mu) / sd if sd > _EPS else y - mu
+
+
+def aquagram_coordinates(spectra: list, wamacs=None, normalization: str = "aquagram"):
+    """Compute Aquagram coordinates (absorbance at the 12 WAMACs) for spectra.
+
+    normalization:
+      * "raw"      — absorbance sampled at each WAMAC, as-is.
+      * "snv"      — SNV each spectrum first, then sample at the WAMACs.
+      * "aquagram" — SNV, then standardise **across the sample set** at each WAMAC
+                     (value − column mean) / column std. This is the classic
+                     "normalized aquagram" (nirpyresearch / Tsenkova): 0 = the
+                     group average, ± = above/below average water absorbance.
+
+    Returns {wamacs, names, values (n×12), normalization}.
+    """
+    if normalization not in AQUAGRAM_NORMS:
+        raise ValueError(f"normalization must be one of {AQUAGRAM_NORMS}")
+    bands = np.asarray(wamacs if wamacs is not None else WAMACS, float)
+    if bands.size < 3:
+        raise ValueError("Need at least 3 WAMACs bands.")
+    specs = [s for s in spectra if s["x"].size >= 2]
+    if not specs:
+        raise ValueError("No usable spectra.")
+
+    # Warn (softly) if the WAMACs fall outside a spectrum's measured range: np.interp
+    # clamps at the ends, so out-of-range bands would all read the edge value.
+    lo = max(s["x"][0] for s in specs)
+    hi = min(s["x"][-1] for s in specs)
+    covered = bool(bands.min() >= lo - 1e-9 and bands.max() <= hi + 1e-9)
+
+    rows = []
+    for s in specs:
+        y = _snv(s["y"]) if normalization in ("snv", "aquagram") else s["y"]
+        rows.append(np.interp(bands, s["x"], y))
+    values = np.vstack(rows)
+
+    if normalization == "aquagram":
+        mu = values.mean(axis=0)
+        sd = values.std(axis=0)
+        sd = np.where(sd > _EPS, sd, 1.0)
+        values = (values - mu) / sd
+
+    return {"wamacs": bands, "names": [s["name"] for s in specs],
+            "values": values, "normalization": normalization, "covered": covered}

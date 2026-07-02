@@ -80,8 +80,8 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">光譜</span> Widgets</h1>
-  <p>四個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
-     算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜成分——全程拖拉連線、免寫程式。</p>
+  <p>五個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
+     算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜成分、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
     <a class="btn ghost" href="#widgets">Widget 教學</a>
@@ -94,7 +94,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>四個 Widgets，一條龍的光譜鑑定流程</h2>
+  <h2>五個 Widgets，一條龍的光譜鑑定流程</h2>
   <p class="lead">安裝後 Orange 工具箱會多一個 <b>Spectra</b> 分類。輸出的資料表採
      <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a> 慣例
      （每一欄＝一個波數、每一列＝一條光譜），可直接接 PCA、PLS、階層式分群等 Orange 原生流程。</p>
@@ -118,6 +118,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M5 34 Q13 32 17 20 T28 14 Q31 28 36 23 T44 28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M5 34 Q13 33 18 27 T30 24 Q34 30 44 28" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/></svg>
       <h3>Mixture Analysis</h3>
       <p>混合光譜 ≈ Σ cᵢ·參考譜ᵢ 的非負最小平方（NNLS）分解：回報每個成分的係數、百分比與擬合 R²，並疊出擬合曲線與殘差。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.5"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="5"/></g><polygon points="24,10 33,17 32,30 24,34 15,29 16,17" fill="#ffd54f" fill-opacity="0.55" stroke="#fff" stroke-width="1.6"/><circle cx="24" cy="24" r="2" fill="#fff"/></svg>
+      <h3>Aquagram（水光譜學）</h3>
+      <p>Aquaphotomics 分析：在水的 12 個特徵吸收帶（WAMACs）取正規化吸光度，畫成 12 軸雷達圖，比較不同樣品／擾動下水的氫鍵結構差異。</p>
     </div>
   </div>
 </section>
@@ -202,6 +207,25 @@ pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=or
       <li><i>Composition</i> 輸出接 <b>Data Table</b> 或 <b>Bar Plot</b> 畫成分比例；<i>Fit</i> 輸出含 mixture / NNLS fit / residual 三列。</li>
     </ol>
     <div class="note"><b>教學重點：</b>殘差若仍有明顯峰形，代表庫裡少了某個成分——這正是「參考譜不完整」的視覺證據。</div>
+  </div>
+
+  <div class="wsec">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.5"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="5"/></g><polygon points="24,10 33,17 32,30 24,34 15,29 16,17" fill="#ffd54f" fill-opacity="0.55" stroke="#fff" stroke-width="1.6"/><circle cx="24" cy="24" r="2" fill="#fff"/></svg>
+      Aquagram — 水光譜學（aquaphotomics）雷達圖</h3>
+    <div class="io"><b>輸入</b>：Data（NIR 光譜，需涵蓋約 1300–1600 nm 的水吸收區）　<b>輸出</b>：Aquagram Coordinates（每列一條光譜、12 個 WAMACs 欄）</div>
+    <p class="lead"><b>Aquaphotomics</b>（Tsenkova）用水在近紅外的 <b>12 個特徵吸收帶</b>（WAMACs，water matrix coordinates，約 1336–1522 nm）當「水的指紋」，把樣品在這 12 個座標的正規化吸光度畫成雷達圖，比較不同狀態（溫度、濃度、品種…擾動）下水的氫鍵結構變化。做法參考 <a href="https://nirpyresearch.com/aquagrams-python-matplotlib/">NIRPY Research 的 aquagram 教學</a>。</p>
+    <ol>
+      <li>接上 NIR 光譜（可先用 Import Spectrum URL / File 載入，或接 Orange-Spectroscopy 的前處理）。</li>
+      <li>選正規化方式：
+        <ul>
+          <li><b>raw</b>：直接取 12 個波段的吸光度。</li>
+          <li><b>snv</b>：先對每條光譜做 SNV（標準常態變量），再取值。</li>
+          <li><b>aquagram</b>（預設，經典正規化）：SNV 後，對整組樣品在每個波段做標準化 (值−均值)/標準差——<b>0 就是這組的平均水譜</b>，往外 = 該波段吸光度高於平均、往內 = 低於平均。</li>
+        </ul></li>
+      <li>右側即時畫出 12 軸雷達圖，每條光譜一條線；WAMACs 波段可在輸入框自訂（預設標準 12 帶）。</li>
+      <li><i>Aquagram Coordinates</i> 輸出是 n×12 的資料表，可再接 PCA、分群或 Data Table 做量化比較。</li>
+    </ol>
+    <div class="note"><b>波段說明：</b>預設 12 WAMACs（nm）＝1342, 1364, 1372, 1382, 1398, 1410, 1438, 1444, 1464, 1474, 1492, 1516；分別對應水的不同氫鍵物種（自由水 OH、S₀–S₄ 水簇、水合等）。若光譜單位不是 nm 或未涵蓋此區，widget 會提示波段落在範圍外。</div>
   </div>
 </section>
 
