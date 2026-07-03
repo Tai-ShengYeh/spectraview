@@ -130,17 +130,37 @@
 <!-- ======================= install ======================= -->
 <section id="install">
   <div class="kicker">Install</div>
-  <h2>安裝（兩行指令）</h2>
-  <p class="lead">需要 Python 3.9+。先裝 Orange（若已裝可跳過），再從 GitHub 裝 widgets：</p>
-<pre class="code"><span class="c"># 1) Orange Data Mining（已安裝者跳過；也可用官方安裝檔）</span>
-pip install orange3
+  <h2>安裝</h2>
+  <div class="note"><b>先搞清楚你的 Orange 是哪一種——這決定安裝方式：</b><br>
+    ▸ <b>桌面版 App</b>（從 <a href="https://orangedatamining.com/">orangedatamining.com</a> 下載的獨立程式，點圖示開）→ 走 <b>方式 A</b>。<br>
+    ▸ <b>pip 版 Orange</b>（自己 <code>pip install orange3</code>、用 <code>python -m Orange.canvas</code> 開）→ 走 <b>方式 B</b>。<br>
+    兩者的 Python 環境不同，裝錯環境 widgets 不會出現。</div>
 
-<span class="c"># 2) orange-spectra widgets（直接從 GitHub 安裝）</span>
-pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</pre>
-  <div class="step"><div class="n">3</div><div><h4>重新啟動 Orange</h4>
-    <p>執行 <code>python -m Orange.canvas</code>（或開啟 Orange 應用程式），左側工具箱會出現新的 <b>Spectra</b> 分類，內含四個 widgets。</p></div></div>
-  <div class="note"><b>提示：</b>若學校電腦無法連 GitHub，也可先下載整個 repo 的 ZIP，解壓後
-    <code>pip install ./spectraview-main/orange-spectra</code>。</div>
+  <h3 style="margin-top:20px;">方式 A ── 桌面版 App（最推薦）</h3>
+  <p class="lead">用 App 內建的 Add-ons 對話框，從 PyPI 依名稱安裝：</p>
+  <div class="step"><div class="n">1</div><div><h4>開 Add-ons</h4><p>Orange 選單 <b>Options ▸ Add-ons…</b></p></div></div>
+  <div class="step"><div class="n">2</div><div><h4>Add more… 輸入名稱</h4>
+    <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 5 個 widgets。</p></div></div>
+  <div class="note"><b>找不到 <code>orange-spectra</code>？</b>代表尚未發佈到 PyPI。發佈方式見
+    <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>；
+    在那之前，桌面版可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
+    <code>…\Orange\python.exe</code>）執行
+    <code>python.exe -m pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>。</div>
+
+  <h3 style="margin-top:26px;">方式 B ── pip 版 Orange</h3>
+<pre class="code"><span class="c"># 1) Orange 與 Qt 綁定（缺 PyQt5 會出現 "PyQt5 ... not available" 而開不了）</span>
+pip install orange3 PyQt5 PyQtWebEngine
+
+<span class="c"># 2) orange-spectra widgets（直接從 GitHub 裝）</span>
+pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+
+<span class="c"># 3) 啟動（用這個指令，不要點桌面 App 圖示——那是另一個環境）</span>
+python -m Orange.canvas</pre>
+  <div class="note"><b>常見錯誤：</b><br>
+    ▸ <code>ImportError: PyQt5 … not available</code> → 少裝 Qt，補
+      <code>pip install PyQt5 PyQtWebEngine</code>。<br>
+    ▸ Add-ons 的 Add more… 貼 git 網址得到「packages were not found」→ 那個框只接受 PyPI 名稱，git 網址請走方式 B 的 <code>pip install</code>。</div>
 </section>
 
 <!-- ======================= widgets ======================= -->

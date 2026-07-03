@@ -10,12 +10,26 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Tai-Sheng Yeh" }]
+# "Orange3 add-on" keyword lets the Orange Add-ons dialog discover this on PyPI.
+keywords = ["orange3", "orange3 add-on", "spectroscopy", "aquaphotomics",
+            "IRUG", "SOPRANO", "chemometrics", "NIR", "Raman", "FTIR"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Framework :: Orange3",
+]
 dependencies = [
     "numpy>=1.23",
     "scipy>=1.9",
     "matplotlib>=3.6",
     "Orange3>=3.34",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra"
+Tutorial = "https://tai-shengyeh.github.io/spectraview/orange.html"
 
 [project.entry-points."orange.widgets"]
 Spectra = "orangespectra.widgets"

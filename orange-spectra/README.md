@@ -19,13 +19,23 @@ PCA / PLS 等化學計量學流程。
 
 ## 安裝 Install
 
+> ⚠️ **先確認你的 Orange 是哪一種**——桌面版 App 與 pip 版是不同的 Python 環境，裝錯不會出現 widgets。
+
+**A. 桌面版 App**（orangedatamining.com 下載的獨立程式）：
+`Options ▸ Add-ons… ▸ Add more…` 輸入 **`orange-spectra`**（只吃 PyPI 名稱，**不吃** git 網址）→ 打勾 → OK → 重啟。
+需先發佈到 PyPI（見 [`PUBLISHING.md`](PUBLISHING.md)）；發佈前可用 App 的 Python 執行下面 pip 指令裝進 App 環境。
+
+**B. pip 版 Orange**（`python -m Orange.canvas` 啟動）：
 ```bash
-pip install orange3            # 若尚未安裝 Orange
+pip install orange3 PyQt5 PyQtWebEngine   # Orange + Qt 綁定（缺 Qt 會開不了）
 pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+python -m Orange.canvas                    # 用這個開，別點 App 圖示（是另一個環境）
 ```
 
-重新啟動 Orange，工具箱會出現 **Spectra** 分類。
-Restart Orange; a **Spectra** category appears in the toolbox.
+重新啟動 Orange，工具箱會出現 **Spectra** 分類（5 個 widgets）。
+Restart Orange; a **Spectra** category (5 widgets) appears in the toolbox.
+
+常見錯誤：`ImportError: PyQt5 … not available` = 少裝 Qt，補 `pip install PyQt5 PyQtWebEngine`。
 
 ## 快速上手 Quick start
 
