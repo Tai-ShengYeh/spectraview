@@ -20,3 +20,4 @@ Thumbs.db
 *.log
 tmp/
 scratch/
+orange-spectra/validation/corn.mat
