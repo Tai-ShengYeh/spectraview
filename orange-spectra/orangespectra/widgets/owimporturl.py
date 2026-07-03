@@ -10,6 +10,7 @@ from Orange.widgets.widget import Msg, Output, OWWidget
 
 from ..core import load_spectrum_url
 from ..table_io import table_from_spectra
+from ._help import add_help
 
 _COLORS = ["#4c72b0", "#dd8452", "#55a868", "#c44e52", "#8172b3",
            "#937860", "#da8bc3", "#8c8c8c", "#ccb974", "#64b5cd"]
@@ -38,6 +39,11 @@ class OWImportSpectrumURL(OWWidget):
     def __init__(self):
         super().__init__()
         self._spectra: list[dict] = []
+
+        add_help(self,
+                 "貼上 IRUG 編號（如 4119）、IRUG/SOPRANO 頁面網址，或 JCAMP-DX/CSV "
+                 "直接網址，按 Fetch。可連抓多條累積；輸出接 Data Table 或其他 widget。\n"
+                 "Paste an IRUG id / page URL / file URL and Fetch.", "importurl")
 
         box = gui.widgetBox(self.controlArea, "Source")
         gui.label(box, self, "IRUG id (e.g. 4119), IRUG/SOPRANO page URL,\n"

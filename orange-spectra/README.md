@@ -56,4 +56,6 @@ QT_QPA_PLATFORM=offscreen python tests/test_widgets.py      # widget 煙霧測�
 - URL 匯入支援 IRUG 詳情頁（jqPlot 內嵌資料）、SOPRANO 頁（Dygraph 內嵌資料）、
   JCAMP-DX（AFFN 純數字格式）與兩欄 CSV/TSV。壓縮的 JCAMP（SQZ/DIF）請改用
   SpectraView 開啟後匯出。
-- 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>
+- 每個 widget 左上角有「ℹ 說明 How to use」盒子與「📖 開啟線上教學」按鈕。
+- 安裝**一次**即可，更新才需重裝（`--upgrade --force-reinstall --no-deps`）＋重開 Orange。
+- 教學網頁（含真實數據 Demo）：<https://tai-shengyeh.github.io/spectraview/orange.html>

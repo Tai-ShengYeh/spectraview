@@ -10,6 +10,11 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
 > 已在 `main` 分支、但尚未納入 [v0.2.0](https://github.com/Tai-ShengYeh/spectraview/releases/tag/v0.2.0) 發行標籤的變更。
 
 ### 新增（Added）
+- **Orange widgets 內建 Help + 教學頁真實數據 Demo**：五個 widget 左上角都有
+  「ℹ 說明 How to use」盒子與「📖 開啟線上教學」按鈕（跳到對應段落）；教學頁
+  `docs/orange.html` 新增「真實數據 Demo」——用內建範例（9 糖 NIR 光譜庫、未知樣品、
+  真實玉米 NIR）實跑相似度熱圖、光譜庫比對排名、NNLS 混合分析、aquagram，嵌入真實
+  結果圖與數字；安裝段落新增「裝一次就好、更新才重裝」說明。
 - **Aquagram widget（`orange-spectra/`，水光譜學 aquaphotomics）**：在水的 12 個特徵
   吸收帶（WAMACs）取正規化吸光度畫成 12 軸雷達圖，比較不同樣品／擾動下水的氫鍵結構；
   支援 raw／SNV／aquagram（SNV＋跨樣品標準化）三種正規化，WAMACs 波段可自訂，

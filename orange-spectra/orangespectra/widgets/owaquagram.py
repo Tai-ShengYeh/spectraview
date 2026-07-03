@@ -20,6 +20,7 @@ from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
 from ..core import AQUAGRAM_NORMS, WAMACS, aquagram_coordinates
 from ..table_io import spectra_from_table
+from ._help import add_help
 
 _COLORS = ["#4c72b0", "#dd8452", "#55a868", "#c44e52", "#8172b3",
            "#937860", "#da8bc3", "#8c8c8c", "#ccb974", "#64b5cd"]
@@ -54,6 +55,11 @@ class OWAquagram(OWWidget):
     def __init__(self):
         super().__init__()
         self._spectra = []
+
+        add_help(self,
+                 "接 NIR 光譜（需涵蓋 ~1300–1600 nm 的水吸收區）→ 在水的 12 個特徵帶"
+                 "（WAMACs）取正規化吸光度，畫 12 軸雷達圖。正規化選 aquagram 時 0＝組平均。"
+                 "\nAquaphotomics radar over the 12 water bands.", "aquagram")
 
         box = gui.widgetBox(self.controlArea, "Normalization")
         gui.comboBox(box, self, "normalization", items=AQUAGRAM_NORMS,
