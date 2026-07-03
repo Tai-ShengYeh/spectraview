@@ -20,6 +20,7 @@ from orangespectra.widgets.owimporturl import OWImportSpectrumURL  # noqa: E402
 from orangespectra.widgets.owlibrary import OWSpectralLibrary  # noqa: E402
 from orangespectra.widgets.owmixture import OWMixtureAnalysis  # noqa: E402
 from orangespectra.widgets.owsimilarity import OWSpectraSimilarity  # noqa: E402
+from orangespectra.widgets.owaquagram import OWAquagram  # noqa: E402
 
 X = np.linspace(400, 1800, 200)
 
@@ -157,6 +158,60 @@ class TestMixture(WidgetTest):
         self.send_signal(self.widget.Inputs.references, refs)
         self.assertTrue(self.widget.Error.analysis_failed.is_shown())
         self.assertIsNone(self.get_output(self.widget.Outputs.composition))
+
+
+class TestAquagram(WidgetTest):
+    def setUp(self):
+        self.widget = self.create_widget(OWAquagram)
+
+    def _nir_table(self):
+        wl = np.linspace(1300, 1600, 200)
+        base = 0.5 + 0.1 * np.exp(-((wl - 1440) ** 2) / (2 * 30 ** 2))
+        specs = []
+        for i in range(3):
+            specs.append(core.make_spectrum(wl, base + 0.01 * i, name=f"A{i}",
+                                            x_label="wavelength (nm)"))
+        for i in range(3):
+            y = base + 0.05 * np.exp(-((wl - 1492) ** 2) / (2 * 8 ** 2)) + 0.01 * i
+            specs.append(core.make_spectrum(wl, y, name=f"B{i}",
+                                            x_label="wavelength (nm)"))
+        return table_from_spectra(specs)
+
+    def test_aquagram_output(self):
+        self.send_signal(self.widget.Inputs.data, self._nir_table())
+        out = self.get_output(self.widget.Outputs.coordinates)
+        self.assertIsNotNone(out)
+        self.assertEqual(len(out), 6)
+        self.assertEqual(len(out.domain.attributes), 12)   # 12 WAMACs
+        # default normalization = aquagram -> each band column mean ~0
+        self.assertTrue(np.allclose(out.X.mean(axis=0), 0, atol=1e-6))
+        self.assertEqual(out.attributes["normalization"], "aquagram")
+
+    def test_normalization_switch(self):
+        self.send_signal(self.widget.Inputs.data, self._nir_table())
+        self.widget.normalization = 0          # raw
+        self.widget._recompute()
+        out = self.get_output(self.widget.Outputs.coordinates)
+        self.assertFalse(np.allclose(out.X.mean(axis=0), 0, atol=1e-6))
+
+    def test_custom_bands(self):
+        self.send_signal(self.widget.Inputs.data, self._nir_table())
+        self.widget.bands_edit.setText("1400, 1450, 1500")
+        self.widget._bands_changed()
+        out = self.get_output(self.widget.Outputs.coordinates)
+        self.assertEqual(len(out.domain.attributes), 3)
+
+    def test_out_of_range_warns(self):
+        wl = np.linspace(1400, 1450, 60)         # far narrower than the WAMACs span
+        t = table_from_spectra([core.make_spectrum(wl, np.ones(60), name="n",
+                                                   x_label="wavelength (nm)")])
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Warning.out_of_range.is_shown())
+
+    def test_non_spectral_errors(self):
+        from Orange.data import Table
+        self.send_signal(self.widget.Inputs.data, Table("iris"))
+        self.assertTrue(self.widget.Error.bad_table.is_shown())
 
 
 if __name__ == "__main__":

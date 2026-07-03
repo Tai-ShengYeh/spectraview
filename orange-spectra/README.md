@@ -1,8 +1,8 @@
 # orange-spectra — Orange Data Mining 光譜 widgets
 
-四個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
+五個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
 與 [SpectraView](https://github.com/Tai-ShengYeh/spectraview) 共用演算法與
-`.speclib` 光譜庫格式。Four spectroscopy widgets for Orange Data Mining,
+`.speclib` 光譜庫格式。Five spectroscopy widgets for Orange Data Mining,
 sharing algorithms and the `.speclib` library format with SpectraView.
 
 | Widget | 功能 |
@@ -11,6 +11,7 @@ sharing algorithms and the `.speclib` library format with SpectraView.
 | **Spectra Similarity** | 兩組光譜間的相似度：correlation / cosine / 光譜角 SAM / Euclidean |
 | **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名 |
 | **Mixture Analysis** | 混合光譜的成分分析：非負最小平方（NNLS）解 mixture ≈ Σ cᵢ·refᵢ，回報係數、比例與 R² |
+| **Aquagram** | Aquaphotomics：在水的 12 個特徵吸收帶（WAMACs）取正規化吸光度，畫 12 軸雷達圖（raw / SNV / aquagram 三種正規化） |
 
 輸出的 Table 採 [Orange-Spectroscopy](https://orange-spectroscopy.readthedocs.io/)
 慣例（欄名＝波長/波數、每列一條光譜），可直接接其 Spectra 檢視 widget 或

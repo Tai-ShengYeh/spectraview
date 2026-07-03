@@ -1,0 +1,41 @@
+name: Deploy Pages
+
+# Modern GitHub Actions Pages deployment (replaces the legacy branch build,
+# which was timing out on the "Deploy to GitHub Pages" step). Publishes the
+# docs/ folder as-is (static HTML, no Jekyll).
+#
+# One-time setup: Settings ▸ Pages ▸ Build and deployment ▸ Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Disable Jekyll (serve docs as static files)
+        run: touch docs/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
