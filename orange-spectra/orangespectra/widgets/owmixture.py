@@ -10,6 +10,7 @@ from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
 from ..core import make_spectrum, mixture_nnls
 from ..table_io import spectra_from_table, table_from_spectra
+from ._help import add_help
 
 
 class OWMixtureAnalysis(OWWidget):
@@ -41,6 +42,12 @@ class OWMixtureAnalysis(OWWidget):
         super().__init__()
         self._mixture = None
         self._refs = []
+
+        add_help(self,
+                 "混合譜接 Mixture、純物質參考譜接 References → NNLS 解 "
+                 "mixture ≈ Σ cᵢ·refᵢ，回報各成分比例與 R²，圖上疊出擬合與殘差。"
+                 "參考譜可來自 Spectral Library 的 Library 輸出。\n"
+                 "Non-negative unmixing of a mixed spectrum.", "mixture")
 
         box = gui.widgetBox(self.controlArea, "Options")
         gui.checkBox(box, self, "fit_offset", "Fit a constant baseline offset",

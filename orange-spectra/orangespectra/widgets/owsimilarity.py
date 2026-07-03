@@ -7,6 +7,7 @@ from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
 from ..core import similarity_scores
 from ..table_io import spectra_from_table
+from ._help import add_help
 
 RANK_KEYS = ["correlation", "cosine", "sam", "euclid"]
 
@@ -37,6 +38,11 @@ class OWSpectraSimilarity(OWWidget):
         super().__init__()
         self._data = None
         self._refs = None
+        add_help(self,
+                 "接 Data（和選用的 References）→ 算每一對光譜的四種相似度："
+                 "correlation / cosine / SAM / Euclidean。只接 Data 時做組內兩兩互比。"
+                 "結果接 Data Table 檢視。\nScores each spectrum pair by 4 metrics.",
+                 "similarity")
         box = gui.widgetBox(self.controlArea, "Options")
         gui.comboBox(box, self, "rank_by", label="Sort scores by:",
                      items=[k for k in RANK_KEYS], orientation="horizontal",

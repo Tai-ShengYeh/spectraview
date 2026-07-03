@@ -13,6 +13,7 @@ from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
 from ..core import load_library, save_library, search_library
 from ..table_io import spectra_from_table, table_from_spectra
+from ._help import add_help
 
 RANK_KEYS = ["correlation", "cosine", "sam", "euclid"]
 
@@ -47,6 +48,12 @@ class OWSpectralLibrary(OWWidget):
         self._library: list[dict] = []
         self._pending: list[dict] = []
         self._queries: list[dict] = []
+
+        add_help(self,
+                 "① 參考譜接 Spectra 輸入 → Add to library；可 Save/Load .speclib"
+                 "（與 SpectraView 桌面版互通）。② 未知譜接 Query → Hits 輸出排名。\n"
+                 "Build a reference library and search unknowns against it.",
+                 "library")
 
         inbox = gui.widgetBox(self.controlArea, "Build")
         self.in_label = gui.label(inbox, self, "No input spectra.")

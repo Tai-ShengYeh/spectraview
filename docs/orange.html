@@ -85,6 +85,7 @@
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
     <a class="btn ghost" href="#widgets">Widget 教學</a>
+    <a class="btn ghost" href="#demo">真實數據 Demo</a>
     <a class="btn ghost" href="#workflows">範例工作流</a>
   </div>
 </div>
@@ -161,6 +162,16 @@ python -m Orange.canvas</pre>
     ▸ <code>ImportError: PyQt5 … not available</code> → 少裝 Qt，補
       <code>pip install PyQt5 PyQtWebEngine</code>。<br>
     ▸ Add-ons 的 Add more… 貼 git 網址得到「packages were not found」→ 那個框只接受 PyPI 名稱，git 網址請走方式 B 的 <code>pip install</code>。</div>
+
+  <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
+    <b>裝一次就好，不用每次都裝。</b>安裝是<strong>一次性</strong>的——裝完之後每次開 Orange，
+    Spectra 分類的 5 個 widgets 都在，直接用。<br>
+    ▸ <b>只有要「更新」到新版時</b>才需要重裝：
+    <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>，
+    然後<strong>完全關掉 Orange 再重開</strong>。<br>
+    ▸ 每個 widget 左上角都有 <b>「ℹ 說明 How to use」</b>盒子與 <b>「📖 開啟線上教學」</b>按鈕，
+    不會用時點一下就能學。
+  </div>
 </section>
 
 <!-- ======================= widgets ======================= -->
@@ -168,7 +179,7 @@ python -m Orange.canvas</pre>
   <div class="kicker">Widget guide</div>
   <h2>Widget 逐一教學</h2>
 
-  <div class="wsec">
+  <div class="wsec" id="importurl">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M6 30 Q12 28 15 18 T24 12 Q27 26 32 21 T40 26" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M24 32 v9 m0 0 l-5-5 m5 5 l5-5" stroke="#ffd54f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Import Spectrum URL — 從網址匯入光譜</h3>
     <div class="io"><b>輸出</b>：Spectra（Table，每列一條光譜）</div>
@@ -186,7 +197,7 @@ python -m Orange.canvas</pre>
       <code>&lt;script&gt;</code> 裡（<code>"波數:強度"</code> 配對）；SOPRANO 則藏在 Dygraph 的資料陣列。widget 直接解析網頁原始碼還原數據。</div>
   </div>
 
-  <div class="wsec">
+  <div class="wsec" id="similarity">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
       Spectra Similarity — 光譜相似度</h3>
     <div class="io"><b>輸入</b>：Data（待比對光譜）、References（參考光譜，可省略）　<b>輸出</b>：Scores（逐對分數表）</div>
@@ -204,7 +215,7 @@ python -m Orange.canvas</pre>
     </table>
   </div>
 
-  <div class="wsec">
+  <div class="wsec" id="library">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><rect x="8" y="10" width="7" height="28" rx="1.5" fill="#fff"/><rect x="18" y="10" width="7" height="28" rx="1.5" fill="#ffd54f"/><rect x="29" y="12" width="7" height="26" rx="1.5" transform="rotate(12 32 25)" fill="#fff"/></svg>
       Spectral Library — 光譜庫建立與比對</h3>
     <div class="io"><b>輸入</b>：Spectra（要入庫的參考譜）、Query（未知譜）　<b>輸出</b>：Hits（排名表）、Best Match（最佳匹配譜）、Library（整個庫）</div>
@@ -216,7 +227,7 @@ python -m Orange.canvas</pre>
     </ol>
   </div>
 
-  <div class="wsec">
+  <div class="wsec" id="mixture">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M5 34 Q13 32 17 20 T28 14 Q31 28 36 23 T44 28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M5 34 Q13 33 18 27 T30 24 Q34 30 44 28" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/></svg>
       Mixture Analysis — 混合光譜成分分析</h3>
     <div class="io"><b>輸入</b>：Mixture（混合譜，取第一列）、References（純物質參考譜）　<b>輸出</b>：Composition（成分係數/比例）、Fit（擬合譜＋殘差）</div>
@@ -229,7 +240,7 @@ python -m Orange.canvas</pre>
     <div class="note"><b>教學重點：</b>殘差若仍有明顯峰形，代表庫裡少了某個成分——這正是「參考譜不完整」的視覺證據。</div>
   </div>
 
-  <div class="wsec">
+  <div class="wsec" id="aquagram">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.5"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="5"/></g><polygon points="24,10 33,17 32,30 24,34 15,29 16,17" fill="#ffd54f" fill-opacity="0.55" stroke="#fff" stroke-width="1.6"/><circle cx="24" cy="24" r="2" fill="#fff"/></svg>
       Aquagram — 水光譜學（aquaphotomics）雷達圖</h3>
     <div class="io"><b>輸入</b>：Data（NIR 光譜，需涵蓋約 1300–1600 nm 的水吸收區）　<b>輸出</b>：Aquagram Coordinates（每列一條光譜、12 個 WAMACs 欄）</div>
@@ -246,6 +257,61 @@ python -m Orange.canvas</pre>
       <li><i>Aquagram Coordinates</i> 輸出是 n×12 的資料表，可再接 PCA、分群或 Data Table 做量化比較。</li>
     </ol>
     <div class="note"><b>波段說明：</b>預設 12 WAMACs（nm）＝1342, 1364, 1372, 1382, 1398, 1410, 1438, 1444, 1464, 1474, 1492, 1516；分別對應水的不同氫鍵物種（自由水 OH、S₀–S₄ 水簇、水合等）。若光譜單位不是 nm 或未涵蓋此區，widget 會提示波段落在範圍外。</div>
+  </div>
+</section>
+
+<!-- ======================= demo (real data) ======================= -->
+<section id="demo">
+  <div class="kicker">Live demo · 真實數據跑出結果</div>
+  <h2>用內建範例資料實際跑一遍</h2>
+  <p class="lead">下面所有圖與數字都是用 repo 內的<b>真實範例資料</b>（<code>examples/sugars_nir.speclib</code>
+     ——9 種糖類／添加物的 NIR 光譜、3 個未知樣品）與真實玉米 NIR，實際用這些 widgets 的演算法跑出來的，
+     不是示意圖。你在自己電腦照做會得到一樣的結果。</p>
+
+  <div class="wsec">
+    <h3>① Import Spectrum URL → 一次載入一組光譜</h3>
+    <p class="lead">把 9 條糖類 NIR 參考譜載進來、疊在同一張圖（每列一條光譜的 Table）。</p>
+    <img src="demo_import.png" alt="9 sugar NIR spectra" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+  </div>
+
+  <div class="wsec">
+    <h3>② Spectra Similarity → 9×9 相關係數熱圖</h3>
+    <p class="lead">對 9 條糖譜兩兩算 correlation。化學上合理：<b>蔗糖 vs 果糖 ≈ 0.99</b>（蔗糖＝葡萄糖＋果糖），
+       糖類 vs 咖啡因 ≈ 0.71 明顯拉開。</p>
+    <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
+  </div>
+
+  <div class="wsec">
+    <h3>③ Spectral Library → 未知糖比對排名</h3>
+    <p class="lead">拿 <code>unknown_glucose.csv</code> 對 9 種糖的庫搜尋，<b>第一名正確命中 glucose（correlation = 1.0000）</b>。</p>
+    <img src="demo_library.png" alt="library search ranking" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <table class="t" style="max-width:460px;">
+      <tr><th>排名</th><th>命中</th><th>correlation</th></tr>
+      <tr><td>1</td><td><b>glucose</b> ✅</td><td>1.0000</td></tr>
+      <tr><td>2</td><td>sucrose</td><td>0.9562</td></tr>
+      <tr><td>3</td><td>fructose</td><td>0.9533</td></tr>
+      <tr><td>…</td><td>…</td><td>…</td></tr>
+      <tr><td>9</td><td>caffeine</td><td>0.7078</td></tr>
+    </table>
+  </div>
+
+  <div class="wsec">
+    <h3>④ Mixture Analysis → NNLS 拆解混合譜</h3>
+    <p class="lead">把 <b>65% glucose + 35% sucrose</b> 混成一條譜餵進去，NNLS <b>準確還原比例</b>
+       （glucose 65.0%、sucrose 35.0%、其餘成分 ≈ 0），<b>R² = 1.0000</b>。</p>
+    <img src="demo_mixture.png" alt="NNLS mixture fit" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <table class="t" style="max-width:460px;">
+      <tr><th>成分</th><th>NNLS 係數</th><th>比例</th><th>真值</th></tr>
+      <tr><td><b>glucose</b></td><td>0.650</td><td>65.0%</td><td>65%</td></tr>
+      <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
+      <tr><td>其他 7 種</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
+    </table>
+  </div>
+
+  <div class="wsec">
+    <h3>⑤ Aquagram → 真實玉米 NIR 水光譜雷達圖</h3>
+    <p class="lead">用真實玉米近紅外光譜，在 12 個 WAMACs 取正規化吸光度畫成 aquagram（雷達圖）。</p>
+    <img src="demo_aquagram.png" alt="real corn NIR aquagram" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
   </div>
 </section>
 
@@ -312,6 +378,13 @@ python -m Orange.canvas</pre>
 <section id="faq">
   <div class="kicker">FAQ</div>
   <h2>常見問題</h2>
+  <details><summary>要每次用都重新 pip 安裝嗎？</summary>
+    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 5 個 widgets 都在，直接用。
+       只有要<b>更新到新版</b>時才重裝（<code>pip install --upgrade --force-reinstall --no-deps …</code>），
+       且重裝後要<b>完全關掉 Orange 再重開</b>才會生效。桌面版 App 若日後上了 PyPI，用 Add-ons 對話框安裝更會自動記住、可線上更新。</p></details>
+  <details><summary>不會用某個 widget，怎麼學？</summary>
+    <p>每個 widget 左上角都有 <b>「ℹ 說明 How to use」</b>盒子（簡短中英說明）和 <b>「📖 開啟線上教學」</b>按鈕，
+       點按鈕就會開這頁對應段落。也可先看上面的 <a href="#demo">真實數據 Demo</a> 看每個 widget 實際跑出什麼。</p></details>
   <details><summary>抓 IRUG 失敗（連線錯誤）怎麼辦？</summary>
     <p>先確認瀏覽器打得開該頁；校內網路有時擋外部站台。仍失敗時，可在瀏覽器用 SpectraView 桌面版的
        File ▸ Import from URL / IRUG… 匯入後存成 CSV，再用 Orange 的 File widget 載入。</p></details>
