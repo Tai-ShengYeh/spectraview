@@ -1,0 +1,54 @@
+name: Publish orange-spectra to PyPI
+
+# Builds orange-spectra and publishes it to PyPI when you create a GitHub
+# Release. Uses PyPI Trusted Publishing (OIDC) — no API token or secret is
+# stored anywhere. One-time setup: on PyPI, add a Trusted Publisher for this
+# repo/workflow/environment (see orange-spectra/PUBLISHING.md).
+#
+# You can also run it manually from the Actions tab (workflow_dispatch), e.g.
+# to publish to TestPyPI first.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        type: choice
+        default: pypi
+        options: [pypi, testpypi]
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build orange-spectra --outdir dist
+          python -m pip install --upgrade twine
+          python -m twine check dist/*
+
+      - name: Publish to TestPyPI
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist
+
+      - name: Publish to PyPI
+        if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi') }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
