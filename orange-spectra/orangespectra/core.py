@@ -70,17 +70,35 @@ def default_fetch(url: str) -> tuple[bytes, str]:
 
 # --------------------------------------------------------------- IRUG jqPlot
 def parse_irug_jqplot(text: str, source: str = ""):
-    """IRUG embeds the spectrum as quoted "wavenumber:intensity" pairs in a
-    jqPlot <script>. Config options are word:number so they never match."""
-    scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", text,
-                         re.DOTALL | re.IGNORECASE)
-    blob = next((s for s in scripts if "jqplotdata" in s.lower()), None)
-    if blob is None:
-        blob = text if "jqplotdata" in text.lower() else None
-    if blob is None:
-        return None
-    pairs = re.findall(
-        r"(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)", blob)
+    """Parse the spectrum IRUG embeds in its interactive (jqPlot) viewer.
+
+    Each spectrum is a JSON object assigned to ``jqPlotData.series['Name']``::
+
+        jqPlotData.series['Submitter'] = {"1900.0":0.384, "1899.1":0.413, ...}
+
+    i.e. the **wavenumber is the quoted key** and the **intensity the value**.
+    A page may hold several series (submitted sample + reference matches); we
+    take the submitted one when labelled, otherwise the first.
+    """
+    series = re.findall(
+        r"jqPlotData\.series\s*\[\s*['\"]([^'\"]*)['\"]\s*\]\s*=\s*\{([^{}]*)\}",
+        text, re.IGNORECASE)
+    if series:
+        block = next((b for name, b in series if "submit" in name.lower()),
+                     series[0][1])
+    else:
+        scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", text,
+                             re.DOTALL | re.IGNORECASE)
+        block = next((s for s in scripts if "jqplotdata" in s.lower()), None)
+        if block is None:
+            block = text if "jqplotdata" in text.lower() else None
+        if block is None:
+            return None
+
+    num = r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
+    pairs = re.findall(rf'"({num})"\s*:\s*({num})', block)   # real IRUG format
+    if len(pairs) < 2:                                       # fallback: bare n:n
+        pairs = re.findall(rf'({num})\s*:\s*({num})', block)
     if len(pairs) < 2:
         return None
     m = re.search(r"id=(\d+)", source)

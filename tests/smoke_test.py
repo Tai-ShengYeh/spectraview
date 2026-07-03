@@ -723,17 +723,18 @@ check("HTML page -> follows extensionless download endpoint",
 check("extensionless endpoint: JCAMP body sniffed despite no extension",
       _oi4[0].x_unit == "cm-1")
 
-# The real IRUG case: data is embedded in the interactive jqPlot viewer as
-# quoted "wavenumber:intensity" pairs inside a <script>. Config options
-# (min:/max:/size:) are word:number and must NOT be picked up as data points.
+# The real IRUG case: each spectrum is a JSON object assigned to
+# jqPlotData.series['Name'] = {"<wavenumber>":<intensity>, ...} — the wavenumber
+# is the quoted key. Config options (min:/max:/size:) are word:number and
+# unquoted, so they must NOT be picked up as data points.
 _irug_page = (
     "<html><head><title>Interactive IRUG Spectrum | IRUG</title></head><body>"
     "<p>Spectrum Type: Raman</p>"
     "<script type='text/javascript'>\n"
     "  var jqPlotData = {};\n"
-    "  jqPlotData.series = [{ data: ["
-    '"1900:0.10","1899:0.12","1898:0.20","1897:0.15","1896:0.05"'
-    "] }];\n"
+    "  jqPlotData.series = [];\n"
+    "  jqPlotData.series['Submitter'] = "
+    '{"1900.0":0.10,"1899.0":0.12,"1898.0":0.20,"1897.0":0.15,"1896.0":0.05};\n'
     "  $.jqplot('chartdiv', [jqPlotData.series], "
     "{ axes:{ xaxis:{ min:100, max:1900 } }, "
     "seriesDefaults:{ markerOptions:{ size:7 } } });\n"
