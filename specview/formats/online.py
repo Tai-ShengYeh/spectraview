@@ -102,27 +102,38 @@ def _extract_inline_jcamp(html: str) -> str | None:
 def parse_irug_jqplot(html: str):
     """Extract the spectrum IRUG embeds in its interactive (jqPlot) viewer.
 
-    IRUG detail pages don't link a JCAMP/CSV file — the data is written into a
-    ``<script>`` block as ``jqPlotData.series``: a brace-wrapped, comma-separated
-    list of quoted ``"wavenumber:intensity"`` pairs. This mirrors the working
-    rvest recipe (grep the ``jqPlotData.series`` script, take the ``{...}``
-    region, split the ``wn:int`` pairs).
+    IRUG detail pages don't link a JCAMP/CSV file — each spectrum is written
+    into a ``<script>`` as a JSON object assigned to ``jqPlotData.series[...]``::
+
+        jqPlotData.series['Submitter'] = {"1900.0":0.384, "1899.1":0.413, ...}
+
+    i.e. the **wavenumber is the (quoted) key** and the **intensity the value**.
+    A page may carry several series (submitted sample + reference matches); we
+    take the submitted one when labelled, otherwise the first.
 
     Returns ``(x, y)`` arrays, or ``None`` if no jqPlot series is present.
     """
-    scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", html,
-                         re.DOTALL | re.IGNORECASE)
-    blob = next((s for s in scripts if "jqplotdata" in s.lower()), None)
-    if blob is None:
-        blob = html if "jqplotdata" in html.lower() else None
-    if blob is None:
-        return None
+    # Each assignment: jqPlotData.series['Name'] = { ...flat number:number... }
+    series = re.findall(
+        r"jqPlotData\.series\s*\[\s*['\"]([^'\"]*)['\"]\s*\]\s*=\s*\{([^{}]*)\}",
+        html, re.IGNORECASE)
+    if series:
+        block = next((b for name, b in series if "submit" in name.lower()),
+                     series[0][1])
+    else:
+        scripts = re.findall(r"<script\b[^>]*>(.*?)</script>", html,
+                             re.DOTALL | re.IGNORECASE)
+        block = next((s for s in scripts if "jqplotdata" in s.lower()), None)
+        if block is None:
+            block = html if "jqplotdata" in html.lower() else None
+        if block is None:
+            return None
 
-    # The data points are ``number:number`` pairs. jqPlot config options are all
-    # ``word:number`` (min:, max:, size:…), so they never match this pattern —
-    # scanning the whole series script is safe and avoids brace-matching games.
-    pairs = re.findall(
-        r"(-?\d+(?:\.\d+)?)\s*:\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)", blob)
+    num = r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
+    # Real IRUG format: quoted-key wavenumber, then the intensity value.
+    pairs = re.findall(rf'"({num})"\s*:\s*({num})', block)
+    if len(pairs) < 2:                       # fall back to bare number:number
+        pairs = re.findall(rf'({num})\s*:\s*({num})', block)
     if len(pairs) < 2:
         return None
     x = np.array([float(a) for a, _ in pairs])

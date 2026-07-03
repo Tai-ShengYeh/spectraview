@@ -33,8 +33,12 @@ except ValueError:
     check("garbage raises", True)
 
 print("== IRUG jqPlot page ==")
-_irug = ("<html><body><script>var jqPlotData={};jqPlotData.series=[{data:["
-         '"1900:0.10","1899:0.12","1898:0.20","1897:0.15","1896:0.05"]}];'
+# Real IRUG format: jqPlotData.series['Submitter'] = {"<wavenumber>":<intensity>,...}
+# (wavenumber is the quoted key). Config options are word:number and unquoted,
+# so they never match the quoted-key pattern.
+_irug = ("<html><body><script>var jqPlotData={};jqPlotData.series=[];"
+         "jqPlotData.series['Submitter'] = "
+         '{"1900.0":0.10,"1899.0":0.12,"1898.0":0.20,"1897.0":0.15,"1896.0":0.05};'
          "$.jqplot('c',[jqPlotData.series],{axes:{xaxis:{min:100,max:1900}}});"
          "</script></body></html>")
 s = core.parse_irug_jqplot(_irug, source="http://www.irug.org/jcamp-details?id=4119")
@@ -44,6 +48,11 @@ check("pairing kept (y@1900=0.10)",
       abs(np.interp(1900, s["x"], s["y"]) - 0.10) < 1e-9)
 check("named from id", s["name"] == "IRUG 4119")
 check("cm-1 label", "cm-1" in s["x_label"])
+# Multiple series (sample + a reference match): take the submitted one.
+_irug_multi = ("<script>jqPlotData.series['ref A'] = {\"10.0\":9,\"11.0\":9,\"12.0\":9};"
+               "jqPlotData.series['Submitter'] = {\"10.0\":1,\"11.0\":2,\"12.0\":3};</script>")
+sm = core.parse_irug_jqplot(_irug_multi, source="id=1")
+check("multi-series: picks Submitter", sm["x"].size == 3 and abs(np.interp(12, sm["x"], sm["y"]) - 3) < 1e-9)
 
 print("== SOPRANO Dygraph page ==")
 _sop = ("<h1>PR1</h1><h2>Raman 785nm</h2><script>g=new Dygraph(el,"
