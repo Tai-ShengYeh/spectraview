@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orange × Spectroscopy widgets ｜ IRUG/SOPRANO import · similarity · library · mixture · aquagram</title>
+<meta name="description" content="orange-spectra: tutorial for five Orange Data Mining spectroscopy widgets. Import spectra from IRUG/SOPRANO URLs, compute similarity, build a .speclib library and search, NNLS mixture analysis, and aquaphotomics aquagrams — interoperable with SpectraView.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#FFFFFF;--paper2:#F5F2E9;--ink:#1A1A1A;--soft:#52493b;--teal:#0E7C7B;--cover:#119C9A;--coral:#E36414;--gold:#C8941F;--line:#E4DECC;--orange:#F58220;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.65;}
+  a{color:var(--teal);text-decoration:none;} a:hover{text-decoration:underline;}
+  h1,h2,h3{font-weight:900;line-height:1.25;}
+  code,kbd,pre{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;}
+  .topbar{background:var(--ink);color:#cfc8b6;font-size:13.5px;padding:8px 22px;}
+  .topbar a{color:#9fd3d2;font-weight:700;}
+  .langtoggle{float:right;}
+  .langtoggle a{color:#cfc8b6;font-weight:700;} .langtoggle a.on{color:#FFDE7A;}
+  .hero{background:linear-gradient(135deg,var(--cover) 0%,#0d6a69 60%,#0a4746 100%);color:#fff;text-align:center;padding:60px 22px 50px;}
+  .hero .badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#FFDE7A;font-weight:900;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:5px 14px;margin-bottom:16px;}
+  .hero h1{font-size:clamp(30px,5.5vw,54px);}
+  .hero .accent{color:#FFDE7A;}
+  .hero p{font-size:clamp(15px,2.2vw,19px);color:rgba(255,255,255,.92);font-weight:500;margin-top:14px;max-width:780px;margin-inline:auto;}
+  .hero .cta{margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .btn{font-weight:900;border-radius:999px;padding:11px 22px;font-size:15px;display:inline-block;}
+  .btn.solid{background:#FFDE7A;color:#0a3b3a;} .btn.solid:hover{text-decoration:none;filter:brightness(1.05);}
+  .btn.ghost{border:1.5px solid rgba(255,255,255,.6);color:#fff;} .btn.ghost:hover{text-decoration:none;background:rgba(255,255,255,.12);}
+  main{max-width:1000px;margin:0 auto;padding:0 22px 40px;}
+  section{padding:52px 0 4px;}
+  .kicker{color:var(--coral);font-weight:900;font-size:14px;letter-spacing:.14em;text-transform:uppercase;}
+  section h2{font-size:clamp(23px,3.4vw,32px);margin:6px 0 8px;}
+  section .lead{color:var(--soft);font-size:16px;margin-bottom:10px;max-width:820px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin:22px 0;}
+  .card{background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;}
+  .card .wicon{width:44px;height:44px;margin-bottom:12px;border-radius:10px;}
+  .card h3{font-size:19px;margin-bottom:6px;}
+  .card p{color:var(--soft);font-size:14.5px;font-weight:500;flex:1;}
+  pre.code{background:#102523;color:#d7efe9;border-radius:12px;padding:16px 18px;font-size:13.5px;overflow-x:auto;line-height:1.7;margin:14px 0;}
+  pre.code .c{color:#7fb3a6;}
+  .step{display:flex;gap:14px;margin:16px 0;align-items:flex-start;}
+  .step .n{flex:0 0 30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:2px;}
+  .step h4{font-size:16.5px;margin-bottom:2px;}
+  .step p{color:var(--soft);font-size:14.5px;}
+  .wsec{background:var(--paper2);border:1px solid var(--line);border-radius:16px;padding:24px 26px;margin:22px 0;}
+  .wsec h3{font-size:20px;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .wsec h3 img,.wsec h3 svg{width:34px;height:34px;border-radius:8px;}
+  .wsec .io{font-size:13.5px;color:var(--soft);background:#fff;border:1px dashed var(--line);border-radius:10px;padding:8px 14px;margin:10px 0;}
+  .wsec .io b{color:var(--teal);}
+  .wsec ol{margin:8px 0 4px 22px;color:var(--soft);font-size:14.5px;}
+  .wsec ol li{margin:5px 0;}
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:18px 0;}
+  .node{background:#fff;border:2px solid var(--teal);border-radius:12px;padding:9px 15px;font-weight:700;font-size:13.5px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+  .node small{display:block;font-weight:500;color:var(--soft);font-size:11.5px;}
+  .node.orange{border-color:var(--orange);}
+  .node.gold{border-color:var(--gold);}
+  .arrow{color:var(--coral);font-weight:900;font-size:19px;padding:0 10px;}
+  .arrow small{display:block;font-size:10.5px;color:var(--soft);font-weight:500;text-align:center;line-height:1.2;}
+  .note{background:#FFF6E0;border:1px solid #EAD9A8;border-radius:12px;padding:14px 18px;font-size:14px;color:#6b5518;margin:14px 0;}
+  .note b{color:#8a6a10;}
+  table.t{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;}
+  table.t th,table.t td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top;}
+  table.t th{background:var(--paper2);font-weight:900;}
+  table.t td:first-child{white-space:nowrap;font-weight:700;}
+  footer{border-top:1px solid var(--line);margin-top:44px;padding:26px 22px;text-align:center;color:var(--soft);font-size:13.5px;}
+  details{margin:10px 0;background:var(--paper2);border:1px solid var(--line);border-radius:12px;padding:12px 18px;}
+  details summary{font-weight:700;cursor:pointer;font-size:15px;}
+  details p{color:var(--soft);font-size:14.5px;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="langtoggle"><a href="orange.html">中文</a> · <a class="on" href="orange_en.html">English</a></span>
+  ⬅ <a href="https://tai-shengyeh.github.io/">Teaching portal</a> ・
+  <a href="index.html">SpectraView</a> ・
+  <a href="https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra">Source on GitHub</a>
+</div>
+
+<div class="hero">
+  <span class="badge">Orange Data Mining × Spectroscopy</span>
+  <h1>Orange <span class="accent">Spectroscopy</span> Widgets</h1>
+  <p>Five open-source widgets that bring spectroscopy into Orange's visual workflow: paste an
+     <b>IRUG / SOPRANO URL</b> to see a spectrum, compute <b>similarity</b>, build a <b>library</b> to
+     identify unknowns, unmix <b>mixtures</b> with <b>NNLS</b>, and draw an aquaphotomics
+     <b>Aquagram</b> — all by dragging and connecting, no coding.</p>
+  <div class="cta">
+    <a class="btn solid" href="#install">Install</a>
+    <a class="btn ghost" href="#widgets">Widget guide</a>
+    <a class="btn ghost" href="#demo">Live demo</a>
+    <a class="btn ghost" href="#workflows">Example workflows</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ======================= overview ======================= -->
+<section id="overview">
+  <div class="kicker">Overview</div>
+  <h2>Five widgets, an end-to-end spectral-ID workflow</h2>
+  <p class="lead">After installing, a new <b>Spectra</b> category appears in Orange's toolbox. Output
+     tables follow the <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a>
+     convention (one column per wavenumber, one row per spectrum), so they plug straight into PCA,
+     PLS, hierarchical clustering and other native Orange widgets.</p>
+  <div class="grid">
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M6 30 Q12 28 15 18 T24 12 Q27 26 32 21 T40 26" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M24 32 v9 m0 0 l-5-5 m5 5 l5-5" stroke="#ffd54f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3>Import Spectrum URL</h3>
+      <p>Paste an IRUG id (e.g. <code>4119</code>), an IRUG/SOPRANO page URL, or a direct JCAMP-DX / CSV URL — download, plot and output a table in one click. Fetch several to accumulate a set.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <h3>Spectra Similarity</h3>
+      <p>Pairwise similarity: Pearson correlation, cosine, spectral angle (SAM) and Euclidean distance. Overlapping bands are auto-aligned before comparing.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><rect x="8" y="10" width="7" height="28" rx="1.5" fill="#fff"/><rect x="18" y="10" width="7" height="28" rx="1.5" fill="#ffd54f"/><rect x="29" y="12" width="7" height="26" rx="1.5" transform="rotate(12 32 25)" fill="#fff"/></svg>
+      <h3>Spectral Library</h3>
+      <p>Collect reference spectra into a library, save as a <b>.speclib</b> file (fully interoperable with the SpectraView desktop app), then search unknowns and output a ranked hit list and best match.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M5 34 Q13 32 17 20 T28 14 Q31 28 36 23 T44 28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M5 34 Q13 33 18 27 T30 24 Q34 30 44 28" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/></svg>
+      <h3>Mixture Analysis</h3>
+      <p>Non-negative least squares (NNLS) decomposition of mixture ≈ Σ cᵢ·refᵢ: reports each component's coefficient, percentage and fit R², and overlays the fit curve and residual.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.5"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="5"/></g><polygon points="24,10 33,17 32,30 24,34 15,29 16,17" fill="#ffd54f" fill-opacity="0.55" stroke="#fff" stroke-width="1.6"/><circle cx="24" cy="24" r="2" fill="#fff"/></svg>
+      <h3>Aquagram (aquaphotomics)</h3>
+      <p>Aquaphotomics: sample normalized absorbance at water's 12 characteristic bands (WAMACs) and draw a 12-axis radar plot to compare water's hydrogen-bond structure across samples/perturbations.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= install ======================= -->
+<section id="install">
+  <div class="kicker">Install</div>
+  <h2>Install</h2>
+  <div class="note"><b>First, know which Orange you have — it decides how you install:</b><br>
+    ▸ <b>Desktop App</b> (the standalone program downloaded from <a href="https://orangedatamining.com/">orangedatamining.com</a>, opened by its icon) → use <b>Method A</b>.<br>
+    ▸ <b>pip Orange</b> (you ran <code>pip install orange3</code> and launch with <code>python -m Orange.canvas</code>) → use <b>Method B</b>.<br>
+    The two have separate Python environments; installing into the wrong one means the widgets won't appear.</div>
+
+  <h3 style="margin-top:20px;">Method A ── Desktop App (recommended)</h3>
+  <p class="lead">Use the App's built-in Add-ons dialog to install from PyPI by name:</p>
+  <div class="step"><div class="n">1</div><div><h4>Open Add-ons</h4><p>Orange menu <b>Options ▸ Add-ons…</b></p></div></div>
+  <div class="step"><div class="n">2</div><div><h4>Add more… and type the name</h4>
+    <p>Click <b>Add more…</b> (top-right), type <code>orange-spectra</code> (<b>not</b> a git URL — this box only takes PyPI names), tick it and click <b>OK</b>.</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 5 widgets appears in the toolbox.</p></div></div>
+  <div class="note"><b><code>orange-spectra</code> not found?</b> It isn't on PyPI yet. See
+    <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>
+    to publish it. Until then, the desktop App can install via its own Python: locate the App's
+    <code>python.exe</code> (e.g. <code>…\Orange\python.exe</code>) and run
+    <code>python.exe -m pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>.</div>
+
+  <h3 style="margin-top:26px;">Method B ── pip Orange</h3>
+<pre class="code"><span class="c"># 1) Orange + a Qt binding (without PyQt5 you get "PyQt5 ... not available" and it won't start)</span>
+pip install orange3 PyQt5 PyQtWebEngine
+
+<span class="c"># 2) orange-spectra widgets (straight from GitHub)</span>
+pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+
+<span class="c"># 3) Launch (use this command; do NOT click the desktop App icon — that's a different env)</span>
+python -m Orange.canvas</pre>
+  <div class="note"><b>Common errors:</b><br>
+    ▸ <code>ImportError: PyQt5 … not available</code> → missing Qt; run
+      <code>pip install PyQt5 PyQtWebEngine</code>.<br>
+    ▸ Pasting a git URL into Add-ons ▸ Add more… gives "packages were not found" → that box only takes PyPI names; use Method B's <code>pip install</code> for a git URL.</div>
+
+  <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
+    <b>Install once — you don't reinstall every time.</b> Installation is <strong>one-off</strong>: after
+    it, the 5 widgets in the Spectra category are there every time you open Orange.<br>
+    ▸ Reinstall <b>only to update</b>:
+    <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>,
+    then <strong>fully close and reopen Orange</strong>.<br>
+    ▸ Every widget has an <b>"ℹ How to use"</b> box and a <b>"📖 Open tutorial"</b> button at the top —
+    click it whenever you're unsure.
+  </div>
+</section>
+
+<!-- ======================= widgets ======================= -->
+<section id="widgets">
+  <div class="kicker">Widget guide</div>
+  <h2>Widget-by-widget guide</h2>
+
+  <div class="wsec" id="importurl">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M6 30 Q12 28 15 18 T24 12 Q27 26 32 21 T40 26" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M24 32 v9 m0 0 l-5-5 m5 5 l5-5" stroke="#ffd54f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Import Spectrum URL — import a spectrum from a URL</h3>
+    <div class="io"><b>Output</b>: Spectra (Table, one row per spectrum)</div>
+    <ol>
+      <li>Paste a source into the box and click <b>Fetch &amp; add</b>:
+        <ul>
+          <li>IRUG id: <code>4119</code> (= <code>http://www.irug.org/jcamp-details?id=4119</code>, the PB15 phthalocyanine-blue Raman spectrum)</li>
+          <li>A SOPRANO page URL (KIK-IRPA pigment Raman database, Belgium)</li>
+          <li>A direct JCAMP-DX (AFFN) or two-column CSV URL</li>
+        </ul></li>
+      <li>The spectrum is plotted live on the right (IR/Raman convention: wavenumber high → low).</li>
+      <li>Fetch repeatedly to accumulate spectra; remove one or clear all. Multiple spectra are resampled onto a shared band.</li>
+    </ol>
+    <div class="note"><b>How it works:</b> IRUG pages have no download file — the spectrum is embedded in
+      the page's interactive chart (jqPlot) inside a <code>&lt;script&gt;</code> (as
+      <code>"wavenumber":intensity</code> pairs); SOPRANO stores it in a Dygraph data array. The widget parses the page source to recover the numbers.</div>
+  </div>
+
+  <div class="wsec" id="similarity">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
+      Spectra Similarity — pairwise similarity</h3>
+    <div class="io"><b>Inputs</b>: Data (spectra to compare), References (optional)　<b>Output</b>: Scores (per-pair table)</div>
+    <ol>
+      <li>Connect Data and References: outputs four metrics for every Data × References pair.</li>
+      <li>Connect only Data: switches to all-pairs within Data (good for "how alike is this batch?").</li>
+      <li>Sort by correlation / cosine (higher = more similar) or SAM / Euclidean (lower = more similar).</li>
+    </ol>
+    <table class="t">
+      <tr><th>Metric</th><th>Meaning</th><th>Property</th></tr>
+      <tr><td>correlation</td><td>Pearson correlation</td><td>Invariant to offset and scale; the most common for ID</td></tr>
+      <tr><td>cosine</td><td>Cosine of the angle</td><td>Invariant to scale</td></tr>
+      <tr><td>SAM</td><td>Spectral angle (radians)</td><td>Common in remote sensing / hyperspectral; lower = more similar</td></tr>
+      <tr><td>euclid</td><td>Euclidean distance (unit-normalized)</td><td>Intuitive "how different is the shape"</td></tr>
+    </table>
+  </div>
+
+  <div class="wsec" id="library">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><rect x="8" y="10" width="7" height="28" rx="1.5" fill="#fff"/><rect x="18" y="10" width="7" height="28" rx="1.5" fill="#ffd54f"/><rect x="29" y="12" width="7" height="26" rx="1.5" transform="rotate(12 32 25)" fill="#fff"/></svg>
+      Spectral Library — build and search a library</h3>
+    <div class="io"><b>Inputs</b>: Spectra (references to add), Query (unknowns)　<b>Outputs</b>: Hits (ranked table), Best Match, Library (the whole library)</div>
+    <ol>
+      <li>Connect references to the <i>Spectra</i> input and click <b>Add input spectra to library</b>.</li>
+      <li><b>Save…</b> as <code>.speclib</code>; <b>Load…</b> an existing one — <b>the file format is identical to the SpectraView desktop app</b>, so you can load e.g. the bundled <code>examples/sugars_nir.speclib</code> (a 9-sugar NIR library).</li>
+      <li>Connect unknowns to <i>Query</i>: Hits outputs each query's ranking against every library entry with all four metrics — connect a <b>Data Table</b> to view.</li>
+      <li>The <i>Library</i> output turns the whole library into a table — feed it straight into <b>Mixture Analysis</b> as references, or view it as spectra.</li>
+    </ol>
+  </div>
+
+  <div class="wsec" id="mixture">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M5 34 Q13 32 17 20 T28 14 Q31 28 36 23 T44 28" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M5 34 Q13 33 18 27 T30 24 Q34 30 44 28" fill="none" stroke="#ffd54f" stroke-width="1.8" stroke-dasharray="4 3" stroke-linecap="round"/></svg>
+      Mixture Analysis — unmix a mixed spectrum</h3>
+    <div class="io"><b>Inputs</b>: Mixture (first row used), References (pure components)　<b>Outputs</b>: Composition (coefficients/fractions), Fit (fit + residual)</div>
+    <ol>
+      <li>Connect the mixed spectrum to <i>Mixture</i> and a set of pure references to <i>References</i>.</li>
+      <li>Solves <code>mixture ≈ Σ cᵢ·refᵢ (+ offset)</code> by non-negative least squares (NNLS); coefficients are forced ≥ 0, which is physically meaningful.</li>
+      <li>The widget shows the composition table (coefficient, percentage) and R²; the plot overlays mixture, fit and residual.</li>
+      <li>Feed <i>Composition</i> into a <b>Data Table</b> or <b>Bar Plot</b>; <i>Fit</i> contains three rows: mixture / NNLS fit / residual.</li>
+    </ol>
+    <div class="note"><b>Teaching point:</b> if the residual still has clear peaks, a component is missing from your reference set — a visual proof that "the references are incomplete."</div>
+  </div>
+
+  <div class="wsec" id="aquagram">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><g stroke="#ffffff" stroke-width="1" fill="none" opacity="0.5"><circle cx="24" cy="24" r="15"/><circle cx="24" cy="24" r="10"/><circle cx="24" cy="24" r="5"/></g><polygon points="24,10 33,17 32,30 24,34 15,29 16,17" fill="#ffd54f" fill-opacity="0.55" stroke="#fff" stroke-width="1.6"/><circle cx="24" cy="24" r="2" fill="#fff"/></svg>
+      Aquagram — aquaphotomics radar plot</h3>
+    <div class="io"><b>Input</b>: Data (NIR spectra covering ~1300–1600 nm, the water absorption region)　<b>Output</b>: Aquagram Coordinates (one row per spectrum, 12 WAMACs columns)</div>
+    <p class="lead"><b>Aquaphotomics</b> (Tsenkova) uses water's <b>12 characteristic NIR bands</b> (WAMACs,
+       water matrix coordinates, ~1336–1522 nm) as a "water fingerprint," plotting each sample's
+       normalized absorbance at these 12 coordinates on a radar chart to compare changes in water's
+       hydrogen-bond structure across states (temperature, concentration, cultivar… perturbations).
+       Method after the <a href="https://nirpyresearch.com/aquagrams-python-matplotlib/">NIRPY Research aquagram tutorial</a>.</p>
+    <ol>
+      <li>Connect NIR spectra (load via Import Spectrum URL / File, or through Orange-Spectroscopy preprocessing).</li>
+      <li>Pick a normalization:
+        <ul>
+          <li><b>raw</b>: absorbance sampled at the 12 bands, as-is.</li>
+          <li><b>snv</b>: SNV (Standard Normal Variate) each spectrum first, then sample.</li>
+          <li><b>aquagram</b> (default, classic): after SNV, standardize across the sample set at each band, (value − mean)/std — <b>0 is the group-average water spectrum</b>, outward = above-average absorbance at that band, inward = below.</li>
+        </ul></li>
+      <li>The 12-axis radar plots live, one line per spectrum; the WAMACs bands are editable (defaults to the standard 12).</li>
+      <li>The <i>Aquagram Coordinates</i> output is an n×12 table — feed it into PCA, clustering or a Data Table for quantitative comparison.</li>
+    </ol>
+    <div class="note"><b>About the bands:</b> the default 12 WAMACs (nm) = 1342, 1364, 1372, 1382, 1398, 1410, 1438, 1444, 1464, 1474, 1492, 1516; each corresponds to a different hydrogen-bonded water species (free OH, S₀–S₄ water clusters, hydration, etc.). If the x-unit isn't nm or the region isn't covered, the widget warns that bands fall outside range.</div>
+  </div>
+</section>
+
+<!-- ======================= demo (real data) ======================= -->
+<section id="demo">
+  <div class="kicker">Live demo · real results from real data</div>
+  <h2>Run it on the bundled example data</h2>
+  <p class="lead">Every figure and number below was produced by actually running these widgets'
+     algorithms on the repo's <b>real example data</b> (<code>examples/sugars_nir.speclib</code> — NIR
+     spectra of 9 sugars/additives, 3 unknown samples) and real corn NIR — not mock-ups. Do the same
+     on your machine and you get the same results.</p>
+
+  <div class="wsec">
+    <h3>① Import Spectrum URL → load a set of spectra at once</h3>
+    <p class="lead">The 9 sugar NIR reference spectra loaded and overlaid on one chart (a table with one row per spectrum).</p>
+    <img src="demo_import.png" alt="9 sugar NIR spectra" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+  </div>
+
+  <div class="wsec">
+    <h3>② Spectra Similarity → 9×9 correlation heatmap</h3>
+    <p class="lead">Pairwise correlation of the 9 sugar spectra. Chemically sensible: <b>sucrose vs fructose ≈ 0.99</b>
+       (sucrose = glucose + fructose), while sugars vs caffeine ≈ 0.71 separate clearly.</p>
+    <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
+  </div>
+
+  <div class="wsec">
+    <h3>③ Spectral Library → ranked search of an unknown sugar</h3>
+    <p class="lead">Searching <code>unknown_glucose.csv</code> against the 9-sugar library <b>correctly ranks glucose #1 (correlation = 1.0000)</b>.</p>
+    <img src="demo_library.png" alt="library search ranking" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <table class="t" style="max-width:460px;">
+      <tr><th>Rank</th><th>Match</th><th>correlation</th></tr>
+      <tr><td>1</td><td><b>glucose</b> ✅</td><td>1.0000</td></tr>
+      <tr><td>2</td><td>sucrose</td><td>0.9562</td></tr>
+      <tr><td>3</td><td>fructose</td><td>0.9533</td></tr>
+      <tr><td>…</td><td>…</td><td>…</td></tr>
+      <tr><td>9</td><td>caffeine</td><td>0.7078</td></tr>
+    </table>
+  </div>
+
+  <div class="wsec">
+    <h3>④ Mixture Analysis → NNLS unmixing</h3>
+    <p class="lead">Feeding a spectrum blended as <b>65% glucose + 35% sucrose</b>, NNLS <b>recovers the fractions exactly</b>
+       (glucose 65.0%, sucrose 35.0%, everything else ≈ 0), <b>R² = 1.0000</b>.</p>
+    <img src="demo_mixture.png" alt="NNLS mixture fit" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <table class="t" style="max-width:460px;">
+      <tr><th>Component</th><th>NNLS coeff.</th><th>Fraction</th><th>Truth</th></tr>
+      <tr><td><b>glucose</b></td><td>0.650</td><td>65.0%</td><td>65%</td></tr>
+      <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
+      <tr><td>other 7</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
+    </table>
+  </div>
+
+  <div class="wsec">
+    <h3>⑤ Aquagram → real corn-NIR water aquagram</h3>
+    <p class="lead">Real corn near-infrared spectra: normalized absorbance at the 12 WAMACs drawn as an aquagram (radar plot).</p>
+    <img src="demo_aquagram.png" alt="real corn NIR aquagram" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
+  </div>
+</section>
+
+<!-- ======================= workflows ======================= -->
+<section id="workflows">
+  <div class="kicker">Example workflows</div>
+  <h2>Three classroom workflows</h2>
+
+  <h3 style="margin-top:18px;">① View: paste URL → spectrum → table</h3>
+  <div class="flow">
+    <div class="node orange">Import Spectrum URL<small>enter 4119 (IRUG PB15)</small></div>
+    <div class="arrow">→<small>Spectra</small></div>
+    <div class="node">Data Table<small>inspect data</small></div>
+  </div>
+  <p class="lead">The shortest path: one widget lets you "paste a URL and see the spectrum"; connect
+     Orange-Spectroscopy's Spectra widget or a Line Plot to view it another way.</p>
+
+  <h3 style="margin-top:26px;">② Identify: build a library → search an unknown</h3>
+  <div class="flow">
+    <div class="node orange">Import Spectrum URL<small>fetch several references</small></div>
+    <div class="arrow">→<small>Spectra</small></div>
+    <div class="node gold">Spectral Library<small>add → Save .speclib</small></div>
+    <div class="arrow">→<small>Hits</small></div>
+    <div class="node">Data Table<small>ranked results</small></div>
+  </div>
+  <div class="flow" style="margin-top:-6px;">
+    <div class="node orange">File / Import URL<small>unknown sample</small></div>
+    <div class="arrow">→<small>Query</small></div>
+    <div class="node gold" style="visibility:hidden;">Spectral Library</div>
+  </div>
+  <p class="lead">Connect the unknown from a second source (a File widget reading a CSV, or another Import
+     URL) to the Library's <i>Query</i>. The <code>.speclib</code> file is fully interoperable with the
+     SpectraView desktop app and the bundled example library.</p>
+
+  <h3 style="margin-top:26px;">③ Quantify: mixture component analysis</h3>
+  <div class="flow">
+    <div class="node orange">Import Spectrum URL<small>mixed sample</small></div>
+    <div class="arrow">→<small>Mixture</small></div>
+    <div class="node" style="border-color:#c44e52;">Mixture Analysis<small>NNLS unmix</small></div>
+    <div class="arrow">→<small>Composition</small></div>
+    <div class="node">Bar Plot<small>fractions chart</small></div>
+  </div>
+  <div class="flow" style="margin-top:-6px;">
+    <div class="node gold">Spectral Library<small>Library output as references</small></div>
+    <div class="arrow">→<small>References</small></div>
+    <div class="node" style="visibility:hidden;">Mixture Analysis</div>
+  </div>
+  <p class="lead">References can come from the library's <i>Library</i> output — "build a library" and "unmix
+     a mixture" chain naturally into one pipeline.</p>
+</section>
+
+<!-- ======================= integration ======================= -->
+<section id="integration">
+  <div class="kicker">Integration</div>
+  <h2>Integration with SpectraView and Orange-Spectroscopy</h2>
+  <table class="t">
+    <tr><th>Interop point</th><th>Detail</th></tr>
+    <tr><td>.speclib library</td><td>A library saved in Orange opens directly in the SpectraView desktop app via <i>Library ▸ Load library…</i>, and vice versa (e.g. <code>examples/sugars_nir.speclib</code>).</td></tr>
+    <tr><td>Table format</td><td>Column names = wavenumbers, one row per spectrum — the same as Orange-Spectroscopy and SpectraView's "combined-export X-matrix." Exported CSVs load both ways.</td></tr>
+    <tr><td>Algorithms</td><td>The four similarity metrics and NNLS are defined identically to SpectraView, so desktop and Orange results validate each other.</td></tr>
+    <tr><td>Downstream</td><td>The Spectra output feeds straight into Orange's PCA, PLS (chemometrics), distance matrix, hierarchical clustering and more.</td></tr>
+  </table>
+</section>
+
+<!-- ======================= faq ======================= -->
+<section id="faq">
+  <div class="kicker">FAQ</div>
+  <h2>FAQ</h2>
+  <details><summary>Do I have to pip-install every time I use it?</summary>
+    <p>No. Installation is <b>one-off</b> — once installed, the 5 widgets in the Spectra category are
+       there every time you open Orange. Reinstall <b>only to update to a new version</b>
+       (<code>pip install --upgrade --force-reinstall --no-deps …</code>), and after reinstalling
+       <b>fully close and reopen Orange</b> for it to take effect. Once the desktop App version is on
+       PyPI, the Add-ons dialog remembers it and offers online updates.</p></details>
+  <details><summary>I don't know how to use a widget — how do I learn?</summary>
+    <p>Every widget has an <b>"ℹ How to use"</b> box (short guidance) and a <b>"📖 Open tutorial"</b>
+       button at the top-left; the button opens the matching section of this page. You can also look at
+       the <a href="#demo">Live demo</a> above to see what each widget actually produces.</p></details>
+  <details><summary>IRUG fetch fails (connection error) — what now?</summary>
+    <p>First check the page opens in a browser; campus networks sometimes block external sites. If it
+       still fails, use the SpectraView desktop app's File ▸ Import from URL / IRUG… in a browser,
+       save as CSV, then load that with Orange's File widget.</p></details>
+  <details><summary>A JCAMP-DX file comes out garbled / fails to parse?</summary>
+    <p>URL import supports AFFN (plain-number) JCAMP; for compressed forms (SQZ/DIF/DUP) open it in
+       SpectraView (which has a full decoder) and export as CSV.</p></details>
+  <details><summary>Can I compare two spectra with different bands?</summary>
+    <p>Yes. Similarity and NNLS both take the overlapping band and interpolate onto a common grid first;
+       only when there is no overlap at all do they report an error.</p></details>
+  <details><summary>Can I baseline-correct / smooth before comparing?</summary>
+    <p>Recommended: connect Orange-Spectroscopy's Preprocess Spectra widget (baseline, SNV,
+       Savitzky-Golay, etc.) before comparison; or do airPLS in SpectraView first and export.</p></details>
+</section>
+
+</main>
+
+<footer>
+  orange-spectra ・ MIT License ・
+  <a href="https://github.com/Tai-ShengYeh/spectraview">GitHub</a> ・
+  <a href="orange.html">中文版</a> ・
+  <a href="https://tai-shengyeh.github.io/">Food-science teaching portal</a>
+</footer>
+
+</body>
+</html>
