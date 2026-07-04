@@ -199,5 +199,76 @@ oor = core.aquagram_coordinates([core.make_spectrum(np.linspace(1400, 1450, 50),
                                  np.ones(50), name="narrow")])
 check("out-of-range WAMACs flagged (covered=False)", not oor["covered"])
 
+
+print("== peak finding ==")
+_px = np.linspace(0, 100, 2001)
+_py = (np.exp(-((_px - 20) / 2.0) ** 2) + 0.6 * np.exp(-((_px - 55) / 1.5) ** 2)
+       + 0.3 * np.exp(-((_px - 80) / 3.0) ** 2))
+_pk = core.find_spectrum_peaks(_px, _py, min_height_frac=0.1,
+                               min_prominence_frac=0.05)
+check("finds the 3 peaks", len(_pk) == 3)
+check("centers correct", all(abs(p["center"] - c) < 0.2
+                             for p, c in zip(_pk, (20, 55, 80))))
+check("gaussian FWHM correct (2*sqrt(ln2)*sigma)",
+      abs(_pk[0]["fwhm"] - 2 * np.sqrt(np.log(2)) * 2.0) < 0.15)
+check("sorted by center", _pk == sorted(_pk, key=lambda p: p["center"]))
+check("height threshold filters",
+      len(core.find_spectrum_peaks(_px, _py, min_height_frac=0.7)) == 1)
+check("min_distance merges",
+      len(core.find_spectrum_peaks(_px, _py, min_height_frac=0.1,
+                                   min_prominence_frac=0.05,
+                                   min_distance=50)) < 3)
+check("smoothing tolerated",
+      len(core.find_spectrum_peaks(_px, _py, min_height_frac=0.1,
+                                   min_prominence_frac=0.05,
+                                   smooth_window=7)) == 3)
+check("no peaks in flat line",
+      core.find_spectrum_peaks(_px, np.ones_like(_px)) == [])
+
+print("== XRF identification ==")
+from orangespectra import xrf  # noqa: E402
+check("53 elements Na-U", len(xrf.ELEMENTS) == 53)
+_m = xrf.identify_energy(6.40, tol=0.05)
+check("6.40 keV -> Fe Ka1", _m and _m[0]["symbol"] == "Fe" and _m[0]["line"] == "Ka1")
+_m = xrf.identify_energy(10.55, tol=0.05)
+check("10.55 keV -> Pb La1 (closest first)", _m[0]["symbol"] == "Pb")
+check("As Ka1 also within tol at 10.54",
+      any(x["symbol"] == "As" for x in xrf.identify_energy(10.55, tol=0.05)))
+check("line filter works",
+      all(x["line"] in ("Ka1", "Kb1")
+          for x in xrf.identify_energy(10.55, tol=0.2, line_filter={"Ka1", "Kb1"})))
+_r = xrf.identify_peaks([6.404, 8.048, 99.0], tol=0.05)
+check("identify_peaks best per energy",
+      _r[0]["best"]["symbol"] == "Fe" and _r[1]["best"]["symbol"] == "Cu"
+      and _r[2]["best"] is None)
+
+print("== PLS-DA ==")
+_rs = np.random.RandomState(1)
+_grid = np.linspace(0, 1, 60)
+_X, _labs = [], []
+for _ci, _c in enumerate((0.25, 0.5, 0.75)):
+    for _ in range(10):
+        _X.append(np.exp(-((_grid - _c) / 0.05) ** 2) * (1 + 0.1 * _rs.randn())
+                  + 0.02 * _rs.randn(60))
+        _labs.append(f"class{_ci}")
+_res = core.plsda_fit(np.array(_X), _labs, n_components=3)
+check("separable classes -> 100% training accuracy", _res["accuracy"] == 1.0)
+check("scores shape (n, A)", _res["scores"].shape == (30, 3))
+check("loadings shape (p, A)", _res["loadings"].shape == (60, 3))
+check("VIP length p, mean(VIP^2)=1",
+      _res["vip"].shape == (60,) and abs((_res["vip"] ** 2).mean() - 1.0) < 1e-6)
+check("confusion diagonal", _res["confusion"].trace() == 30)
+check("explained X variance <= 1 and decreasing-ish",
+      _res["explained_x_variance"].sum() <= 1.0 + 1e-9)
+_sub = [0, 1, 10, 11, 20, 21]     # 2 samples from each of the 3 classes
+check("components clipped to <= n-1",
+      core.plsda_fit(np.array(_X)[_sub], [_labs[i] for i in _sub],
+                     n_components=99)["n_components"] <= 5)
+try:
+    core.plsda_fit(np.array(_X), ["same"] * 30, n_components=2)
+    check("single class raises", False)
+except ValueError:
+    check("single class raises", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
