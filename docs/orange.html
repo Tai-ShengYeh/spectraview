@@ -83,8 +83,8 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">光譜</span> Widgets</h1>
-  <p>五個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
-     算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜成分、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
+  <p>八個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
+     算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜、<b>尋峰標記</b>、<b>XRF 元素標記</b>、<b>PLS-DA</b> 判別分析、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
     <a class="btn ghost" href="#widgets">Widget 教學</a>
@@ -98,7 +98,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>五個 Widgets，一條龍的光譜鑑定流程</h2>
+  <h2>八個 Widgets，一條龍的光譜鑑定流程</h2>
   <p class="lead">安裝後 Orange 工具箱會多一個 <b>Spectra</b> 分類。輸出的資料表採
      <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a> 慣例
      （每一欄＝一個波數、每一列＝一條光譜），可直接接 PCA、PLS、階層式分群等 Orange 原生流程。</p>
@@ -128,6 +128,21 @@
       <h3>Aquagram（水光譜學）</h3>
       <p>Aquaphotomics 分析：在水的 12 個特徵吸收帶（WAMACs）取正規化吸光度，畫成 12 軸雷達圖，比較不同樣品／擾動下水的氫鍵結構差異。</p>
     </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M4 40 L12 40 Q16 40 17 26 Q18 12 20 12 Q22 12 23 26 Q24 40 28 40 L30 40 Q33 40 34 31 Q35 22 36.5 22 Q38 22 39 31 Q40 40 44 40" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M20 9 v-4 M36.5 19 v-4" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><circle cx="20" cy="12" r="2.2" fill="#ffd54f"/><circle cx="36.5" cy="22" r="2.2" fill="#ffd54f"/></svg>
+      <h3>Peak Finder</h3>
+      <p>自動偵測波峰並在圖上標記位置，量測峰位、峰高、半高寬（FWHM）、顯著度與面積，輸出峰表。門檻與平滑可調。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><path d="M4 40 L10 40 Q13 40 14 30 Q15 20 16.5 20 Q18 20 19 30 Q20 40 23 40 Q26 40 27 24 Q28 8 30 8 Q32 8 33 24 Q34 40 37 40 L44 40" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><rect x="24" y="2" width="13" height="11" rx="2" fill="#ffd54f"/><text x="30.5" y="11" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#4b3f72">Fe</text></svg>
+      <h3>XRF Element ID</h3>
+      <p>XRF 能譜（keV）自動尋峰並比對元素特徵譜線（Kα/Kβ/Lα/Lβ，Na–U 53 元素），圖上直接標出「Fe Kα1」等元素標籤。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#dd8452"/><path d="M8 40 L8 8 M8 40 L42 40" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="#fff"/><circle cx="21" cy="12" r="3" fill="#fff"/><circle cx="14" cy="22" r="3" fill="#fff"/><circle cx="33" cy="28" r="3" fill="#ffd54f"/><circle cx="38" cy="24" r="3" fill="#ffd54f"/><circle cx="35" cy="34" r="3" fill="#ffd54f"/><path d="M12 34 L40 10" stroke="#fff" stroke-width="1.6" stroke-dasharray="4 3"/></svg>
+      <h3>PLS-DA</h3>
+      <p>偏最小平方判別分析：依類別上色的分數圖、loadings 與 VIP 變數重要性，一眼看出哪些波段把類別分開。</p>
+    </div>
   </div>
 </section>
 
@@ -145,7 +160,7 @@
   <div class="step"><div class="n">1</div><div><h4>開 Add-ons</h4><p>Orange 選單 <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… 輸入名稱</h4>
     <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。</p></div></div>
-  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 5 個 widgets。</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 8 個 widgets。</p></div></div>
   <div class="note"><b>找不到 <code>orange-spectra</code>？</b>代表尚未發佈到 PyPI。發佈方式見
     <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>；
     在那之前，桌面版可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
@@ -168,7 +183,7 @@ python -m Orange.canvas</pre>
 
   <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
     <b>裝一次就好，不用每次都裝。</b>安裝是<strong>一次性</strong>的——裝完之後每次開 Orange，
-    Spectra 分類的 5 個 widgets 都在，直接用。<br>
+    Spectra 分類的 8 個 widgets 都在，直接用。<br>
     ▸ <b>只有要「更新」到新版時</b>才需要重裝：
     <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>，
     然後<strong>完全關掉 Orange 再重開</strong>。<br>
@@ -260,6 +275,46 @@ python -m Orange.canvas</pre>
       <li><i>Aquagram Coordinates</i> 輸出是 n×12 的資料表，可再接 PCA、分群或 Data Table 做量化比較。</li>
     </ol>
     <div class="note"><b>波段說明：</b>預設 12 WAMACs（nm）＝1342, 1364, 1372, 1382, 1398, 1410, 1438, 1444, 1464, 1474, 1492, 1516；分別對應水的不同氫鍵物種（自由水 OH、S₀–S₄ 水簇、水合等）。若光譜單位不是 nm 或未涵蓋此區，widget 會提示波段落在範圍外。</div>
+  </div>
+
+  <div class="wsec" id="peaks">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#c44e52"/><path d="M4 40 L12 40 Q16 40 17 26 Q18 12 20 12 Q22 12 23 26 Q24 40 28 40 L30 40 Q33 40 34 31 Q35 22 36.5 22 Q38 22 39 31 Q40 40 44 40" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M20 9 v-4 M36.5 19 v-4" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/><circle cx="20" cy="12" r="2.2" fill="#ffd54f"/><circle cx="36.5" cy="22" r="2.2" fill="#ffd54f"/></svg>
+      Peak Finder — 波峰偵測與標記</h3>
+    <div class="io"><b>輸入</b>：Data（光譜 Table）　<b>輸出</b>：Peaks（position, height, FWHM, prominence, area）</div>
+    <ol>
+      <li>接上光譜，圖上立刻以三角形＋數字標出每個峰的位置。</li>
+      <li><b>Min height / Min prominence</b>（都是訊號全幅的 %）調高可濾掉雜訊小峰；<b>Min distance</b>（x 單位）避免相鄰的重複峰。</li>
+      <li><b>Smoothing window</b>（Savitzky-Golay 點數，0＝關）只影響偵測——峰高仍讀原始訊號，不會被平滑壓低。</li>
+      <li>Peaks 輸出接 <b>Data Table</b>：每列一個峰（所屬光譜、峰位、峰高、FWHM、顯著度、高斯估計面積）。</li>
+    </ol>
+    <div class="note"><b>與 SpectraView 相同演算法</b>（Analyze ▸ Find peaks）：scipy 的 find_peaks 找極大值、peak_widths 在半高處量 FWHM。IR/Raman 鑑定常拿峰位表對照文獻特徵峰。</div>
+  </div>
+
+  <div class="wsec" id="xrf">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><path d="M4 40 L10 40 Q13 40 14 30 Q15 20 16.5 20 Q18 20 19 30 Q20 40 23 40 Q26 40 27 24 Q28 8 30 8 Q32 8 33 24 Q34 40 37 40 L44 40" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><rect x="24" y="2" width="13" height="11" rx="2" fill="#ffd54f"/><text x="30.5" y="11" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#4b3f72">Fe</text></svg>
+      XRF Element ID — XRF 光譜元素標記</h3>
+    <div class="io"><b>輸入</b>：Data（XRF 能譜，x 軸＝keV）　<b>輸出</b>：Elements（元素比對表）</div>
+    <ol>
+      <li>接上已校正能量軸（keV）的 XRF 譜；widget 自動尋峰。</li>
+      <li>每個峰在容差（<b>Energy tolerance</b>，預設 0.10 keV）內比對特徵譜線資料庫——Kα1/Kβ1/Lα1/Lβ1（X-ray Data Booklet 參考值，Na–U 共 53 個元素）。</li>
+      <li>圖上直接標「Fe Kα1」「Pb Lα1」等；比不到的峰標「?」。<b>Lines</b> 選單可限定只比 K 線或 L 線。</li>
+      <li>Elements 輸出表列出每峰的所有候選（峰能量、譜線能量、Δ、峰高、元素、譜線名）——接 Data Table 檢視。</li>
+    </ol>
+    <div class="note"><b>判讀提示：</b>同一元素的 Kβ（或 Lβ）若也出現，可佐證判定；重疊峰（如 Pb Lα1 10.55 keV 與 As Kα1 10.54 keV）要靠第二條線區分。顏料分析常見：鉛白（Pb）、朱砂（Hg）、鐵紅（Fe）、鈦白（Ti）、鋅白（Zn）。</div>
+  </div>
+
+  <div class="wsec" id="plsda">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#dd8452"/><path d="M8 40 L8 8 M8 40 L42 40" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="3" fill="#fff"/><circle cx="21" cy="12" r="3" fill="#fff"/><circle cx="14" cy="22" r="3" fill="#fff"/><circle cx="33" cy="28" r="3" fill="#ffd54f"/><circle cx="38" cy="24" r="3" fill="#ffd54f"/><circle cx="35" cy="34" r="3" fill="#ffd54f"/><path d="M12 34 L40 10" stroke="#fff" stroke-width="1.6" stroke-dasharray="4 3"/></svg>
+      PLS-DA — 偏最小平方判別分析</h3>
+    <div class="io"><b>輸入</b>：Data（含類別 target 的光譜 Table）　<b>輸出</b>：Scores、Loadings、VIP、Predictions</div>
+    <ol>
+      <li>資料要有<b>類別變數</b>：File/Datasets 載入後，用 <b>Select Columns</b> 把類別欄拖到 <i>Target</i> 再接進來。</li>
+      <li>widget 把類別 one-hot 編碼後做 PLS2（NIPALS 演算法），分數圖依類別上色；標題顯示訓練準確率，狀態欄有混淆矩陣。</li>
+      <li><b>Components</b> 調潛在變數數目（太多會過擬合——準確率永遠 100% 就是警訊）。</li>
+      <li><b>VIP</b> 輸出（已排序）：VIP &gt; 1 常視為重要變數——這就是「哪些波數把類別分開」的答案。</li>
+      <li><b>Predictions</b> 輸出＝原資料表＋預測類別 meta，可接 Orange 原生評估 widget。</li>
+    </ol>
+    <div class="note"><b>誠實評估：</b>這裡顯示的是<b>訓練集</b>準確率，會偏樂觀。要報告真實效能，請用 Orange 的 <b>Test &amp; Score</b>（交叉驗證）搭配 Logistic Regression 等學習器比較；PLS-DA 的價值在分數圖的可視化與 VIP 的波段解釋。</div>
   </div>
 </section>
 
@@ -381,8 +436,16 @@ python -m Orange.canvas</pre>
 <section id="faq">
   <div class="kicker">FAQ</div>
   <h2>常見問題</h2>
+  <details><summary>桌面版 Add-ons 安裝失敗：UnicodeDecodeError: 'cp950' codec can't decode…？</summary>
+    <p>這是 Orange 桌面版在<b>繁體中文 Windows</b>（系統代碼頁 cp950/Big5）上的已知問題：Add-ons 對話框讀取 pip 輸出時用 cp950 解碼，遇到 UTF-8 字元（如進度條「━」）就中斷。<b>跟裝哪個套件無關。</b>兩種解法：</p>
+    <ol>
+      <li><b>用命令列裝進 App 環境（推薦、最快）</b>——開「命令提示字元」執行：<br>
+        <code>"C:\Users\你的帳號\AppData\Local\Programs\Orange\python.exe" -m pip install orange-spectra</code><br>
+        跑完<b>完全關閉再重開 Orange</b> 即可。更新版本同理加 <code>--upgrade</code>。</li>
+      <li><b>讓 Python 走 UTF-8</b>——「編輯系統環境變數 ▸ 環境變數 ▸（使用者變數）新增」：名稱 <code>PYTHONUTF8</code>、值 <code>1</code>；重開 Orange 後 Add-ons 對話框就能正常用。</li>
+    </ol></details>
   <details><summary>要每次用都重新 pip 安裝嗎？</summary>
-    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 5 個 widgets 都在，直接用。
+    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 8 個 widgets 都在，直接用。
        只有要<b>更新到新版</b>時才重裝（<code>pip install --upgrade --force-reinstall --no-deps …</code>），
        且重裝後要<b>完全關掉 Orange 再重開</b>才會生效。桌面版 App 若日後上了 PyPI，用 Add-ons 對話框安裝更會自動記住、可線上更新。</p></details>
   <details><summary>不會用某個 widget，怎麼學？</summary>

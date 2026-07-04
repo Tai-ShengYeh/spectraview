@@ -185,9 +185,9 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
 
 ## Orange Data Mining widgets（orange-spectra）
 
-[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：五個光譜學
+[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：八個光譜學
 widgets（貼 IRUG/SOPRANO 網址匯入光譜、相似度比對、`.speclib` 光譜庫建立與搜尋、NNLS
-混合光譜成分分析、水光譜學 Aquagram 雷達圖），演算法與光譜庫格式跟 SpectraView 完全互通。
+混合光譜成分分析、尋峰標記、XRF 元素標記、PLS-DA 判別分析、水光譜學 Aquagram 雷達圖），演算法與光譜庫格式跟 SpectraView 完全互通。
 已上架 [PyPI](https://pypi.org/project/orange-spectra/)：
 
 ```bash

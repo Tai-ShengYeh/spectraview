@@ -442,3 +442,124 @@ def aquagram_coordinates(spectra: list, wamacs=None, normalization: str = "aquag
 
     return {"wamacs": bands, "names": [s["name"] for s in specs],
             "values": values, "normalization": normalization, "covered": covered}
+
+
+# ============================================================ peak finding
+def find_spectrum_peaks(x, y, min_height_frac: float = 0.05,
+                        min_prominence_frac: float = 0.03,
+                        min_distance: float = 0.0,
+                        smooth_window: int = 0) -> list:
+    """Detect peaks and measure FWHM (same method as SpectraView's Analyze menu).
+
+    Fractions are relative to the signal's full range; ``min_distance`` is in
+    x-units; ``smooth_window`` (odd, >=3) applies a Savitzky-Golay pre-smooth
+    for detection only (heights are read from the raw signal). Returns dicts
+    (center, height, fwhm, prominence, area, index) sorted by center.
+    """
+    from scipy.signal import find_peaks as _sp_find_peaks
+    from scipy.signal import peak_widths, savgol_filter
+
+    x = np.asarray(x, float)
+    y0 = np.asarray(y, float)
+    order = np.argsort(x)
+    x, y0 = x[order], y0[order]
+    y = y0
+    if smooth_window and 3 <= smooth_window < y0.size:
+        w = smooth_window + (smooth_window + 1) % 2      # force odd
+        y = savgol_filter(y0, w, min(3, w - 1), mode="interp")
+    rng = float(y.max() - y.min()) or 1.0
+    height = y.min() + min_height_frac * rng
+    prominence = max(min_prominence_frac * rng, _EPS)
+    dx = float(np.median(np.abs(np.diff(x)))) or 1.0
+    distance = max(1, int(round(min_distance / dx))) if min_distance > 0 else 1
+
+    idx, props = _sp_find_peaks(y, height=height, prominence=prominence,
+                                distance=distance)
+    if idx.size == 0:
+        return []
+    widths, _, lips, rips = peak_widths(y, idx, rel_height=0.5)
+    axis = np.arange(x.size)
+    fwhm = np.abs(np.interp(rips, axis, x) - np.interp(lips, axis, x))
+
+    gauss_area = np.sqrt(np.pi / (4.0 * np.log(2.0)))    # ~1.0645 * h * FWHM
+    peaks = []
+    for k, i in enumerate(idx):
+        h, f = float(y0[i]), float(fwhm[k])
+        peaks.append({"center": float(x[i]), "height": h, "fwhm": f,
+                      "prominence": float(props["prominences"][k]),
+                      "area": abs(h) * f * gauss_area, "index": int(i)})
+    peaks.sort(key=lambda p: p["center"])
+    return peaks
+
+
+# ============================================================ PLS-DA
+def plsda_fit(X, labels, n_components: int = 2) -> dict:
+    """PLS-DA: PLS2 (NIPALS) regression of one-hot classes on spectra.
+
+    Pure-numpy NIPALS keeps this dependency-free and deterministic. Returns
+    scores T (n x A), x-loadings P (p x A), weights W, y-loadings Q (c x A),
+    VIP scores (p), per-sample predicted class + soft y-hat, training accuracy
+    and confusion matrix (rows = true class).
+    """
+    X = np.asarray(X, float)
+    labels = [str(v) for v in labels]
+    if X.ndim != 2 or X.shape[0] != len(labels):
+        raise ValueError("X must be (n_samples, n_features) matching labels.")
+    classes = sorted(set(labels))
+    if len(classes) < 2:
+        raise ValueError("PLS-DA needs at least 2 classes.")
+    n, p = X.shape
+    A = int(max(1, min(n_components, n - 1, p)))
+    Y = np.zeros((n, len(classes)))
+    for i, lab in enumerate(labels):
+        Y[i, classes.index(lab)] = 1.0
+
+    x_mean, y_mean = X.mean(axis=0), Y.mean(axis=0)
+    Xc, Yc = X - x_mean, Y - y_mean
+    T = np.zeros((n, A)); W = np.zeros((p, A))
+    P = np.zeros((p, A)); Q = np.zeros((len(classes), A))
+    Xa, Ya = Xc.copy(), Yc.copy()
+    for a in range(A):
+        u = Ya[:, int(np.argmax(Ya.var(axis=0)))]
+        for _ in range(500):
+            w = Xa.T @ u
+            w /= (np.linalg.norm(w) or 1.0)
+            t = Xa @ w
+            q = Ya.T @ t / max(t @ t, _EPS)
+            u_new = Ya @ q / max(q @ q, _EPS)
+            if np.linalg.norm(u_new - u) <= 1e-10 * max(np.linalg.norm(u), 1.0):
+                u = u_new
+                break
+            u = u_new
+        t = Xa @ w
+        pa = Xa.T @ t / max(t @ t, _EPS)
+        q = Ya.T @ t / max(t @ t, _EPS)
+        Xa = Xa - np.outer(t, pa)
+        Ya = Ya - np.outer(t, q)
+        T[:, a], W[:, a], P[:, a], Q[:, a] = t, w, pa, q
+
+    # Regression coefficients B = W (P'W)^-1 Q'
+    B = W @ np.linalg.solve(P.T @ W, Q.T)
+    y_hat = Xc @ B + y_mean
+    pred_idx = np.argmax(y_hat, axis=1)
+    predicted = [classes[i] for i in pred_idx]
+    truth_idx = np.array([classes.index(lab) for lab in labels])
+    accuracy = float(np.mean(pred_idx == truth_idx))
+    confusion = np.zeros((len(classes), len(classes)), int)
+    for ti, pi in zip(truth_idx, pred_idx):
+        confusion[ti, pi] += 1
+
+    # VIP_j = sqrt( p * sum_a(ssy_a * (w_ja/||w_a||)^2) / sum_a ssy_a )
+    ssy = np.array([(T[:, a] @ T[:, a]) * (Q[:, a] @ Q[:, a]) for a in range(A)])
+    wnorm2 = np.maximum((W ** 2).sum(axis=0), _EPS)
+    vip = np.sqrt(p * ((W ** 2) / wnorm2 @ ssy) / max(ssy.sum(), _EPS))
+
+    # Explained X variance per component
+    total = float((Xc ** 2).sum()) or 1.0
+    xvar = np.array([(np.outer(T[:, a], P[:, a]) ** 2).sum() / total
+                     for a in range(A)])
+    return {"classes": classes, "n_components": A, "scores": T,
+            "loadings": P, "weights": W, "y_loadings": Q, "vip": vip,
+            "coef": B, "x_mean": x_mean, "y_mean": y_mean,
+            "y_hat": y_hat, "predicted": predicted, "accuracy": accuracy,
+            "confusion": confusion, "explained_x_variance": xvar}

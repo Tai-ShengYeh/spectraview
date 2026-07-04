@@ -214,5 +214,125 @@ class TestAquagram(WidgetTest):
         self.assertTrue(self.widget.Error.bad_table.is_shown())
 
 
+
+class TestOWPeakFinder(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owpeaks import OWPeakFinder
+        self.widget = self.create_widget(OWPeakFinder)
+
+    def _table(self):
+        x = np.linspace(400, 1800, 1401)
+        y = (np.exp(-((x - 1000) / 15) ** 2)
+             + 0.5 * np.exp(-((x - 1450) / 10) ** 2) + 0.01)
+        return table_from_spectra([core.make_spectrum(x, y, "s")])
+
+    def test_finds_and_outputs_peaks(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        out = self.get_output(self.widget.Outputs.peaks)
+        self.assertEqual(len(out), 2)
+        pos = sorted(float(r["position"]) for r in out)
+        self.assertAlmostEqual(pos[0], 1000, delta=2)
+        self.assertAlmostEqual(pos[1], 1450, delta=2)
+        names = [str(v.name) for v in out.domain.attributes]
+        self.assertIn("fwhm", names)
+
+    def test_thresholds(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        self.widget.min_height = 80.0
+        self.widget._recompute()
+        out = self.get_output(self.widget.Outputs.peaks)
+        self.assertEqual(len(out), 1)
+
+    def test_clear(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        self.send_signal(self.widget.Inputs.data, None)
+        self.assertIsNone(self.get_output(self.widget.Outputs.peaks))
+
+    def test_non_spectral_errors(self):
+        from Orange.data import Table
+        self.send_signal(self.widget.Inputs.data, Table("iris"))
+        self.assertTrue(self.widget.Error.bad_table.is_shown())
+
+
+class TestOWXRFElementID(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owxrfid import OWXRFElementID
+        self.widget = self.create_widget(OWXRFElementID)
+
+    def _table(self):
+        x = np.linspace(1, 20, 1901)
+        y = (np.exp(-((x - 6.404) / 0.08) ** 2) * 100
+             + np.exp(-((x - 8.048) / 0.08) ** 2) * 60
+             + np.exp(-((x - 10.551) / 0.09) ** 2) * 40 + 1.0)
+        return table_from_spectra(
+            [core.make_spectrum(x, y, "xrf", x_label="energy (keV)")])
+
+    def test_identifies_elements(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        out = self.get_output(self.widget.Outputs.elements)
+        syms = {str(r["symbol"]) for r in out}
+        self.assertTrue({"Fe", "Cu", "Pb"} <= syms)
+
+    def test_line_filter(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        self.widget.line_filter = 1                      # K lines only
+        self.widget._recompute()
+        out = self.get_output(self.widget.Outputs.elements)
+        self.assertNotIn("Pb", {str(r["symbol"]) for r in out})
+
+    def test_warns_when_not_kev(self):
+        x = np.linspace(400, 1800, 500)
+        y = np.exp(-((x - 1000) / 15) ** 2) + 0.01
+        t = table_from_spectra([core.make_spectrum(x, y, "ir")])
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Warning.not_kev.is_shown())
+
+
+class TestOWPLSDA(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owplsda import OWPLSDA
+        self.widget = self.create_widget(OWPLSDA)
+
+    def _table(self):
+        from Orange.data import ContinuousVariable, DiscreteVariable, Domain, Table
+        rs = np.random.RandomState(0)
+        grid = np.linspace(0, 1, 50)
+        X, y = [], []
+        for ci, c in enumerate((0.3, 0.7)):
+            for _ in range(8):
+                X.append(np.exp(-((grid - c) / 0.08) ** 2) + 0.02 * rs.randn(50))
+                y.append(ci)
+        dom = Domain([ContinuousVariable(f"{v:.3f}") for v in grid],
+                     DiscreteVariable("class", values=("A", "B")))
+        return Table.from_numpy(dom, np.array(X), np.array(y, float))
+
+    def test_outputs(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        scores = self.get_output(self.widget.Outputs.scores)
+        self.assertEqual(len(scores), 16)
+        self.assertEqual(len(scores.domain.attributes), 2)
+        vip = self.get_output(self.widget.Outputs.vip)
+        self.assertEqual(len(vip), 50)
+        vals = [float(r["VIP"]) for r in vip]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        pred = self.get_output(self.widget.Outputs.predictions)
+        self.assertEqual(str(pred.domain.metas[-1].name), "PLS-DA prediction")
+        self.assertIn("100.0%", self.widget.info_label.text())
+
+    def test_no_class_errors(self):
+        from Orange.data import ContinuousVariable, Domain, Table
+        dom = Domain([ContinuousVariable(f"x{i}") for i in range(5)])
+        t = Table.from_numpy(dom, np.random.RandomState(0).rand(6, 5))
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Error.no_class.is_shown())
+
+    def test_components_setting(self):
+        self.send_signal(self.widget.Inputs.data, self._table())
+        self.widget.n_components = 5
+        self.widget._recompute()
+        scores = self.get_output(self.widget.Outputs.scores)
+        self.assertEqual(len(scores.domain.attributes), 5)
+
+
 if __name__ == "__main__":
     unittest.main()

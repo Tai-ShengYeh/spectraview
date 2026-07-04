@@ -2,7 +2,7 @@
 
 **English** ｜ [中文](#中文說明)
 
-Five spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
+Eight spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
 They share their algorithms and the `.speclib` library format with
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview), a desktop
 spectroscopy viewer. Fetch spectra from public databases by URL, compare and
@@ -16,6 +16,9 @@ aquaphotomics aquagrams — all inside Orange's visual workflow canvas.
 | **Spectral Library** | Build a reference library, save it as **`.speclib`** (interoperable with SpectraView), and rank an unknown spectrum against the library. |
 | **Mixture Analysis** | Decompose a mixed spectrum with non‑negative least squares (NNLS): solve `mixture ≈ Σ cᵢ·refᵢ` and report coefficients, proportions, and R². |
 | **Aquagram** | Aquaphotomics: read normalized absorbance at water's 12 characteristic bands (WAMACs) and draw a 12‑axis radar chart (raw / SNV / aquagram normalization). |
+| **Peak Finder** | Detect peaks, label them on the plot, and output a peak table (position, height, FWHM, prominence, area). |
+| **XRF Element ID** | Find peaks in an XRF spectrum (keV) and label them with matching element emission lines (Kα/Kβ/Lα/Lβ, 53 elements Na–U). |
+| **PLS-DA** | Partial least squares discriminant analysis: class-colored score plot, loadings, VIP variable importance, and predictions. |
 
 The output `Table` follows the
 [Orange-Spectroscopy](https://orange-spectroscopy.readthedocs.io/) convention
@@ -54,7 +57,7 @@ missing a Qt binding — install one:
 pip install PyQt5 PyQtWebEngine
 ```
 
-After (re)starting Orange, a **Spectra** category with the five widgets appears
+After (re)starting Orange, a **Spectra** category with the eight widgets appears
 in the toolbox.
 
 ## Quick start
@@ -70,7 +73,7 @@ in the toolbox.
    proportions and R².
 
 Every widget has an **ℹ How to use** box and a **📖 Open tutorial** button in
-its top‑left corner.
+its top‑left corner, and **F1** (or the ? button) opens its online help page.
 
 ## Supported URL formats
 
@@ -107,7 +110,7 @@ MIT.
 
 [English](#orange-spectra--spectroscopy-widgets-for-orange-data-mining) ｜ **中文**
 
-五個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
+八個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
 與桌面版光譜檢視程式
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview) 共用演算法與
 `.speclib` 光譜庫格式。可用網址從公開資料庫抓光譜、比對與搜尋、建立可重複使用的
@@ -121,6 +124,9 @@ MIT.
 | **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名。 |
 | **Mixture Analysis** | 混合光譜的成分分析：以非負最小平方（NNLS）解 `mixture ≈ Σ cᵢ·refᵢ`，回報係數、比例與 R²。 |
 | **Aquagram** | Aquaphotomics：在水的 12 個特徵吸收帶（WAMACs）取正規化吸光度，畫 12 軸雷達圖（raw / SNV / aquagram 三種正規化）。 |
+| **Peak Finder** | 自動尋峰並在圖上標記，輸出峰表（峰位、峰高、FWHM、顯著度、面積）。 |
+| **XRF Element ID** | XRF 能譜（keV）尋峰並比對元素特徵譜線（Kα/Kβ/Lα/Lβ，Na–U 53 元素），圖上直接標元素。 |
+| **PLS-DA** | 偏最小平方判別分析：依類別上色的分數圖、loadings、VIP 變數重要性與預測輸出。 |
 
 輸出的 `Table` 採
 [Orange-Spectroscopy](https://orange-spectroscopy.readthedocs.io/)
@@ -156,7 +162,7 @@ macOS 請用 `python3` / `pip3`（可用 [Homebrew](https://brew.sh/) 裝 Python
 pip install PyQt5 PyQtWebEngine
 ```
 
-重新啟動 Orange，工具箱會出現 **Spectra** 分類（5 個 widgets）。
+重新啟動 Orange，工具箱會出現 **Spectra** 分類（8 個 widgets）。
 
 ## 快速上手
 
@@ -168,7 +174,7 @@ pip install PyQt5 PyQtWebEngine
 4. 混合譜接 **Mixture Analysis** 的 *Mixture*、參考譜（或 Library 的 *Library*
    輸出）接 *References* → 得成分比例與 R²。
 
-每個 widget 左上角都有「**ℹ 說明 How to use**」盒子與「**📖 開啟線上教學**」按鈕。
+每個 widget 左上角都有「**ℹ 說明 How to use**」盒子與「**📖 開啟線上教學**」按鈕；選取 widget 按 **F1**（或 ? 鈕）會開啟線上說明頁。
 
 ## 支援的網址格式
 
