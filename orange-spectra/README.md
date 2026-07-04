@@ -29,9 +29,13 @@ pipelines.
 > Orange are separate Python environments. Installing into the wrong one means
 > the widgets won't appear.
 
+Works on **Windows, macOS (Apple Silicon & Intel), and Linux** — it's pure
+Python (numpy / scipy / matplotlib / Orange3).
+
 **A. Desktop App** (the standalone program from orangedatamining.com):
 `Options ▸ Add-ons… ▸ Add more…`, type **`orange-spectra`**, tick it, **OK**,
-and restart.
+and restart. On macOS, download the Mac `.dmg` from
+<https://orangedatamining.com/download/>.
 
 **B. pip Orange** (started with `python -m Orange.canvas`):
 
@@ -39,6 +43,9 @@ and restart.
 pip install orange-spectra
 python -m Orange.canvas
 ```
+
+On macOS use `python3` / `pip3` (e.g. install Python via
+[Homebrew](https://brew.sh/): `brew install python`).
 
 If Orange fails to start with `ImportError: PyQt5 … not available`, it's
 missing a Qt binding — install one:
@@ -125,8 +132,12 @@ PCA / PLS 等化學計量學流程。
 > ⚠️ 先確認你的 **Orange 是哪一種**——桌面版 App 與 pip 版是不同的 Python
 > 環境，裝錯不會出現 widgets。
 
+可在 **Windows、macOS（Apple 晶片與 Intel）、Linux** 執行——純 Python
+（numpy / scipy / matplotlib / Orange3）。
+
 **A. 桌面版 App**（orangedatamining.com 下載的獨立程式）：
 `Options ▸ Add-ons… ▸ Add more…` 輸入 **`orange-spectra`** → 打勾 → OK → 重啟。
+macOS 到 <https://orangedatamining.com/download/> 下載 Mac 版 `.dmg`。
 
 **B. pip 版 Orange**（`python -m Orange.canvas` 啟動）：
 
@@ -134,6 +145,9 @@ PCA / PLS 等化學計量學流程。
 pip install orange-spectra
 python -m Orange.canvas
 ```
+
+macOS 請用 `python3` / `pip3`（可用 [Homebrew](https://brew.sh/) 裝 Python：
+`brew install python`）。
 
 若 Orange 開不了並出現 `ImportError: PyQt5 … not available`，是少了 Qt 綁定，
 補裝：

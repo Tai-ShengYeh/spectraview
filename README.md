@@ -185,15 +185,20 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
 
 ## Orange Data Mining widgets（orange-spectra）
 
-[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：四個光譜學
+[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：五個光譜學
 widgets（貼 IRUG/SOPRANO 網址匯入光譜、相似度比對、`.speclib` 光譜庫建立與搜尋、NNLS
 混合光譜成分分析、水光譜學 Aquagram 雷達圖），演算法與光譜庫格式跟 SpectraView 完全互通。
+已上架 [PyPI](https://pypi.org/project/orange-spectra/)：
 
 ```bash
-pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+pip install orange-spectra          # pip 版 Orange
 ```
 
-📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>
+**Orange 桌面版 App**（含 macOS）：`Options ▸ Add-ons… ▸ Add more…` 輸入 `orange-spectra`
+→ 打勾 → OK → 重啟。macOS 到 [orangedatamining.com](https://orangedatamining.com/download/)
+下載 Mac 版 `.dmg`；Apple 晶片與 Intel 皆可。
+
+📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>（[English](https://tai-shengyeh.github.io/spectraview/orange_en.html)）
 
 ---
 
