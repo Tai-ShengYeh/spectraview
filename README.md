@@ -200,6 +200,20 @@ pip install orange-spectra          # pip 版 Orange
 
 📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>（[English](https://tai-shengyeh.github.io/spectraview/orange_en.html)）
 
+### orange-assay（盤面影像／劑量反應）
+
+[`orange-assay/`](orange-assay/) 是姊妹 add-on：三個把**檢測盤照片**變成資料、擬合
+**劑量反應曲線**的 widgets——**Microplate Reader**（微孔盤 6–384 孔）、**Coffee-Ring
+Reader**（點樣咖啡環盤，重用 [coffee-ring-analyzer](https://github.com/Tai-ShengYeh/coffee-ring-analyzer)
+演算法）、**Dose-Response Fit**（3PL/4PL，EC50/LOD）。已上架
+[PyPI](https://pypi.org/project/orange-assay/)：
+
+```bash
+pip install orange-assay
+```
+
+📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/assay.html>
+
 ---
 
 ## 專案結構

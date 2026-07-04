@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee-Ring Reader — orange-assay help</title><style>
+:root{--fg:#22303c;--mut:#5b6b7a;--acc:#1f8a54;--bg:#ffffff;--card:#f2f8f4;--line:#d9e6dd}
+@media (prefers-color-scheme: dark){:root{--fg:#e4ecf3;--mut:#9db0c0;--acc:#5fce93;--bg:#141a20;--card:#1b241f;--line:#2c3b33}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,'Segoe UI','Noto Sans TC',sans-serif;color:var(--fg);background:var(--bg)}
+main{max-width:820px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.1rem;margin:1.4em 0 .4em;color:var(--acc)}
+code{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.92em}
+.note{background:var(--card);border-left:3px solid var(--acc);border-radius:6px;padding:10px 14px;font-size:.95em}
+.crumb{font-size:.9em;color:var(--mut)}.crumb a{color:var(--acc);text-decoration:none}
+ol,ul{padding-left:1.3em}li{margin:.25em 0}
+.lang{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:.85em;margin:14px 0 4px}
+footer{margin-top:40px;font-size:.85em;color:var(--mut)}footer a{color:var(--acc)}
+</style></head>
+<body><main>
+<div class="crumb"><a href="index.html">orange-assay widgets</a> ▸ Coffee-Ring Reader</div>
+<h1>Coffee-Ring Reader — 咖啡環讀取</h1>
+<div class="lang">中文</div>
+<p><b>輸出</b>：Cells（正規化時：concentration, ratio, se, col；未正規化時逐格 value）。</p>
+<ol><li>選點樣／咖啡環盤照片。</li>
+<li>設 <b>Rows</b>（重複列）與 <b>Columns</b>（<b>第 0 欄＝blank</b>）；可勾 <b>Auto-detect grid</b> 從亮點自動抓格。</li>
+<li><b>Measure</b>：thresholded count 或 intensity；<b>Threshold</b>：manual（預設 0.43）/ Otsu / per-cell Otsu。</li>
+<li>勾 <b>Divide by blank</b>：每格除以同列第 0 欄、再平均重複列；<b>Concentrations</b> 填第 1 欄起的濃度。</li>
+<li>Cells 輸出接 <b>Dose-Response Fit</b> 求 EC50 / LOD。</li></ol>
+<p class="note">重現 coffee-ring-analyzer：ITU-R 601 灰階、integral image 逐格量測、blank 正規化——與其 Streamlit／手機／CLI 版結果一致。</p>
+<div class="lang">English</div>
+<p><b>Output</b>: Cells (normalized: concentration, ratio, se, col; or per-cell value when raw).</p>
+<ol><li>Choose the spotted-assay / coffee-ring plate photo.</li>
+<li>Set <b>Rows</b> (replicates) and <b>Columns</b> (<b>column 0 = blank</b>); tick <b>Auto-detect grid</b> to find cells from bright spots.</li>
+<li><b>Measure</b>: thresholded count or intensity; <b>Threshold</b>: manual (default 0.43) / Otsu / per-cell Otsu.</li>
+<li>Tick <b>Divide by blank</b> to normalize each cell by its row's column 0 and average replicate rows; fill in <b>Concentrations</b> for columns 1…</li>
+<li>Feed Cells to <b>Dose-Response Fit</b> for EC50 / LOD.</li></ol>
+<p class="note">Reproduces coffee-ring-analyzer: ITU-R 601 grayscale, integral-image per-cell measurement, blank normalization — matching its Streamlit / mobile / CLI results.</p>
+<footer>完整教學 Full tutorial：<a href="../assay.html#coffeering">assay.html</a> ・
+<a href="https://github.com/Tai-ShengYeh/spectraview">GitHub</a></footer>
+</main></body></html>
