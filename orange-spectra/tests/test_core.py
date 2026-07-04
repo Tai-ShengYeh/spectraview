@@ -270,5 +270,37 @@ try:
 except ValueError:
     check("single class raises", True)
 
+
+print("== embedded JS chart parsing ==")
+_plotly = ('<script>var t={x:[400,401,402,403,404],y:[0.1,0.4,0.9,0.5,0.2]};'
+           'Plotly.newPlot("d",[t]);</script>')
+_sp = core.load_spectrum_url("https://infra-art.eu/sample/PSE320",
+                             fetch=lambda u: (_plotly.encode(), "text/html"))
+check("Plotly x/y arrays parsed", _sp is not None and _sp["x"].size == 5)
+check("named from URL last segment", _sp["name"] == "PSE320")
+check("y pairing kept", abs(np.interp(402, _sp["x"], _sp["y"]) - 0.9) < 1e-9)
+_hc = ('<script>Highcharts.chart("c",{series:[{data:[[4000,0.02],[3999,0.03],'
+       '[3998,0.08],[3997,0.05],[3996,0.01]]}]});</script>')
+_sp2 = core.load_spectrum_url("https://x.org/s/AB12",
+                              fetch=lambda u: (_hc.encode(), "text/html"))
+check("Highcharts pair array parsed", _sp2["x"].size == 5)
+check("sorted ascending", _sp2["x"][0] == 3996.0 and np.all(np.diff(_sp2["x"]) > 0))
+_cj = ('<script>new Chart(x,{data:{labels:[1000,1001,1002,1003,1004,1005],'
+       'datasets:[{data:[5,6,9,7,6,5]}]}});</script>')
+_sp3 = core.load_spectrum_url("https://x.org/c/CJ",
+                              fetch=lambda u: (_cj.encode(), "text/html"))
+check("Chart.js labels+data parsed", _sp3["x"].size == 6)
+check("embedded parser does not hijack IRUG",
+      core.load_spectrum_url(4119, fetch=lambda u: (
+          '<script>jqPlotData.series[\'Submitter\'] = '
+          '{"1900.0":0.1,"1899.0":0.2,"1898.0":0.3};</script>'.encode(),
+          "text/html"))["name"] == "IRUG 4119")
+try:
+    core.load_spectrum_url("https://x.org/none",
+                           fetch=lambda u: (b"<html>nothing here</html>", "text/html"))
+    check("no-chart page raises", False)
+except ValueError:
+    check("no-chart page raises", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

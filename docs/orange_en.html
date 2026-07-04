@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orange × Spectroscopy widgets ｜ IRUG/SOPRANO import · similarity · library · mixture · aquagram</title>
-<meta name="description" content="orange-spectra: tutorial for eight Orange Data Mining spectroscopy widgets. Import spectra from IRUG/SOPRANO URLs, compute similarity, build a .speclib library and search, NNLS mixture analysis, and aquaphotomics aquagrams — interoperable with SpectraView.">
+<meta name="description" content="orange-spectra: tutorial for nine Orange Data Mining spectroscopy widgets. Import spectra from IRUG/SOPRANO URLs, compute similarity, build a .speclib library and search, NNLS mixture analysis, and aquaphotomics aquagrams — interoperable with SpectraView.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -83,7 +83,7 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">Spectroscopy</span> Widgets</h1>
-  <p>Eight open-source widgets that bring spectroscopy into Orange's visual workflow: paste an
+  <p>Nine open-source widgets that bring spectroscopy into Orange's visual workflow: paste an
      <b>IRUG / SOPRANO URL</b> to see a spectrum, compute <b>similarity</b>, build a <b>library</b> to
      identify unknowns, unmix <b>mixtures</b> with <b>NNLS</b>, and draw an aquaphotomics
      <b>Aquagram</b> — all by dragging and connecting, no coding.</p>
@@ -100,7 +100,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>Eight widgets, an end-to-end spectral-ID workflow</h2>
+  <h2>Nine widgets, an end-to-end spectral-ID workflow</h2>
   <p class="lead">After installing, a new <b>Spectra</b> category appears in Orange's toolbox. Output
      tables follow the <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a>
      convention (one column per wavenumber, one row per spectrum), so they plug straight into PCA,
@@ -110,6 +110,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M6 30 Q12 28 15 18 T24 12 Q27 26 32 21 T40 26" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M24 32 v9 m0 0 l-5-5 m5 5 l5-5" stroke="#ffd54f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <h3>Import Spectrum URL</h3>
       <p>Paste an IRUG id (e.g. <code>4119</code>), an IRUG/SOPRANO page URL, or a direct JCAMP-DX / CSV URL — download, plot and output a table in one click. Fetch several to accumulate a set.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#64b5cd"/><path d="M5 16 Q12 14 16 20 T26 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M5 24 Q12 30 16 22 T26 26" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/><path d="M34 12 Q41 21 34 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M38 15 Q44 21 38 27" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <h3>Merge Spectra</h3>
+      <p>Overlay several spectra sources on one plot and output a single combined table (one spectrum per row, shared grid) for downstream analysis.</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -163,7 +168,7 @@
   <div class="step"><div class="n">1</div><div><h4>Open Add-ons</h4><p>Orange menu <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… and type the name</h4>
     <p>Click <b>Add more…</b> (top-right), type <code>orange-spectra</code> (<b>not</b> a git URL — this box only takes PyPI names), tick it and click <b>OK</b>.</p></div></div>
-  <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 8 widgets appears in the toolbox.</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 9 widgets appears in the toolbox.</p></div></div>
   <div class="note"><b><code>orange-spectra</code> not found?</b> It isn't on PyPI yet. See
     <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>
     to publish it. Until then, the desktop App can install via its own Python: locate the App's
@@ -186,7 +191,7 @@ python -m Orange.canvas</pre>
 
   <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
     <b>Install once — you don't reinstall every time.</b> Installation is <strong>one-off</strong>: after
-    it, the 8 widgets in the Spectra category are there every time you open Orange.<br>
+    it, the 9 widgets in the Spectra category are there every time you open Orange.<br>
     ▸ Reinstall <b>only to update</b>:
     <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>,
     then <strong>fully close and reopen Orange</strong>.<br>
@@ -217,6 +222,18 @@ python -m Orange.canvas</pre>
     <div class="note"><b>How it works:</b> IRUG pages have no download file — the spectrum is embedded in
       the page's interactive chart (jqPlot) inside a <code>&lt;script&gt;</code> (as
       <code>"wavenumber":intensity</code> pairs); SOPRANO stores it in a Dygraph data array. The widget parses the page source to recover the numbers.</div>
+  </div>
+
+  <div class="wsec" id="merge">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#64b5cd"/><path d="M5 16 Q12 14 16 20 T26 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M5 24 Q12 30 16 22 T26 26" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/><path d="M34 12 Q41 21 34 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M38 15 Q44 21 38 27" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Merge Spectra — overlay &amp; combine spectra</h3>
+    <div class="io"><b>Input</b>: Spectra (connect several)　<b>Output</b>: Spectra (one combined Table)</div>
+    <ol>
+      <li>Connect several sources to <i>Spectra</i> — multiple Import Spectrum URL widgets, Orange's File, or any wavenumber-column Table.</li>
+      <li>All spectra overlay live; <b>Normalize each</b> (none / max=1 / area=1 / SNV) makes differently-scaled spectra comparable; <b>Stack offset</b> only spreads the display.</li>
+      <li>The output is one combined Table (each row a spectrum on the shared overlap grid), ready for Similarity / Library / Mixture / PLS-DA.</li>
+    </ol>
+    <div class="note">The Orange counterpart of SpectraView's "open several files &amp; combined export": the output uses the <b>overlap region</b> of all spectra on a common grid; no overlap raises an error.</div>
   </div>
 
   <div class="wsec" id="similarity">
@@ -459,7 +476,7 @@ python -m Orange.canvas</pre>
         (Edit system environment variables ▸ Environment Variables ▸ New), restart Orange, then use the Add-ons dialog normally.</li>
     </ol></details>
   <details><summary>Do I have to pip-install every time I use it?</summary>
-    <p>No. Installation is <b>one-off</b> — once installed, the 8 widgets in the Spectra category are
+    <p>No. Installation is <b>one-off</b> — once installed, the 9 widgets in the Spectra category are
        there every time you open Orange. Reinstall <b>only to update to a new version</b>
        (<code>pip install --upgrade --force-reinstall --no-deps …</code>), and after reinstalling
        <b>fully close and reopen Orange</b> for it to take effect. Once the desktop App version is on

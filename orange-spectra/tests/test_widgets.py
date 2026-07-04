@@ -334,5 +334,52 @@ class TestOWPLSDA(WidgetTest):
         self.assertEqual(len(scores.domain.attributes), 5)
 
 
+
+class TestOWMergeSpectra(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owmerge import OWMergeSpectra
+        self.widget = self.create_widget(OWMergeSpectra)
+
+    def _tables(self):
+        x1 = np.linspace(400, 1800, 400)
+        x2 = np.linspace(600, 2000, 400)
+        t1 = table_from_spectra([core.make_spectrum(x1, np.exp(-((x1 - 1000) / 40) ** 2), "A"),
+                                 core.make_spectrum(x1, np.exp(-((x1 - 900) / 40) ** 2), "A2")])
+        t2 = table_from_spectra([core.make_spectrum(x2, np.exp(-((x2 - 1200) / 50) ** 2), "B")])
+        return t1, t2
+
+    def test_merge_two_inputs(self):
+        t1, t2 = self._tables()
+        self.widget.set_data(t1, 1)
+        self.widget.set_data(t2, 2)
+        self.widget.handleNewSignals()
+        out = self.get_output(self.widget.Outputs.spectra)
+        self.assertEqual(len(out), 3)
+        attrs = [float(v.name) for v in out.domain.attributes]
+        self.assertGreaterEqual(min(attrs), 600)      # overlap region
+        self.assertLessEqual(max(attrs), 1800)
+
+    def test_remove_input(self):
+        t1, t2 = self._tables()
+        self.widget.set_data(t1, 1)
+        self.widget.set_data(t2, 2)
+        self.widget.handleNewSignals()
+        self.widget.set_data(None, 2)
+        self.widget.handleNewSignals()
+        self.assertEqual(len(self.get_output(self.widget.Outputs.spectra)), 2)
+
+    def test_normalization(self):
+        t1, _ = self._tables()
+        self.widget.set_data(t1, 1)
+        self.widget.normalization = 1                 # max = 1
+        self.widget.handleNewSignals()
+        out = self.get_output(self.widget.Outputs.spectra)
+        self.assertLessEqual(float(np.nanmax(np.abs(out.X))), 1.0 + 1e-6)
+
+    def test_empty(self):
+        self.widget.handleNewSignals()
+        self.assertIsNone(self.get_output(self.widget.Outputs.spectra))
+
+
 if __name__ == "__main__":
     unittest.main()
