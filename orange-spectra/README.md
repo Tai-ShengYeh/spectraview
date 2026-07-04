@@ -2,7 +2,7 @@
 
 **English** ｜ [中文](#中文說明)
 
-Eight spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
+Nine spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
 They share their algorithms and the `.speclib` library format with
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview), a desktop
 spectroscopy viewer. Fetch spectra from public databases by URL, compare and
@@ -11,7 +11,8 @@ aquaphotomics aquagrams — all inside Orange's visual workflow canvas.
 
 | Widget | What it does |
 |---|---|
-| **Import Spectrum URL** | Paste an **IRUG id/URL** or a **SOPRANO URL** (direct JCAMP-DX/CSV links work too), download and plot the spectrum, and output an Orange `Table` (one spectrum per row, wavenumbers as column names). |
+| **Import Spectrum URL** | Paste an **IRUG id/URL** or a **SOPRANO URL** (direct JCAMP-DX/CSV links, and spectra embedded in Plotly/Highcharts/Chart.js charts, work too), download and plot the spectrum, output an Orange `Table`. |
+| **Merge Spectra** | Overlay several spectra sources on one plot and output a single combined `Table` (each row a spectrum on a shared grid) — like SpectraView's multi-file overlay. |
 | **Spectra Similarity** | Score similarity between two sets of spectra: correlation, cosine, spectral angle (SAM), and Euclidean distance. |
 | **Spectral Library** | Build a reference library, save it as **`.speclib`** (interoperable with SpectraView), and rank an unknown spectrum against the library. |
 | **Mixture Analysis** | Decompose a mixed spectrum with non‑negative least squares (NNLS): solve `mixture ≈ Σ cᵢ·refᵢ` and report coefficients, proportions, and R². |
@@ -57,7 +58,7 @@ missing a Qt binding — install one:
 pip install PyQt5 PyQtWebEngine
 ```
 
-After (re)starting Orange, a **Spectra** category with the eight widgets appears
+After (re)starting Orange, a **Spectra** category with the nine widgets appears
 in the toolbox.
 
 ## Quick start
@@ -81,6 +82,7 @@ its top‑left corner, and **F1** (or the ? button) opens its online help page.
 - **SOPRANO** pages (Dygraph‑embedded data)
 - **JCAMP-DX** (AFFN plain‑number format)
 - Two‑column **CSV/TSV**
+- Spectra embedded in **Plotly / Highcharts / Chart.js** interactive charts (generic x/y fallback)
 
 Compressed JCAMP (SQZ/DIF) is not parsed here — open it in SpectraView and
 export first.
@@ -110,7 +112,7 @@ MIT.
 
 [English](#orange-spectra--spectroscopy-widgets-for-orange-data-mining) ｜ **中文**
 
-八個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
+九個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
 與桌面版光譜檢視程式
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview) 共用演算法與
 `.speclib` 光譜庫格式。可用網址從公開資料庫抓光譜、比對與搜尋、建立可重複使用的
@@ -119,7 +121,8 @@ MIT.
 
 | Widget | 功能 |
 |---|---|
-| **Import Spectrum URL** | 貼上 **IRUG 編號／網址**或 **SOPRANO 網址**（也支援 JCAMP-DX/CSV 直接網址），下載並畫出光譜，輸出成 Orange `Table`（每列一條光譜、欄名＝波數）。 |
+| **Import Spectrum URL** | 貼上 **IRUG 編號／網址**或 **SOPRANO 網址**（也支援 JCAMP-DX/CSV 直接網址，以及 Plotly/Highcharts/Chart.js 互動圖內嵌資料），下載並畫出光譜，輸出成 Orange `Table`。 |
+| **Merge Spectra** | 把多個光譜來源疊在一張圖，輸出成一個合併 `Table`（每列一條光譜、共同波段）——等同 SpectraView 的多檔疊圖。 |
 | **Spectra Similarity** | 兩組光譜間的相似度：correlation / cosine / 光譜角 SAM / Euclidean。 |
 | **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名。 |
 | **Mixture Analysis** | 混合光譜的成分分析：以非負最小平方（NNLS）解 `mixture ≈ Σ cᵢ·refᵢ`，回報係數、比例與 R²。 |
@@ -162,7 +165,7 @@ macOS 請用 `python3` / `pip3`（可用 [Homebrew](https://brew.sh/) 裝 Python
 pip install PyQt5 PyQtWebEngine
 ```
 
-重新啟動 Orange，工具箱會出現 **Spectra** 分類（8 個 widgets）。
+重新啟動 Orange，工具箱會出現 **Spectra** 分類（9 個 widgets）。
 
 ## 快速上手
 
@@ -182,6 +185,7 @@ pip install PyQt5 PyQtWebEngine
 - **SOPRANO** 頁（Dygraph 內嵌資料）
 - **JCAMP-DX**（AFFN 純數字格式）
 - 兩欄 **CSV/TSV**
+- **Plotly / Highcharts / Chart.js** 互動圖內嵌的 x/y 資料（通用後備解析）
 
 壓縮的 JCAMP（SQZ/DIF）這裡不解析——請先用 SpectraView 開啟後匯出。
 

@@ -83,8 +83,8 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">光譜</span> Widgets</h1>
-  <p>八個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
-     算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜、<b>尋峰標記</b>、<b>XRF 元素標記</b>、<b>PLS-DA</b> 判別分析、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
+  <p>九個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
+     <b>多譜疊圖合併</b>、算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜、<b>尋峰標記</b>、<b>XRF 元素標記</b>、<b>PLS-DA</b> 判別分析、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
     <a class="btn ghost" href="#widgets">Widget 教學</a>
@@ -98,7 +98,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>八個 Widgets，一條龍的光譜鑑定流程</h2>
+  <h2>九個 Widgets，一條龍的光譜鑑定流程</h2>
   <p class="lead">安裝後 Orange 工具箱會多一個 <b>Spectra</b> 分類。輸出的資料表採
      <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a> 慣例
      （每一欄＝一個波數、每一列＝一條光譜），可直接接 PCA、PLS、階層式分群等 Orange 原生流程。</p>
@@ -107,6 +107,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M6 30 Q12 28 15 18 T24 12 Q27 26 32 21 T40 26" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M24 32 v9 m0 0 l-5-5 m5 5 l5-5" stroke="#ffd54f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <h3>Import Spectrum URL</h3>
       <p>貼上 IRUG 編號（如 <code>4119</code>）、IRUG/SOPRANO 頁面網址，或 JCAMP-DX / CSV 直接網址——下載、畫圖、輸出資料表，一鍵完成。可連抓多條累積成一組。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#64b5cd"/><path d="M5 16 Q12 14 16 20 T26 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M5 24 Q12 30 16 22 T26 26" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/><path d="M34 12 Q41 21 34 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M38 15 Q44 21 38 27" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <h3>Merge Spectra</h3>
+      <p>把多個光譜來源疊在同一張圖，並輸出成一個合併資料表（每列一條光譜、共同波段），方便一次比對或接後續分析。</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -212,7 +217,19 @@ python -m Orange.canvas</pre>
       <li>重複 Fetch 可累積多條光譜；清單可移除單條或全部清空。多條光譜會自動重採樣到共同波段。</li>
     </ol>
     <div class="note"><b>原理：</b>IRUG 網頁沒有下載檔——光譜其實藏在頁面互動圖（jqPlot）的
-      <code>&lt;script&gt;</code> 裡（<code>"波數:強度"</code> 配對）；SOPRANO 則藏在 Dygraph 的資料陣列。widget 直接解析網頁原始碼還原數據。</div>
+      <code>&lt;script&gt;</code> 裡（<code>"波數:強度"</code> 配對）；SOPRANO 藏在 Dygraph 資料陣列；也支援 Plotly / Highcharts / Chart.js 等互動圖內嵌的 x/y 陣列（如 INFRA-ART 等資料庫）。widget 直接解析網頁原始碼還原數據。</div>
+  </div>
+
+  <div class="wsec" id="merge">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#64b5cd"/><path d="M5 16 Q12 14 16 20 T26 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M5 24 Q12 30 16 22 T26 26" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/><path d="M34 12 Q41 21 34 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M38 15 Q44 21 38 27" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Merge Spectra — 多光譜疊圖合併</h3>
+    <div class="io"><b>輸入</b>：Spectra（可接多個來源）　<b>輸出</b>：Spectra（合併後的 Table）</div>
+    <ol>
+      <li>把多個來源接到 <i>Spectra</i> 輸入——多個 Import Spectrum URL、Orange 的 File、或任何欄名＝波數的 Table。</li>
+      <li>右側即時疊圖；<b>Normalize each</b>（none / max=1 / area=1 / SNV）讓不同強度的譜可比較，<b>Stack offset</b> 只把顯示往上錯開、不改數值。</li>
+      <li>輸出是一個合併 Table（每列一條光譜、共同重疊波段），可接 Similarity / Library / Mixture / PLS-DA。</li>
+    </ol>
+    <div class="note">這是 SpectraView 桌面版「開多檔疊圖＋合併匯出」的 Orange 版：輸出取所有光譜的<b>重疊波段</b>內插到共同格點；完全沒重疊才報錯。</div>
   </div>
 
   <div class="wsec" id="similarity">

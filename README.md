@@ -185,8 +185,8 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
 
 ## Orange Data Mining widgets（orange-spectra）
 
-[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：八個光譜學
-widgets（貼 IRUG/SOPRANO 網址匯入光譜、相似度比對、`.speclib` 光譜庫建立與搜尋、NNLS
+[`orange-spectra/`](orange-spectra/) 是配套的 **Orange Data Mining 附加元件**：九個光譜學
+widgets（貼 IRUG/SOPRANO/互動圖網址匯入光譜、多譜疊圖合併、相似度比對、`.speclib` 光譜庫建立與搜尋、NNLS
 混合光譜成分分析、尋峰標記、XRF 元素標記、PLS-DA 判別分析、水光譜學 Aquagram 雷達圖），演算法與光譜庫格式跟 SpectraView 完全互通。
 已上架 [PyPI](https://pypi.org/project/orange-spectra/)：
 
@@ -199,6 +199,20 @@ pip install orange-spectra          # pip 版 Orange
 下載 Mac 版 `.dmg`；Apple 晶片與 Intel 皆可。
 
 📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/orange.html>（[English](https://tai-shengyeh.github.io/spectraview/orange_en.html)）
+
+### orange-assay（盤面影像／劑量反應）
+
+[`orange-assay/`](orange-assay/) 是姊妹 add-on：三個把**檢測盤照片**變成資料、擬合
+**劑量反應曲線**的 widgets——**Microplate Reader**（微孔盤 6–384 孔）、**Coffee-Ring
+Reader**（點樣咖啡環盤，重用 [coffee-ring-analyzer](https://github.com/Tai-ShengYeh/coffee-ring-analyzer)
+演算法）、**Dose-Response Fit**（3PL/4PL，EC50/LOD）。已上架
+[PyPI](https://pypi.org/project/orange-assay/)：
+
+```bash
+pip install orange-assay
+```
+
+📖 教學網頁：<https://tai-shengyeh.github.io/spectraview/assay.html>
 
 ---
 

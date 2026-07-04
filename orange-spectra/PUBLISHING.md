@@ -36,6 +36,16 @@
 
 ---
 
+## 兩個套件（orange-spectra ＋ orange-assay）
+
+同一個 workflow（`publish-pypi.yml`）會 build 這個 repo 裡的**兩個** add-on，並用
+`skip-existing` 上傳——只有你調高版本號的那個會真的被上傳，另一個維持原版會自動略過。
+因此每個套件都要**各自**在 PyPI 設一個 pending publisher（同一個 repo / workflow /
+environment `pypi`，只有 **PyPI Project Name** 不同）：一個填 `orange-spectra`、一個填
+`orange-assay`。手動觸發時可用 **Run workflow** 的 *package* 選單只 build 其中一個。
+
+---
+
 ## 方式 B ── 本機手動上傳（用 API token）
 
 ```bash

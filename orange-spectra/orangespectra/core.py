@@ -236,18 +236,92 @@ def parse_csv(text: str, source: str = ""):
                          name=name, x_label=x_label, source=source)
 
 
+# ----------------------------------------------- generic embedded JS charts
+_NUM = r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
+
+
+def _array_after(text, key_pattern):
+    """Return the JS array literal (as a string) that follows ``key_pattern``
+    (e.g. ``x:``), or None. The '[' must immediately follow the key."""
+    for m in re.finditer(key_pattern, text, re.IGNORECASE):
+        b = text.find("[", m.end())
+        if b < 0 or (b - m.end()) > 3:
+            continue
+        try:
+            return _find_balanced(text, b)
+        except ValueError:
+            continue
+    return None
+
+
+def _mk_from_pairs(pairs, source, name=None):
+    xy = sorted(((float(a), float(b)) for a, b in pairs), key=lambda p: p[0])
+    if name is None:
+        seg = urllib.parse.urlparse(source).path.rstrip("/").split("/")[-1]
+        name = seg or "spectrum"
+    return make_spectrum([p[0] for p in xy], [p[1] for p in xy],
+                         name=name, x_label="x", source=source)
+
+
+def parse_embedded_arrays(text: str, source: str = ""):
+    """Last-resort parser for spectra embedded in an interactive JS chart:
+    Plotly (``x:[…], y:[…]``), Highcharts / ECharts (``data:[[x,y],…]``),
+    Chart.js (``labels:[…]`` + ``data:[…]``), or any ``[[x,y],…]`` array.
+
+    Runs only after the specific parsers, and needs several numeric points, so
+    it rarely mis-fires. Helps databases that only render a chart (no file)."""
+    # (1) paired arrays: data:[[x,y],…] / series data (Highcharts, ECharts, Plotly)
+    for key in (r"['\"]?data['\"]?\s*:", r"['\"]?series['\"]?\s*:"):
+        s = _array_after(text, key)
+        if s and s.lstrip().startswith("[["):
+            pairs = re.findall(rf"\[\s*({_NUM})\s*,\s*({_NUM})", s)
+            if len(pairs) >= 5:
+                return _mk_from_pairs(pairs, source)
+    # any [[x,y],…] block anywhere (longest wins)
+    best = None
+    for m in re.finditer(r"\[\s*\[", text):
+        try:
+            s = _find_balanced(text, m.start())
+        except ValueError:
+            continue
+        pairs = re.findall(rf"\[\s*({_NUM})\s*,\s*({_NUM})", s)
+        if len(pairs) >= 8 and (best is None or len(pairs) > len(best)):
+            best = pairs
+    if best:
+        return _mk_from_pairs(best, source)
+    # (2) separate x / y arrays (Plotly-style)
+    xs, ys = _array_after(text, r"['\"]?x['\"]?\s*:"), _array_after(
+        text, r"['\"]?y['\"]?\s*:")
+    if xs and ys:
+        xv = [float(v) for v in re.findall(_NUM, xs)]
+        yv = [float(v) for v in re.findall(_NUM, ys)]
+        if len(xv) >= 5 and len(xv) == len(yv):
+            return _mk_from_pairs(zip(xv, yv), source)
+    # (3) Chart.js: labels (x) + data (y)
+    lab, dat = _array_after(text, r"labels\s*:"), _array_after(text, r"data\s*:")
+    if lab and dat:
+        xv = [float(v) for v in re.findall(_NUM, lab)]
+        yv = [float(v) for v in re.findall(_NUM, dat)]
+        if len(xv) >= 5 and len(xv) == len(yv):
+            return _mk_from_pairs(zip(xv, yv), source)
+    return None
+
+
 def load_spectrum_url(id_or_url, fetch=default_fetch):
-    """Fetch + auto-detect: IRUG page, SOPRANO page, JCAMP-DX, or CSV."""
+    """Fetch + auto-detect: IRUG page, SOPRANO page, JCAMP-DX, CSV, or a
+    spectrum embedded in an interactive JS chart (Plotly/Highcharts/Chart.js)."""
     url = resolve_source(id_or_url)
     raw, _ctype = fetch(url)
     text = raw.decode("utf-8", errors="replace")
-    for parser in (parse_irug_jqplot, parse_soprano, parse_jcamp, parse_csv):
+    for parser in (parse_irug_jqplot, parse_soprano, parse_jcamp, parse_csv,
+                   parse_embedded_arrays):
         spec = parser(text, source=url)
         if spec is not None and spec["x"].size >= 2:
             return spec
     raise ValueError(
         f"Could not extract a spectrum from {url}\n"
-        "Supported: IRUG detail pages, SOPRANO pages, JCAMP-DX (AFFN), CSV/TSV."
+        "Supported: IRUG detail pages, SOPRANO pages, JCAMP-DX (AFFN), CSV/TSV, "
+        "and spectra embedded in Plotly / Highcharts / Chart.js charts."
     )
 
 

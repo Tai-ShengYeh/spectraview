@@ -1,12 +1,15 @@
-name: Publish orange-spectra to PyPI
+name: Publish add-ons to PyPI
 
-# Builds orange-spectra and publishes it to PyPI when you create a GitHub
-# Release. Uses PyPI Trusted Publishing (OIDC) — no API token or secret is
-# stored anywhere. One-time setup: on PyPI, add a Trusted Publisher for this
-# repo/workflow/environment (see orange-spectra/PUBLISHING.md).
+# Builds the Orange add-ons in this repo (orange-spectra, orange-assay) and
+# publishes them to PyPI when you create a GitHub Release. Uses PyPI Trusted
+# Publishing (OIDC) — no API token or secret is stored anywhere. One-time
+# setup: on PyPI add a Trusted Publisher for EACH project pointing at this
+# repo / workflow (publish-pypi.yml) / environment (pypi). See
+# orange-spectra/PUBLISHING.md.
 #
-# You can also run it manually from the Actions tab (workflow_dispatch), e.g.
-# to publish to TestPyPI first.
+# Both packages are built every run; `skip-existing` means already-published
+# versions are skipped, so a release only uploads the packages whose version
+# you actually bumped. You can also run it manually from the Actions tab.
 
 on:
   release:
@@ -18,6 +21,11 @@ on:
         type: choice
         default: pypi
         options: [pypi, testpypi]
+      package:
+        description: "Which package(s) to build"
+        type: choice
+        default: both
+        options: [both, orange-spectra, orange-assay]
 
 permissions:
   contents: read
@@ -34,10 +42,16 @@ jobs:
           python-version: "3.12"
 
       - name: Build sdist + wheel
+        env:
+          PKG: ${{ github.event_name == 'workflow_dispatch' && inputs.package || 'both' }}
         run: |
-          python -m pip install --upgrade build
-          python -m build orange-spectra --outdir dist
-          python -m pip install --upgrade twine
+          python -m pip install --upgrade build twine
+          if [ "$PKG" = "both" ] || [ "$PKG" = "orange-spectra" ]; then
+            python -m build orange-spectra --outdir dist
+          fi
+          if [ "$PKG" = "both" ] || [ "$PKG" = "orange-assay" ]; then
+            python -m build orange-assay --outdir dist
+          fi
           python -m twine check dist/*
 
       - name: Publish to TestPyPI
@@ -46,9 +60,11 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: dist
+          skip-existing: true
 
       - name: Publish to PyPI
         if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi') }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          skip-existing: true

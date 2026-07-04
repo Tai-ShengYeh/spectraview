@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>orange-assay — 盤面影像與劑量反應分析 widgets</title>
+<meta name="description" content="orange-assay: three Orange Data Mining widgets for plate-image assays — Microplate Reader, Coffee-Ring Reader and Dose-Response Fit (3PL/4PL, EC50, LOD).">
+<style>
+:root{--fg:#22303c;--mut:#5b6b7a;--acc:#1f8a54;--acc2:#dd8452;--bg:#ffffff;--card:#f2f8f4;--line:#d9e6dd;--code:#eef4f0}
+@media (prefers-color-scheme:dark){:root{--fg:#e4ecf3;--mut:#9db0c0;--acc:#5fce93;--acc2:#e9a074;--bg:#12181d;--card:#1b241f;--line:#2c3b33;--code:#1a221d}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,'Segoe UI','Noto Sans TC',sans-serif;color:var(--fg);background:var(--bg)}
+header{background:linear-gradient(135deg,#1f8a54,#2f6f8f);color:#fff;padding:34px 20px}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+header .wrap{padding:0}
+.badge{display:inline-block;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 12px;font-size:.82em;margin-bottom:10px}
+h1{font-size:1.75rem;margin:.1em 0}
+header p{opacity:.94;max-width:640px}
+.cta{margin-top:16px}
+.btn{display:inline-block;border-radius:8px;padding:8px 16px;font-size:.92em;text-decoration:none;margin:4px 6px 0 0}
+.btn.solid{background:#fff;color:#1f8a54;font-weight:600}
+.btn.ghost{border:1px solid rgba(255,255,255,.6);color:#fff}
+main{max-width:900px;margin:0 auto;padding:10px 20px 60px}
+.kicker{color:var(--acc);font-weight:600;font-size:.82em;letter-spacing:.06em;text-transform:uppercase;margin-top:34px}
+h2{font-size:1.28rem;margin:.2em 0 .5em}h3{font-size:1.06rem;margin:1.2em 0 .3em}
+code{background:var(--code);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:.9em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto}
+pre code{border:0;padding:0;background:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card svg{width:40px;height:40px}.card h3{margin:.4em 0 .2em}
+.wsec{border:1px solid var(--line);border-radius:12px;padding:8px 18px 16px;margin:14px 0;background:var(--card)}
+.wsec h3{display:flex;align-items:center;gap:10px}.wsec h3 svg{width:32px;height:32px;flex:0 0 auto}
+.io{font-size:.9em;color:var(--mut);margin:.2em 0 .6em}
+.note{background:var(--bg);border-left:3px solid var(--acc);border-radius:6px;padding:10px 14px;font-size:.94em;margin:.6em 0}
+.pipe{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center;font-family:ui-monospace,monospace;font-size:.9em;white-space:pre;overflow-x:auto}
+ol,ul{padding-left:1.35em}li{margin:.25em 0}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:20px;font-size:.86em;color:var(--mut);text-align:center}
+footer a{color:var(--acc)}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <span class="badge">Orange Data Mining × Assay imaging</span>
+  <h1>Orange <b>Assay</b> Widgets</h1>
+  <p>三個把<b>檢測盤照片</b>變成資料、擬合<b>劑量反應曲線</b>的 widgets——微孔盤讀取、
+     咖啡環讀取、3PL/4PL 曲線擬合（EC50 / LOD）。影像核心重用
+     <a href="https://github.com/Tai-ShengYeh/coffee-ring-analyzer" style="color:#fff">coffee-ring-analyzer</a>，
+     結果與其 Streamlit／手機／CLI 版一致。全程拖拉、免寫程式。</p>
+  <div class="cta">
+    <a class="btn solid" href="#install">安裝 Install</a>
+    <a class="btn ghost" href="#widgets">Widget 教學</a>
+    <a class="btn ghost" href="#pipeline">工作流</a>
+    <a class="btn ghost" href="https://pypi.org/project/orange-assay/">PyPI</a>
+  </div>
+</div></header>
+
+<main>
+
+<section id="overview">
+  <div class="kicker">Overview</div>
+  <h2>三個 Widgets，一條龍的檢測分析</h2>
+  <p>安裝後 Orange 工具箱會多一個 <b>Assay</b> 分類。輸出都是一般 Orange 資料表，可接
+     Data Table、散佈圖、PCA、以及 <a href="orange.html">orange-spectra</a> 的 PLS-DA。</p>
+  <div class="grid">
+    <div class="card">
+      <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#dd8452"/><rect x="7" y="9" width="34" height="30" rx="3" fill="none" stroke="#fff" stroke-width="2"/><g fill="#ffd54f"><circle cx="14" cy="16" r="2.4"/><circle cx="21" cy="16" r="2.4"/><circle cx="28" cy="16" r="2.4"/><circle cx="35" cy="16" r="2.4"/><circle cx="14" cy="24" r="2.4"/><circle cx="21" cy="24" r="2.4"/><circle cx="28" cy="24" r="2.4"/><circle cx="35" cy="24" r="2.4"/><circle cx="14" cy="32" r="2.4"/><circle cx="21" cy="32" r="2.4"/><circle cx="28" cy="32" r="2.4"/><circle cx="35" cy="32" r="2.4"/></g></svg>
+      <h3>Microplate Reader</h3>
+      <p>讀微孔盤照片（6–384 孔）成每孔一列的表：平均亮度或閾值面積，附 A1…H12 孔位。</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><g fill="none" stroke="#fff" stroke-width="2"><circle cx="14" cy="17" r="5"/><circle cx="24" cy="17" r="5"/><circle cx="34" cy="17" r="5"/></g><g fill="#ffd54f"><circle cx="14" cy="31" r="6"/><circle cx="24" cy="31" r="4.5"/><circle cx="34" cy="31" r="3"/></g></svg>
+      <h3>Coffee-Ring Reader</h3>
+      <p>量化點樣（咖啡環）盤：逐格面積/強度、除以 blank、平均重複列 → 濃度/比值表。</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M7 40 L7 8 M7 40 L42 40" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 37 C18 37 20 34 24 22 C28 10 30 9 40 9" fill="none" stroke="#ffd54f" stroke-width="3" stroke-linecap="round"/></svg>
+      <h3>Dose-Response Fit</h3>
+      <p>對任何濃度/訊號表擬合 3PL/4PL 邏輯曲線，回報 EC50、LOD、R²，並疊曲線於資料點。</p>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="kicker">Workflow</div>
+  <h2>典型工作流</h2>
+  <div class="pipe">Microplate Reader ─wells──┐
+                          ├──►  Dose-Response Fit  ──►  EC50 / LOD / 曲線
+Coffee-Ring Reader ─cells─┘         （也可接 PCA · PLS-DA · Data Table）</div>
+  <p><b>Dose-Response Fit</b> 是共用 widget：兩個 reader 的輸出、或你已在試算表裡的
+     比色法／ELISA 數據都能接。</p>
+</section>
+
+<section id="install">
+  <div class="kicker">Install</div>
+  <h2>安裝</h2>
+  <p>可在 <b>Windows、macOS（Apple 晶片與 Intel）、Linux</b> 執行——純 Python
+     （numpy / scipy / matplotlib / Pillow / Orange3）。</p>
+  <h3>A. 桌面版 App</h3>
+  <p><code>Options ▸ Add-ons… ▸ Add more…</code> 輸入 <b>orange-assay</b> → 打勾 → OK → 重啟。
+     macOS 到 <a href="https://orangedatamining.com/download/">orangedatamining.com</a> 下載 Mac 版 <code>.dmg</code>。</p>
+  <h3>B. pip 版 Orange</h3>
+  <pre><code>pip install orange-assay
+python -m Orange.canvas</code></pre>
+  <div class="note"><b>繁中 Windows 若 Add-ons 崩潰</b>（<code>UnicodeDecodeError: 'cp950' codec…</code>）：
+    改用命令列 <code>"…\Programs\Orange\python.exe" -m pip install orange-assay</code> 再重開 Orange，
+    或設環境變數 <code>PYTHONUTF8=1</code>。詳見 <a href="orange.html#faq">orange-spectra FAQ</a>。</div>
+  <p>重啟後工具箱出現 <b>Assay</b> 分類（3 個 widgets）。每個 widget 左上角有
+     「ℹ 說明」盒子，選取後按 <b>F1</b> 會開對應說明頁。</p>
+</section>
+
+<section id="widgets">
+  <div class="kicker">Widget guide</div>
+  <h2>Widget 逐一教學</h2>
+
+  <div class="wsec" id="microplate">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#dd8452"/><rect x="7" y="9" width="34" height="30" rx="3" fill="none" stroke="#fff" stroke-width="2"/><g fill="#ffd54f"><circle cx="14" cy="16" r="2.4"/><circle cx="21" cy="16" r="2.4"/><circle cx="28" cy="16" r="2.4"/><circle cx="14" cy="24" r="2.4"/><circle cx="21" cy="24" r="2.4"/><circle cx="28" cy="24" r="2.4"/><circle cx="35" cy="16" r="2.4"/><circle cx="35" cy="24" r="2.4"/></g></svg>
+      Microplate Reader — 微孔盤讀取</h3>
+    <div class="io"><b>輸出</b>：Wells（每孔一列：value, row, col；孔位 meta 如 A1）</div>
+    <ol>
+      <li>按 <b>Choose plate image…</b> 選盤面照片。</li>
+      <li>選 <b>Format</b>（6/12/24/48/96/384）；規則網格自動疊上。</li>
+      <li><b>Measure</b>：mean（平均亮度，最穩）、thresholded count / intensity（需選閾值法：Otsu / manual / per-well Otsu）。</li>
+      <li><b>Border margin</b> 修盤緣；<b>Row fill</b> 調小避免上下鄰孔互擾。</li>
+      <li>Wells 接 <b>Data Table</b>，或把孔對應到濃度後接 <b>Dose-Response Fit</b>。</li>
+    </ol>
+    <div class="note">井位是規則網格，最穩是先量 mean，再視需要用閾值量面積。</div>
+  </div>
+
+  <div class="wsec" id="coffeering">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8172b3"/><g fill="none" stroke="#fff" stroke-width="2"><circle cx="14" cy="17" r="5"/><circle cx="24" cy="17" r="5"/><circle cx="34" cy="17" r="5"/></g><g fill="#ffd54f"><circle cx="14" cy="31" r="6"/><circle cx="24" cy="31" r="4.5"/><circle cx="34" cy="31" r="3"/></g></svg>
+      Coffee-Ring Reader — 咖啡環讀取</h3>
+    <div class="io"><b>輸出</b>：Cells（正規化：concentration, ratio, se, col；未正規化：逐格 value）</div>
+    <ol>
+      <li>選點樣／咖啡環盤照片。</li>
+      <li>設 <b>Rows</b>（重複列）與 <b>Columns</b>（<b>第 0 欄＝blank</b>）；可勾 <b>Auto-detect grid</b> 從亮點自動抓格。</li>
+      <li><b>Measure</b>：count 或 intensity；<b>Threshold</b>：manual（預設 0.43）/ Otsu / per-cell Otsu。</li>
+      <li>勾 <b>Divide by blank</b>：每格除以同列第 0 欄、平均重複列；<b>Concentrations</b> 填第 1 欄起的濃度。</li>
+      <li>Cells 接 <b>Dose-Response Fit</b> 求 EC50 / LOD。</li>
+    </ol>
+    <div class="note">重現 coffee-ring-analyzer：ITU-R 601 灰階、integral-image 逐格量測、blank 正規化——與 Streamlit／手機／CLI 版一致。預設格點與濃度即該專案的 thrombin assay 設定。</div>
+  </div>
+
+  <div class="wsec" id="doseresponse">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4c72b0"/><path d="M7 40 L7 8 M7 40 L42 40" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 37 C18 37 20 34 24 22 C28 10 30 9 40 9" fill="none" stroke="#ffd54f" stroke-width="3" stroke-linecap="round"/></svg>
+      Dose-Response Fit — 劑量反應曲線</h3>
+    <div class="io"><b>輸入</b>：任何含濃度＋訊號兩數值欄的 Table　<b>輸出</b>：Fit summary、Fitted curve</div>
+    <ol>
+      <li>選 <b>Concentration</b> 與 <b>Signal</b> 欄；濃度跨數量級時勾 <b>log10</b>。</li>
+      <li><b>Model</b>：3PL（y = L/(1+e<sup>−k(x−x₀)</sup>)）或 4PL（含下/上漸近線）。</li>
+      <li>讀 <b>EC50</b>（＝拐點 x₀）、<b>LOD</b>（訊號超過基線＋3σ 的濃度）、<b>R²</b>。</li>
+      <li>Fit summary 接 Data Table；Fitted curve 可疊圖或匯出。</li>
+    </ol>
+    <div class="note">共用 widget：Microplate / Coffee-Ring Reader 的輸出、或任何比色法／ELISA 數據都能接。</div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="kicker">FAQ</div>
+  <h2>常見問題</h2>
+  <details><summary>支援哪些影像格式？</summary>
+    <p>PNG / JPG / TIFF / BMP（用 Pillow 讀取）。彩色會以 ITU-R 601 luma 轉灰階。</p></details>
+  <details><summary>為什麼比值出現 inf 或 NaN？</summary>
+    <p>Coffee-Ring 的 blank（第 0 欄）量到 0（例如閾值太高、blank 沒有訊號）→ 除以 0。
+       降低 manual threshold、或確認第 0 欄真的有 blank 點樣。</p></details>
+  <details><summary>EC50 / LOD 單位是什麼？</summary>
+    <p>與你輸入的濃度同單位。若勾了 log10，widget 會把結果轉回線性濃度顯示。</p></details>
+  <details><summary>可以接到 orange-spectra 的 widgets 嗎？</summary>
+    <p>可以——輸出是一般 Orange 資料表，可接 PLS-DA、PCA、Data Table 等。兩個套件互補。</p></details>
+</section>
+
+</main>
+
+<footer>
+  orange-assay ・ MIT License ・
+  <a href="https://pypi.org/project/orange-assay/">PyPI</a> ・
+  <a href="https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-assay">GitHub</a> ・
+  <a href="orange.html">orange-spectra 教學</a> ・
+  <a href="https://tai-shengyeh.github.io/">食品科學教學課程</a>
+</footer>
+
+</body>
+</html>

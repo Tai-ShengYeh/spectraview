@@ -3,16 +3,16 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "orange-spectra"
-version = "0.3.0"
-description = "Orange Data Mining widgets for spectroscopy: import spectra from IRUG/SOPRANO URLs, similarity search, spectral libraries (.speclib) and NNLS mixture analysis."
+name = "orange-assay"
+version = "0.1.0"
+description = "Orange Data Mining widgets for plate-image assays: microplate & coffee-ring readers and 3PL/4PL dose-response curve fitting (EC50, LOD)."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Tai-Sheng Yeh" }]
 # "Orange3 add-on" keyword lets the Orange Add-ons dialog discover this on PyPI.
-keywords = ["orange3", "orange3 add-on", "spectroscopy", "aquaphotomics",
-            "IRUG", "SOPRANO", "chemometrics", "NIR", "Raman", "FTIR"]
+keywords = ["orange3", "orange3 add-on", "assay", "microplate", "elisa",
+            "coffee-ring", "dose-response", "ec50", "image-analysis"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -23,25 +23,26 @@ dependencies = [
     "numpy>=1.23",
     "scipy>=1.9",
     "matplotlib>=3.6",
+    "Pillow>=9.0",
     "Orange3>=3.34",
 ]
 
 [project.urls]
-Homepage = "https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra"
-Tutorial = "https://tai-shengyeh.github.io/spectraview/orange.html"
+Homepage = "https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-assay"
+Tutorial = "https://tai-shengyeh.github.io/spectraview/assay.html"
 
 [project.entry-points."orange.widgets"]
-Spectra = "orangespectra.widgets"
+Assay = "orangeassay.widgets"
 
 [project.entry-points."orange3.addon"]
-orange-spectra = "orangespectra"
+orange-assay = "orangeassay"
 
 # F1 / "?" widget documentation (opens the online help pages).
 [project.entry-points."orange.canvas.help"]
-html-index = "orangespectra.widgets:WIDGET_HELP_PATH"
+html-index = "orangeassay.widgets:WIDGET_HELP_PATH"
 
 [tool.setuptools.packages.find]
-include = ["orangespectra*"]
+include = ["orangeassay*"]
 
 [tool.setuptools.package-data]
-"orangespectra.widgets" = ["icons/*.svg"]
+"orangeassay.widgets" = ["icons/*.svg"]
