@@ -415,27 +415,24 @@ python -m Orange.canvas</pre>
   </div>
 
   <div class="wsec">
-    <h3>④ Mixture Analysis → NNLS unmixing</h3>
-    <p class="lead">Feeding a spectrum blended as <b>65% glucose + 35% sucrose</b>, NNLS <b>recovers the fractions exactly</b>
-       (glucose 65.0%, sucrose 35.0%, everything else ≈ 0), <b>R² = 1.0000</b>.</p>
-    <img src="demo_mixture.png" alt="NNLS mixture fit" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <h3>④ Mixture Analysis → NNLS unmixing of a real CGL NIR mixture</h3>
+    <p class="lead">Using Eigenvector's <a href="https://eigenvector.com/resources/data-sets/">CGL three-component NIR
+       mixture design</a> (<b>casein / glucose / lactate</b>, 1104–2496 nm): estimate each component's
+       <b>pure spectrum</b> from the calibration set by classical least squares (CLS), then unmix a
+       <b>real test mixture</b> with NNLS. Spectral fit <b>R² = 1.0000</b>; recovered proportions are close to the reference wt%.</p>
+    <img src="demo_mixture.png" alt="NNLS unmixing of a real CGL NIR mixture" style="width:100%;border-radius:10px;border:1px solid var(--line);">
     <table class="t" style="max-width:460px;">
-      <tr><th>Component</th><th>NNLS coeff.</th><th>Fraction</th><th>Truth</th></tr>
-      <tr><td><b>glucose</b></td><td>0.650</td><td>65.0%</td><td>65%</td></tr>
-      <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
-      <tr><td>other 7</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
+      <tr><th>Component</th><th>NNLS recovered</th><th>Reference wt%</th></tr>
+      <tr><td><b>casein</b></td><td>31.3%</td><td>31.3%</td></tr>
+      <tr><td><b>glucose</b></td><td>33.9%</td><td>37.6%</td></tr>
+      <tr><td><b>lactate</b></td><td>34.7%</td><td>31.1%</td></tr>
     </table>
-    <div class="note"><b>Real-data extension (CGL NIR):</b> using Eigenvector's
-      <a href="https://eigenvector.com/resources/data-sets/">CGL three-component NIR
-      mixture design</a> (<b>casein / glucose / lactate</b>, 1104–2496 nm). Estimate each
-      component's <b>pure spectrum</b> from the calibration set by classical least squares
-      (CLS), then unmix a <b>test mixture</b> with NNLS — the recovered proportions closely
-      match the reference wt%. Running
+    <div class="note"><b>Reproduce / run it in Orange:</b> running
       <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/examples/cgl_mixture_nnls.py"><code>examples/cgl_mixture_nnls.py</code></a>
-      regenerates this figure and writes <code>cgl_components.speclib</code> (3 pure-component
-      references) and <code>cgl_mixture.csv</code> (one mixture) — load them via <b>Load Spectra
-      Files</b> / <b>Import Spectrum URL</b> into <b>Mixture Analysis</b> to run a real NNLS
-      unmixing inside Orange.</div>
+      generates this figure and writes <code>cgl_components.speclib</code> (3 pure-component
+      references) and <code>cgl_mixture.csv</code> (one mixture) — load them with <b>Load Spectra
+      Files</b> into <b>Mixture Analysis</b> (References + Mixture) to run the same NNLS unmixing inside Orange.
+      <br>(The pure spectra are CLS estimates from real data, so recovered proportions differ from the reference by a few %; the spectral fit itself is R²≈1.)</div>
   </div>
 
   <div class="wsec">
