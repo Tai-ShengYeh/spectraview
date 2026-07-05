@@ -83,7 +83,7 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">光譜</span> Widgets</h1>
-  <p>十個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
+  <p>十一個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
      <b>多譜疊圖合併</b>、算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜、<b>尋峰標記</b>、<b>XRF 元素標記</b>、<b>PLS-DA</b> 判別分析、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
@@ -98,7 +98,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>十個 Widgets，一條龍的光譜鑑定流程</h2>
+  <h2>十一個 Widgets，一條龍的光譜鑑定流程</h2>
   <p class="lead">安裝後 Orange 工具箱會多一個 <b>Spectra</b> 分類。輸出的資料表採
      <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a> 慣例
      （每一欄＝一個波數、每一列＝一條光譜），可直接接 PCA、PLS、階層式分群等 Orange 原生流程。</p>
@@ -117,6 +117,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#937860"/><path d="M6 14 L6 36 Q6 39 9 39 L39 39 Q42 39 42 36 L42 19 Q42 16 39 16 L24 16 L20 11 Q19 10 17 10 L9 10 Q6 10 6 13 Z" fill="#ffd54f"/><path d="M12 33 Q17 31 20 26 T28 22 Q30 30 33 27 T38 30" fill="none" stroke="#4b3f2f" stroke-width="2" stroke-linecap="round"/></svg>
       <h3>Load Spectra Files</h3>
       <p>一鍵吃整包光譜：資料夾或 .zip（免解壓）裡的 JCAMP-DX、CSV、矩陣 CSV、NetCDF .cdf 全部讀進來，輸出一個合併資料表。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
+      <h3>Spectrometer</h3>
+      <p>把「相機＋繞射光柵」拍到的光譜照片變成校準光譜：取水平帶讀強度、用已知譜線把像素校準成波長（Theremino 分光儀的核心功能）。</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -170,7 +175,7 @@
   <div class="step"><div class="n">1</div><div><h4>開 Add-ons</h4><p>Orange 選單 <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… 輸入名稱</h4>
     <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。</p></div></div>
-  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 10 個 widgets。</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 11 個 widgets。</p></div></div>
   <div class="note"><b>找不到 <code>orange-spectra</code>？</b>代表尚未發佈到 PyPI。發佈方式見
     <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>；
     在那之前，桌面版可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
@@ -223,6 +228,19 @@ python -m Orange.canvas</pre>
     </ol>
     <div class="note"><b>原理：</b>IRUG 網頁沒有下載檔——光譜其實藏在頁面互動圖（jqPlot）的
       <code>&lt;script&gt;</code> 裡（<code>"波數:強度"</code> 配對）；SOPRANO 藏在 Dygraph 資料陣列；也支援 Plotly / Highcharts / Chart.js 等互動圖內嵌的 x/y 陣列（如 INFRA-ART 等資料庫）。widget 直接解析網頁原始碼還原數據。</div>
+  </div>
+
+  <div class="wsec" id="spectrometer">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
+      Spectrometer — 影像分光（相機＋繞射光柵）</h3>
+    <div class="io"><b>輸出</b>：Spectra（單一光譜的 Table）</div>
+    <ol>
+      <li>按 <b>Choose spectrum photo…</b> 選一張相機＋繞射光柵拍到的光譜照片（水平展開的彩色條）。</li>
+      <li><b>Channel</b>（luminance／R／G／B／sum）與 <b>Strip centre / height</b> 選要取的水平帶。</li>
+      <li><b>校準</b>：填 <code>像素=波長</code> 對（如日光燈汞線 <code>120=435.8, 410=546.1, 560=611.6</code>），選 linear／quadratic；留空則 x 軸維持像素。</li>
+      <li>上圖照片＋選取帶、下圖萃取光譜；輸出接 Similarity / Library / Peak Finder / Data Table。</li>
+    </ol>
+    <div class="note">等效 <b>Theremino Spectrometer</b> 的核心：水平帶 → 沿水平讀強度 → 已知譜線校準像素成波長。在 Orange 裡是對<b>拍好的照片</b>處理（非即時相機串流）；同機況照片可沿用同一組校準點。</div>
   </div>
 
   <div class="wsec" id="loadfiles">

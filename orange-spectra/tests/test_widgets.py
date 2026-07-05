@@ -419,5 +419,48 @@ class TestOWLoadSpectraFiles(WidgetTest):
         self.assertTrue(self.widget.Information.nothing.is_shown())
 
 
+
+class TestOWSpectrometer(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owspectrometer import OWSpectrometer
+        self.widget = self.create_widget(OWSpectrometer)
+        H, W = 40, 640
+        img = np.zeros((H, W, 3))
+        for col, rgb in [(100, (0.2, 0.4, 1.0)), (500, (1.0, 0.3, 0.1))]:
+            band = np.exp(-((np.arange(W) - col) / 4.0) ** 2)
+            for c, ch in enumerate(rgb):
+                img[:, :, c] += band * ch * 255
+        self.widget._rgb = np.clip(img, 0, 255)
+
+    def test_pixel_axis(self):
+        self.widget.cal_text = ""
+        self.widget._recompute()
+        out = self.get_output(self.widget.Outputs.spectrum)
+        self.assertEqual(len(out), 1)
+        attrs = [float(v.name) for v in out.domain.attributes]
+        self.assertEqual(attrs[0], 0)
+        self.assertEqual(attrs[-1], 639)
+
+    def test_calibration(self):
+        self.widget.cal_text = "100=435.8, 500=611.6"
+        self.widget._recompute()
+        out = self.get_output(self.widget.Outputs.spectrum)
+        attrs = [float(v.name) for v in out.domain.attributes]
+        self.assertLess(min(attrs), 440)
+        self.assertGreater(max(attrs), 600)
+        self.assertIn("R", self.widget.info_label.text())
+
+    def test_bad_calibration_errors(self):
+        self.widget.cal_text = "not-a-pair"
+        self.widget._recompute()
+        self.assertTrue(self.widget.Error.bad_calibration.is_shown())
+
+    def test_no_image(self):
+        w = self.create_widget(OWSpectrometer) if False else self.widget
+        w._rgb = None
+        w._recompute()
+        self.assertIsNone(self.get_output(w.Outputs.spectrum))
+
+
 if __name__ == "__main__":
     unittest.main()

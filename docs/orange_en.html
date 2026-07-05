@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orange × Spectroscopy widgets ｜ IRUG/SOPRANO import · similarity · library · mixture · aquagram</title>
-<meta name="description" content="orange-spectra: tutorial for ten Orange Data Mining spectroscopy widgets. Import spectra from IRUG/SOPRANO URLs, compute similarity, build a .speclib library and search, NNLS mixture analysis, and aquaphotomics aquagrams — interoperable with SpectraView.">
+<meta name="description" content="orange-spectra: tutorial for eleven Orange Data Mining spectroscopy widgets. Import spectra from IRUG/SOPRANO URLs, compute similarity, build a .speclib library and search, NNLS mixture analysis, and aquaphotomics aquagrams — interoperable with SpectraView.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -83,7 +83,7 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">Spectroscopy</span> Widgets</h1>
-  <p>Ten open-source widgets that bring spectroscopy into Orange's visual workflow: paste an
+  <p>Eleven open-source widgets that bring spectroscopy into Orange's visual workflow: paste an
      <b>IRUG / SOPRANO URL</b> to see a spectrum, compute <b>similarity</b>, build a <b>library</b> to
      identify unknowns, unmix <b>mixtures</b> with <b>NNLS</b>, and draw an aquaphotomics
      <b>Aquagram</b> — all by dragging and connecting, no coding.</p>
@@ -100,7 +100,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>Ten widgets, an end-to-end spectral-ID workflow</h2>
+  <h2>Eleven widgets, an end-to-end spectral-ID workflow</h2>
   <p class="lead">After installing, a new <b>Spectra</b> category appears in Orange's toolbox. Output
      tables follow the <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a>
      convention (one column per wavenumber, one row per spectrum), so they plug straight into PCA,
@@ -120,6 +120,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#937860"/><path d="M6 14 L6 36 Q6 39 9 39 L39 39 Q42 39 42 36 L42 19 Q42 16 39 16 L24 16 L20 11 Q19 10 17 10 L9 10 Q6 10 6 13 Z" fill="#ffd54f"/><path d="M12 33 Q17 31 20 26 T28 22 Q30 30 33 27 T38 30" fill="none" stroke="#4b3f2f" stroke-width="2" stroke-linecap="round"/></svg>
       <h3>Load Spectra Files</h3>
       <p>Bulk-load a whole folder or .zip (no extraction): JCAMP-DX, CSV, matrix CSV and NetCDF .cdf all land in one combined table.</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
+      <h3>Spectrometer</h3>
+      <p>Turn a camera + diffraction-grating spectrum photo into a calibrated spectrum: read intensity along a horizontal strip and map pixel → wavelength from known lines (a Theremino-style spectrometer).</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -173,7 +178,7 @@
   <div class="step"><div class="n">1</div><div><h4>Open Add-ons</h4><p>Orange menu <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… and type the name</h4>
     <p>Click <b>Add more…</b> (top-right), type <code>orange-spectra</code> (<b>not</b> a git URL — this box only takes PyPI names), tick it and click <b>OK</b>.</p></div></div>
-  <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 10 widgets appears in the toolbox.</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 11 widgets appears in the toolbox.</p></div></div>
   <div class="note"><b><code>orange-spectra</code> not found?</b> It isn't on PyPI yet. See
     <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>
     to publish it. Until then, the desktop App can install via its own Python: locate the App's
@@ -196,7 +201,7 @@ python -m Orange.canvas</pre>
 
   <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
     <b>Install once — you don't reinstall every time.</b> Installation is <strong>one-off</strong>: after
-    it, the 10 widgets in the Spectra category are there every time you open Orange.<br>
+    it, the 11 widgets in the Spectra category are there every time you open Orange.<br>
     ▸ Reinstall <b>only to update</b>:
     <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>,
     then <strong>fully close and reopen Orange</strong>.<br>
@@ -227,6 +232,19 @@ python -m Orange.canvas</pre>
     <div class="note"><b>How it works:</b> IRUG pages have no download file — the spectrum is embedded in
       the page's interactive chart (jqPlot) inside a <code>&lt;script&gt;</code> (as
       <code>"wavenumber":intensity</code> pairs); SOPRANO stores it in a Dygraph data array. The widget parses the page source to recover the numbers.</div>
+  </div>
+
+  <div class="wsec" id="spectrometer">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
+      Spectrometer — image spectroscopy (camera + grating)</h3>
+    <div class="io"><b>Output</b>: Spectra (a single-spectrum Table)</div>
+    <ol>
+      <li>Click <b>Choose spectrum photo…</b> and pick a camera + diffraction-grating photo (a horizontal colour band).</li>
+      <li><b>Channel</b> (luminance / R / G / B / sum) and <b>Strip centre / height</b> select the horizontal band to read.</li>
+      <li><b>Calibration</b>: enter <code>pixel=nm</code> pairs (e.g. fluorescent mercury lines <code>120=435.8, 410=546.1, 560=611.6</code>), fit linear / quadratic; leave empty to keep the x-axis in pixels.</li>
+      <li>Top: photo + ROI band; bottom: extracted spectrum. Feed the output to Similarity / Library / Peak Finder / Data Table.</li>
+    </ol>
+    <div class="note">The core of a <b>Theremino Spectrometer</b>: horizontal strip → intensity along it → calibrate pixel → wavelength from known lines. In Orange it works on a <b>captured photo</b> (not a live camera stream); photos from the same setup can reuse the same calibration points.</div>
   </div>
 
   <div class="wsec" id="loadfiles">
@@ -493,7 +511,7 @@ python -m Orange.canvas</pre>
         (Edit system environment variables ▸ Environment Variables ▸ New), restart Orange, then use the Add-ons dialog normally.</li>
     </ol></details>
   <details><summary>Do I have to pip-install every time I use it?</summary>
-    <p>No. Installation is <b>one-off</b> — once installed, the 10 widgets in the Spectra category are
+    <p>No. Installation is <b>one-off</b> — once installed, the 11 widgets in the Spectra category are
        there every time you open Orange. Reinstall <b>only to update to a new version</b>
        (<code>pip install --upgrade --force-reinstall --no-deps …</code>), and after reinstalling
        <b>fully close and reopen Orange</b> for it to take effect. Once the desktop App version is on
