@@ -83,30 +83,61 @@ for b, hm, lm in zip(WAMACS, high_mean, low_mean):
 print(f"\nMost separated band: {WAMACS[int(np.argmax(np.abs(sep)))]} nm "
       f"(Δ={sep[int(np.argmax(np.abs(sep)))]:+.2f})")
 
-# ---- Radar plot (classic aquagram) ----
-def radar(ax, coords, labels, names, title):
-    n = len(labels)
-    ang = np.linspace(0, 2*np.pi, n, endpoint=False)
-    ang = np.concatenate([ang, ang[:1]])
-    for row, name in zip(coords, names):
-        vals = np.concatenate([row, row[:1]])
-        ax.plot(ang, vals, marker="o", ms=3, lw=1.6, label=name)
-        ax.fill(ang, vals, alpha=0.08)
-    ax.set_xticks(ang[:-1]); ax.set_xticklabels([str(int(l)) for l in labels], fontsize=8)
-    ax.set_title(title, color="#0b5c9e", pad=16)
-    ax.grid(alpha=.3)
+# ---- Radar plot (classic aquagram over the 40 individual samples) ----
+# aggregate SNV coords over the same 40 samples for the comparison panel
+snv_agg = aquagram_coordinates(many, normalization="snv")
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 5), subplot_kw=dict(polar=True))
-radar(axes[0], results["aquagram"]["values"], WAMACS,
-      results["aquagram"]["names"], "Aquagram (SNV + across-sample std)\nreal corn NIR, low vs high moisture")
-# also show snv version for comparison
-radar(axes[1], results["snv"]["values"], WAMACS,
-      results["snv"]["names"], "SNV-only sampled at WAMACs\n(no across-sample standardization)")
-axes[0].legend(loc="upper right", bbox_to_anchor=(1.25, 1.12), fontsize=8)
+
+def radar(ax, coords, labels, title, rlim, n_low):
+    """Plot each sample as a thin line (blue=low, orange=high moisture) plus a
+    bold group mean, with readable radial tick labels on one clear spoke."""
+    n = len(labels)
+    ang = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    angc = np.concatenate([ang, ang[:1]])
+    for i, row in enumerate(coords):
+        col = "#1f77b4" if i < n_low else "#E36414"
+        vals = np.concatenate([row, row[:1]])
+        ax.plot(angc, vals, lw=0.7, color=col, alpha=0.35, zorder=2)
+    for grp, col, lab in ((coords[:n_low], "#1f77b4", "Low moisture (mean)"),
+                          (coords[n_low:], "#E36414", "High moisture (mean)")):
+        m = np.concatenate([grp.mean(0), grp.mean(0)[:1]])
+        ax.plot(angc, m, lw=2.6, color=col, marker="o", ms=3, label=lab, zorder=4)
+        ax.fill(angc, m, color=col, alpha=0.08, zorder=1)
+    ax.plot(angc, np.zeros_like(angc), color="#666", lw=1.0, ls="--", zorder=1)
+    ax.set_xticks(ang)
+    ax.set_xticklabels([str(int(l)) for l in labels], fontsize=8.5)
+    ax.tick_params(axis="x", pad=6)
+    # readable radial axis: integer rings only, labels on the 0° spoke, small grey
+    ax.set_ylim(rlim)
+    lo, hi = int(np.floor(rlim[0])), int(np.ceil(rlim[1]))
+    ax.set_yticks(list(range(lo, hi + 1)))
+    ax.set_rlabel_position(15)
+    ax.tick_params(axis="y", labelsize=7, colors="#8a8a8a")
+    ax.set_title(title, color="#0b5c9e", fontsize=11, pad=18)
+    ax.grid(alpha=.35)
+
+
+# shared radial scale so both panels are comparable and never crop the fill
+_m = float(np.max(np.abs(np.concatenate([V.ravel(), snv_agg["values"].ravel()])))) * 1.10
+_rlim = (-_m, _m)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6), subplot_kw=dict(polar=True))
+radar(axes[0], V, WAMACS,
+      "Aquagram (SNV + across-sample std)\nreal corn NIR, low vs high moisture",
+      _rlim, len(low_idx))
+radar(axes[1], snv_agg["values"], WAMACS,
+      "SNV-only sampled at WAMACs\n(no across-sample standardization)",
+      _rlim, len(low_idx))
+axes[0].legend(loc="lower center", bbox_to_anchor=(0.5, -0.24), ncol=2,
+               fontsize=9, frameon=False)
 fig.suptitle("Aquagram validation on real corn NIR spectra (Eigenvector, m5)",
-             fontsize=13, color="#119C9A")
-fig.tight_layout()
-fig.savefig(OUT / "aquagram_real_corn_nir.png", dpi=140, facecolor="white")
+             fontsize=13, color="#119C9A", y=1.03)
+fig.subplots_adjust(wspace=0.4)
+fig.savefig(OUT / "aquagram_real_corn_nir.png", dpi=140, facecolor="white",
+            bbox_inches="tight")
+# save the computed coordinates so the figure can be re-rendered without the dataset
+np.savez(OUT / "aquagram_values.npz", wamacs=np.array(WAMACS),
+         aquagram=V, snv=snv_agg["values"], n_low=len(low_idx))
 print(f"\nSaved radar figure -> {OUT/'aquagram_real_corn_nir.png'}")
 
 # raw group-mean spectra with WAMACs marked (sanity of coverage)
