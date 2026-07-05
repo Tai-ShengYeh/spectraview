@@ -406,25 +406,23 @@ python -m Orange.canvas</pre>
   </div>
 
   <div class="wsec">
-    <h3>④ Mixture Analysis → NNLS 拆解混合譜</h3>
-    <p class="lead">把 <b>65% glucose + 35% sucrose</b> 混成一條譜餵進去，NNLS <b>準確還原比例</b>
-       （glucose 65.0%、sucrose 35.0%、其餘成分 ≈ 0），<b>R² = 1.0000</b>。</p>
-    <img src="demo_mixture.png" alt="NNLS mixture fit" style="width:100%;border-radius:10px;border:1px solid var(--line);">
+    <h3>④ Mixture Analysis → NNLS 拆解真實 CGL NIR 混合譜</h3>
+    <p class="lead">用 Eigenvector 的 <a href="https://eigenvector.com/resources/data-sets/">CGL 三成分 NIR 混合設計</a>
+       （<b>casein／glucose／lactate</b>，1104–2496 nm）：先用校正集以古典最小平方（CLS）估出三成分的<b>純光譜</b>，
+       再對一條<b>真實測試混合譜</b>做 NNLS 拆解。擬合 <b>R² = 1.0000</b>，回推比例與參考 wt% 相當接近。</p>
+    <img src="demo_mixture.png" alt="NNLS unmixing of a real CGL NIR mixture" style="width:100%;border-radius:10px;border:1px solid var(--line);">
     <table class="t" style="max-width:460px;">
-      <tr><th>成分</th><th>NNLS 係數</th><th>比例</th><th>真值</th></tr>
-      <tr><td><b>glucose</b></td><td>0.650</td><td>65.0%</td><td>65%</td></tr>
-      <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
-      <tr><td>其他 7 種</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
+      <tr><th>成分</th><th>NNLS 回推比例</th><th>參考 wt%</th></tr>
+      <tr><td><b>casein</b></td><td>31.3%</td><td>31.3%</td></tr>
+      <tr><td><b>glucose</b></td><td>33.9%</td><td>37.6%</td></tr>
+      <tr><td><b>lactate</b></td><td>34.7%</td><td>31.1%</td></tr>
     </table>
-    <div class="note"><b>真實資料延伸範例（CGL NIR）：</b>用 Eigenvector 的
-      <a href="https://eigenvector.com/resources/data-sets/">CGL 三成分 NIR 混合設計</a>
-      （<b>casein／glucose／lactate</b>，1104–2496 nm）。先用校正集以古典最小平方（CLS）
-      估出三個成分的<b>純光譜</b>，再對一條<b>測試混合譜</b>做 NNLS 拆解，回推的比例會很接近
-      參考 wt%。跑
+    <div class="note"><b>自己重現／在 Orange 裡實跑：</b>跑
       <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/examples/cgl_mixture_nnls.py"><code>examples/cgl_mixture_nnls.py</code></a>
       會產生這張圖，並輸出 <code>cgl_components.speclib</code>（3 條純成分參考譜）與
-      <code>cgl_mixture.csv</code>（一條混合譜）——把它們載入 <b>Load Spectra Files</b> ／
-      <b>Import Spectrum URL</b> 後接 <b>Mixture Analysis</b>，即可在 Orange 裡實際跑一次真實的 NNLS 拆解。</div>
+      <code>cgl_mixture.csv</code>（一條混合譜）——用 <b>Load Spectra Files</b> 載入接
+      <b>Mixture Analysis</b> 的 References、載入混合譜接 Mixture，即可在 Orange 裡跑同一次 NNLS 拆解。
+      <br>（純光譜是用 CLS 從真實資料估的近似值，所以回推比例與參考值有數 % 的合理差異；光譜擬合本身 R²≈1。）</div>
   </div>
 
   <div class="wsec">
