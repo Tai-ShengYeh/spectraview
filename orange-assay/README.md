@@ -75,9 +75,9 @@ MIT.
 
 ---
 
-<a name="中文說明"></a>
+## 中文說明
 
-# orange-assay — Orange Data Mining 盤面影像與劑量反應 widgets
+**orange-assay — Orange Data Mining 盤面影像與劑量反應 widgets**
 
 [English](#orange-assay--plate-image--dose-response-widgets-for-orange-data-mining) ｜ **中文**
 
