@@ -302,5 +302,56 @@ try:
 except ValueError:
     check("no-chart page raises", True)
 
+
+print("== files: folder / zip / matrix / NetCDF ==")
+from orangespectra import files as _files  # noqa: E402
+_fd = tempfile.mkdtemp()
+open(os.path.join(_fd, "a.csv"), "w").write("wl,i\n400,1\n401,2\n402,4\n")
+open(os.path.join(_fd, "b.dx"), "w").write(
+    "##TITLE=B\n##XUNITS=1/CM\n##FIRSTX=100\n##LASTX=104\n##NPOINTS=5\n"
+    "##XYDATA=(X++(Y..Y))\n100 1 2 3\n103 4 5\n##END=\n")
+open(os.path.join(_fd, "wide.csv"), "w").write(
+    "name,1000,1001,1002,1003\nS1,1,2,3,4\nS2,4,3,2,1\n")
+open(os.path.join(_fd, "long.csv"), "w").write(
+    "wl,alpha,beta\n500,1,9\n501,2,8\n502,3,7\n503,4,6\n")
+open(os.path.join(_fd, "junk.md"), "w").write("not a spectrum")
+from scipy.io import netcdf_file as _ncf
+_nc = _ncf(os.path.join(_fd, "apple.cdf"), "w")
+_nc.createDimension("sample", 3); _nc.createDimension("wavelength", 12)
+_wl = _nc.createVariable("wavelength", "d", ("wavelength",))
+_wl[:] = np.linspace(400, 411, 12)
+_ab = _nc.createVariable("absorbance", "d", ("sample", "wavelength"))
+_ab[:] = np.random.RandomState(0).rand(3, 12)
+_nc.close()
+
+_wide = _files.load_spectra_path(os.path.join(_fd, "wide.csv"))
+check("wide matrix: 2 named spectra",
+      len(_wide) == 2 and _wide[0]["name"] == "S1"
+      and _wide[0]["x"][0] == 1000.0)
+_long = _files.load_spectra_path(os.path.join(_fd, "long.csv"))
+check("long matrix: 2 column spectra",
+      len(_long) == 2 and {_s["name"] for _s in _long} == {"alpha", "beta"})
+_ncs = _files.load_netcdf(os.path.join(_fd, "apple.cdf"))
+check("NetCDF: 3 rows, wavelength axis",
+      len(_ncs) == 3 and _ncs[0]["x_label"] == "wavelength"
+      and _ncs[0]["x"][0] == 400.0)
+_all = _files.load_spectra_folder(_fd)
+check("folder skips junk, loads all spectra", len(_all) == 1 + 1 + 2 + 2 + 3)
+import zipfile as _zf
+_zp = os.path.join(_fd, "pack.zip")
+with _zf.ZipFile(_zp, "w") as _z:
+    for _fn in ("a.csv", "wide.csv", "apple.cdf"):
+        _z.write(os.path.join(_fd, _fn), _fn)
+check("zip archive loads without extraction",
+      len(_files.load_spectra_zip(_zp)) == 1 + 2 + 3)
+_nc2 = _ncf(os.path.join(_fd, "pair.cdf"), "w")
+_nc2.createDimension("n", 15)
+_tv = _nc2.createVariable("time", "d", ("n",)); _tv[:] = np.arange(15.0)
+_yv = _nc2.createVariable("tic", "d", ("n",))
+_yv[:] = np.random.RandomState(1).rand(15)
+_nc2.close()
+_p = _files.load_netcdf(os.path.join(_fd, "pair.cdf"))
+check("NetCDF 1-D pair fallback", len(_p) == 1 and _p[0]["x_label"] == "time")
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

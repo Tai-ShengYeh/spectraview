@@ -2,7 +2,7 @@
 
 **English** ｜ [中文](#中文說明)
 
-Nine spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
+Ten spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
 They share their algorithms and the `.speclib` library format with
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview), a desktop
 spectroscopy viewer. Fetch spectra from public databases by URL, compare and
@@ -12,6 +12,7 @@ aquaphotomics aquagrams — all inside Orange's visual workflow canvas.
 | Widget | What it does |
 |---|---|
 | **Import Spectrum URL** | Paste an **IRUG id/URL** or a **SOPRANO URL** (direct JCAMP-DX/CSV links, and spectra embedded in Plotly/Highcharts/Chart.js charts, work too), download and plot the spectrum, output an Orange `Table`. |
+| **Load Spectra Files** | Bulk-load chosen files, a whole folder or a .zip (no extraction): JCAMP-DX, CSV, matrix CSV, NetCDF `.cdf` → one merged `Table`. |
 | **Merge Spectra** | Overlay several spectra sources on one plot and output a single combined `Table` (each row a spectrum on a shared grid) — like SpectraView's multi-file overlay. |
 | **Spectra Similarity** | Score similarity between two sets of spectra: correlation, cosine, spectral angle (SAM), and Euclidean distance. |
 | **Spectral Library** | Build a reference library, save it as **`.speclib`** (interoperable with SpectraView), and rank an unknown spectrum against the library. |
@@ -58,7 +59,7 @@ missing a Qt binding — install one:
 pip install PyQt5 PyQtWebEngine
 ```
 
-After (re)starting Orange, a **Spectra** category with the nine widgets appears
+After (re)starting Orange, a **Spectra** category with the ten widgets appears
 in the toolbox.
 
 ## Quick start
@@ -112,7 +113,7 @@ MIT.
 
 [English](#orange-spectra--spectroscopy-widgets-for-orange-data-mining) ｜ **中文**
 
-九個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
+十個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
 與桌面版光譜檢視程式
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview) 共用演算法與
 `.speclib` 光譜庫格式。可用網址從公開資料庫抓光譜、比對與搜尋、建立可重複使用的
@@ -122,6 +123,7 @@ MIT.
 | Widget | 功能 |
 |---|---|
 | **Import Spectrum URL** | 貼上 **IRUG 編號／網址**或 **SOPRANO 網址**（也支援 JCAMP-DX/CSV 直接網址，以及 Plotly/Highcharts/Chart.js 互動圖內嵌資料），下載並畫出光譜，輸出成 Orange `Table`。 |
+| **Load Spectra Files** | 批次載入：選檔、整個資料夾或 .zip（免解壓）——JCAMP-DX、CSV、矩陣 CSV、NetCDF `.cdf` 全部讀成一個合併 `Table`。 |
 | **Merge Spectra** | 把多個光譜來源疊在一張圖，輸出成一個合併 `Table`（每列一條光譜、共同波段）——等同 SpectraView 的多檔疊圖。 |
 | **Spectra Similarity** | 兩組光譜間的相似度：correlation / cosine / 光譜角 SAM / Euclidean。 |
 | **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名。 |
@@ -165,7 +167,7 @@ macOS 請用 `python3` / `pip3`（可用 [Homebrew](https://brew.sh/) 裝 Python
 pip install PyQt5 PyQtWebEngine
 ```
 
-重新啟動 Orange，工具箱會出現 **Spectra** 分類（9 個 widgets）。
+重新啟動 Orange，工具箱會出現 **Spectra** 分類（10 個 widgets）。
 
 ## 快速上手
 
