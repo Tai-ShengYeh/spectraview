@@ -25,3 +25,28 @@
 ## 重建方式
 此庫由 `*_a.csv`（每物質 5 重複的吸光度譜）以「每物質取平均」建成。資料來源為
 使用者自有量測（DLP Hadamard NIR）。
+
+---
+
+## CGL NIR — Mixture Analysis (NNLS) 真實範例
+
+`cgl_mixture_nnls.py` 用 Eigenvector 的 **CGL 三成分 NIR 混合設計**
+（casein／glucose／lactate，1104–2496 nm；來源：<https://eigenvector.com/resources/data-sets/>）
+示範 **Mixture Analysis (NNLS)** 拆解混合譜：
+
+1. 用校正集以古典最小平方（CLS）估出三個成分的**純光譜**（`S = pinv(C)·X`）；
+2. 對一條**測試混合譜**做 NNLS（`orangespectra.core.mixture_nnls`）拆解；
+3. 回推的比例與參考 wt% 比對。
+
+**執行**（需要能連到 eigenvector.com，或自己下載 `CGL_nir.mat` 後傳路徑）：
+```bash
+python examples/cgl_mixture_nnls.py [path/to/CGL_nir.mat]
+```
+會產生 `docs/demo_mixture.png`，並輸出可直接在 Orange 裡試的兩個檔：
+- `cgl_components.speclib` — 3 條純成分參考譜
+- `cgl_mixture.csv` — 一條測試混合譜
+
+**在 Orange 裡實跑**：用 **Load Spectra Files** 載入 `cgl_components.speclib`（接
+Mixture Analysis 的 *References*），再載入 `cgl_mixture.csv`（接 *Mixture*），即得成分比例與 R²。
+
+> `CGL_nir.mat` 只在 Eigenvector 網站，不隨 repo 附帶（已 gitignore）。
