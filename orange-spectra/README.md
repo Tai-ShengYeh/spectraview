@@ -107,9 +107,9 @@ MIT.
 
 ---
 
-<a name="中文說明"></a>
+## 中文說明
 
-# orange-spectra — Orange Data Mining 光譜 widgets
+**orange-spectra — Orange Data Mining 光譜 widgets**
 
 [English](#orange-spectra--spectroscopy-widgets-for-orange-data-mining) ｜ **中文**
 

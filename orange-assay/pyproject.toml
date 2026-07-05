@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orange-assay"
-version = "0.1.0"
+version = "0.1.1"
 description = "Orange Data Mining widgets for plate-image assays: microplate & coffee-ring readers and 3PL/4PL dose-response curve fitting (EC50, LOD)."
 readme = "README.md"
 requires-python = ">=3.9"

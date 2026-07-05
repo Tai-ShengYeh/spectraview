@@ -46,7 +46,7 @@ python -m Orange.canvas
 
 After restarting Orange, an **Assay** category with the three widgets appears in
 the toolbox. Each widget has an **ℹ How to use** box, and **F1** opens its
-online help page.
+online help page. Full tutorial: <https://tai-shengyeh.github.io/spectraview/assay.html> ([English](https://tai-shengyeh.github.io/spectraview/assay_en.html)).
 
 > **Traditional-Chinese Windows note:** if the Add-ons dialog crashes with
 > `UnicodeDecodeError: 'cp950' codec…`, install from a command prompt instead:
@@ -75,9 +75,9 @@ MIT.
 
 ---
 
-<a name="中文說明"></a>
+## 中文說明
 
-# orange-assay — Orange Data Mining 盤面影像與劑量反應 widgets
+**orange-assay — Orange Data Mining 盤面影像與劑量反應 widgets**
 
 [English](#orange-assay--plate-image--dose-response-widgets-for-orange-data-mining) ｜ **中文**
 
@@ -120,7 +120,7 @@ python -m Orange.canvas
 ```
 
 重啟後工具箱會出現 **Assay** 分類（3 個 widgets）。每個 widget 都有
-「**ℹ 說明**」盒子，按 **F1** 會開線上說明頁。
+「**ℹ 說明**」盒子，按 **F1** 會開線上說明頁。教學網頁：<https://tai-shengyeh.github.io/spectraview/assay.html>（[English](https://tai-shengyeh.github.io/spectraview/assay_en.html)）。
 
 > **繁體中文 Windows 注意：** 若 Add-ons 對話框出現
 > `UnicodeDecodeError: 'cp950' codec…` 崩潰，改用命令列安裝：
