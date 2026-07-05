@@ -416,6 +416,15 @@ python -m Orange.canvas</pre>
       <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
       <tr><td>其他 7 種</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
     </table>
+    <div class="note"><b>真實資料延伸範例（CGL NIR）：</b>用 Eigenvector 的
+      <a href="https://eigenvector.com/resources/data-sets/">CGL 三成分 NIR 混合設計</a>
+      （<b>casein／glucose／lactate</b>，1104–2496 nm）。先用校正集以古典最小平方（CLS）
+      估出三個成分的<b>純光譜</b>，再對一條<b>測試混合譜</b>做 NNLS 拆解，回推的比例會很接近
+      參考 wt%。跑
+      <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/examples/cgl_mixture_nnls.py"><code>examples/cgl_mixture_nnls.py</code></a>
+      會產生這張圖，並輸出 <code>cgl_components.speclib</code>（3 條純成分參考譜）與
+      <code>cgl_mixture.csv</code>（一條混合譜）——把它們載入 <b>Load Spectra Files</b> ／
+      <b>Import Spectrum URL</b> 後接 <b>Mixture Analysis</b>，即可在 Orange 裡實際跑一次真實的 NNLS 拆解。</div>
   </div>
 
   <div class="wsec">

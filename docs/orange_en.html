@@ -425,6 +425,17 @@ python -m Orange.canvas</pre>
       <tr><td><b>sucrose</b></td><td>0.350</td><td>35.0%</td><td>35%</td></tr>
       <tr><td>other 7</td><td>≈ 0</td><td>≈ 0%</td><td>0%</td></tr>
     </table>
+    <div class="note"><b>Real-data extension (CGL NIR):</b> using Eigenvector's
+      <a href="https://eigenvector.com/resources/data-sets/">CGL three-component NIR
+      mixture design</a> (<b>casein / glucose / lactate</b>, 1104–2496 nm). Estimate each
+      component's <b>pure spectrum</b> from the calibration set by classical least squares
+      (CLS), then unmix a <b>test mixture</b> with NNLS — the recovered proportions closely
+      match the reference wt%. Running
+      <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/examples/cgl_mixture_nnls.py"><code>examples/cgl_mixture_nnls.py</code></a>
+      regenerates this figure and writes <code>cgl_components.speclib</code> (3 pure-component
+      references) and <code>cgl_mixture.csv</code> (one mixture) — load them via <b>Load Spectra
+      Files</b> / <b>Import Spectrum URL</b> into <b>Mixture Analysis</b> to run a real NNLS
+      unmixing inside Orange.</div>
   </div>
 
   <div class="wsec">
