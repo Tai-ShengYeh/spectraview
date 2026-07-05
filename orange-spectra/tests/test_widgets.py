@@ -381,5 +381,43 @@ class TestOWMergeSpectra(WidgetTest):
         self.assertIsNone(self.get_output(self.widget.Outputs.spectra))
 
 
+
+class TestOWLoadSpectraFiles(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owloadfiles import OWLoadSpectraFiles
+        self.widget = self.create_widget(OWLoadSpectraFiles)
+
+    def _folder(self):
+        import tempfile
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "a.csv"), "w") as fh:
+            fh.write("wl,i\n400,1\n401,2\n402,4\n")
+        with open(os.path.join(d, "wide.csv"), "w") as fh:
+            fh.write("name,400,401,402\nS1,1,2,3\nS2,3,2,1\n")
+        return d
+
+    def test_folder_source(self):
+        self.widget.sources = [self._folder()]
+        self.widget._sync_list()
+        self.widget._reload()
+        out = self.get_output(self.widget.Outputs.spectra)
+        self.assertEqual(len(out), 3)
+
+    def test_single_file(self):
+        d = self._folder()
+        self.widget.sources = [os.path.join(d, "wide.csv")]
+        self.widget._sync_list()
+        self.widget._reload()
+        self.assertEqual(len(self.get_output(self.widget.Outputs.spectra)), 2)
+
+    def test_clear(self):
+        self.widget.sources = [self._folder()]
+        self.widget._sync_list()
+        self.widget._reload()
+        self.widget._clear()
+        self.assertIsNone(self.get_output(self.widget.Outputs.spectra))
+        self.assertTrue(self.widget.Information.nothing.is_shown())
+
+
 if __name__ == "__main__":
     unittest.main()

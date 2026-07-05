@@ -83,7 +83,7 @@
 <div class="hero">
   <span class="badge">Orange Data Mining × Spectroscopy</span>
   <h1>Orange <span class="accent">光譜</span> Widgets</h1>
-  <p>九個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
+  <p>十個開源 widgets，把光譜學帶進 Orange 視覺化工作流：貼上 <b>IRUG / SOPRANO 網址</b>直接看光譜、
      <b>多譜疊圖合併</b>、算<b>相似度</b>、建<b>光譜庫</b>比對未知物、用 <b>NNLS</b> 拆解混合光譜、<b>尋峰標記</b>、<b>XRF 元素標記</b>、<b>PLS-DA</b> 判別分析、畫水光譜學 <b>Aquagram</b>——全程拖拉連線、免寫程式。</p>
   <div class="cta">
     <a class="btn solid" href="#install">安裝 Install</a>
@@ -98,7 +98,7 @@
 <!-- ======================= overview ======================= -->
 <section id="overview">
   <div class="kicker">Overview</div>
-  <h2>九個 Widgets，一條龍的光譜鑑定流程</h2>
+  <h2>十個 Widgets，一條龍的光譜鑑定流程</h2>
   <p class="lead">安裝後 Orange 工具箱會多一個 <b>Spectra</b> 分類。輸出的資料表採
      <a href="https://orange-spectroscopy.readthedocs.io/">Orange-Spectroscopy</a> 慣例
      （每一欄＝一個波數、每一列＝一條光譜），可直接接 PCA、PLS、階層式分群等 Orange 原生流程。</p>
@@ -112,6 +112,11 @@
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#64b5cd"/><path d="M5 16 Q12 14 16 20 T26 16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M5 24 Q12 30 16 22 T26 26" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/><path d="M34 12 Q41 21 34 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M38 15 Q44 21 38 27" fill="none" stroke="#ffd54f" stroke-width="2.2" stroke-linecap="round"/></svg>
       <h3>Merge Spectra</h3>
       <p>把多個光譜來源疊在同一張圖，並輸出成一個合併資料表（每列一條光譜、共同波段），方便一次比對或接後續分析。</p>
+    </div>
+    <div class="card">
+      <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#937860"/><path d="M6 14 L6 36 Q6 39 9 39 L39 39 Q42 39 42 36 L42 19 Q42 16 39 16 L24 16 L20 11 Q19 10 17 10 L9 10 Q6 10 6 13 Z" fill="#ffd54f"/><path d="M12 33 Q17 31 20 26 T28 22 Q30 30 33 27 T38 30" fill="none" stroke="#4b3f2f" stroke-width="2" stroke-linecap="round"/></svg>
+      <h3>Load Spectra Files</h3>
+      <p>一鍵吃整包光譜：資料夾或 .zip（免解壓）裡的 JCAMP-DX、CSV、矩陣 CSV、NetCDF .cdf 全部讀進來，輸出一個合併資料表。</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -165,7 +170,7 @@
   <div class="step"><div class="n">1</div><div><h4>開 Add-ons</h4><p>Orange 選單 <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… 輸入名稱</h4>
     <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。</p></div></div>
-  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 8 個 widgets。</p></div></div>
+  <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 10 個 widgets。</p></div></div>
   <div class="note"><b>找不到 <code>orange-spectra</code>？</b>代表尚未發佈到 PyPI。發佈方式見
     <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>；
     在那之前，桌面版可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
@@ -188,7 +193,7 @@ python -m Orange.canvas</pre>
 
   <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
     <b>裝一次就好，不用每次都裝。</b>安裝是<strong>一次性</strong>的——裝完之後每次開 Orange，
-    Spectra 分類的 8 個 widgets 都在，直接用。<br>
+    Spectra 分類的 10 個 widgets 都在，直接用。<br>
     ▸ <b>只有要「更新」到新版時</b>才需要重裝：
     <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>，
     然後<strong>完全關掉 Orange 再重開</strong>。<br>
@@ -218,6 +223,18 @@ python -m Orange.canvas</pre>
     </ol>
     <div class="note"><b>原理：</b>IRUG 網頁沒有下載檔——光譜其實藏在頁面互動圖（jqPlot）的
       <code>&lt;script&gt;</code> 裡（<code>"波數:強度"</code> 配對）；SOPRANO 藏在 Dygraph 資料陣列；也支援 Plotly / Highcharts / Chart.js 等互動圖內嵌的 x/y 陣列（如 INFRA-ART 等資料庫）。widget 直接解析網頁原始碼還原數據。</div>
+  </div>
+
+  <div class="wsec" id="loadfiles">
+    <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#937860"/><path d="M6 14 L6 36 Q6 39 9 39 L39 39 Q42 39 42 36 L42 19 Q42 16 39 16 L24 16 L20 11 Q19 10 17 10 L9 10 Q6 10 6 13 Z" fill="#ffd54f"/><path d="M12 33 Q17 31 20 26 T28 22 Q30 30 33 27 T38 30" fill="none" stroke="#4b3f2f" stroke-width="2" stroke-linecap="round"/></svg>
+      Load Spectra Files — 批次載入光譜檔</h3>
+    <div class="io"><b>輸出</b>：Spectra（合併 Table，每列一條光譜、共同波段）</div>
+    <ol>
+      <li><b>Add files… / Add folder… / Add .zip…</b> 加入來源；資料夾會掃描所有光譜檔（可含子資料夾），.zip <b>免解壓</b>直接讀。</li>
+      <li>支援：JCAMP-DX（AFFN）、兩欄 CSV/TSV、<b>矩陣 CSV</b>（SpectraView「合併匯出」兩種版面都行）、<b>NetCDF .cdf/.nc</b>（classic 格式——applewine 等 chemometrics 資料集、ANDI 層析匯出）。</li>
+      <li>右側疊圖預覽全部光譜；輸出接 Similarity / Library / PLS-DA / Data Table。</li>
+    </ol>
+    <div class="note"><b>NetCDF 讀法：</b>取檔內最大的 2 維數值變數當資料矩陣（每列一條光譜），自動找長度相符的一維變數（wavelength / wavenumber / time…）當 x 軸；無法解析的檔會略過並提示。像 Kimmel Center FTIR library 這種「一包 zip 很多檔」直接 Add .zip 即可。</div>
   </div>
 
   <div class="wsec" id="merge">
@@ -462,7 +479,7 @@ python -m Orange.canvas</pre>
       <li><b>讓 Python 走 UTF-8</b>——「編輯系統環境變數 ▸ 環境變數 ▸（使用者變數）新增」：名稱 <code>PYTHONUTF8</code>、值 <code>1</code>；重開 Orange 後 Add-ons 對話框就能正常用。</li>
     </ol></details>
   <details><summary>要每次用都重新 pip 安裝嗎？</summary>
-    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 8 個 widgets 都在，直接用。
+    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 10 個 widgets 都在，直接用。
        只有要<b>更新到新版</b>時才重裝（<code>pip install --upgrade --force-reinstall --no-deps …</code>），
        且重裝後要<b>完全關掉 Orange 再重開</b>才會生效。桌面版 App 若日後上了 PyPI，用 Add-ons 對話框安裝更會自動記住、可線上更新。</p></details>
   <details><summary>不會用某個 widget，怎麼學？</summary>
