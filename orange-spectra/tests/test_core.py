@@ -353,5 +353,43 @@ _nc2.close()
 _p = _files.load_netcdf(os.path.join(_fd, "pair.cdf"))
 check("NetCDF 1-D pair fallback", len(_p) == 1 and _p[0]["x_label"] == "time")
 
+
+print("== spectrometer (image -> spectrum) ==")
+from orangespectra import spectrometer as _spm  # noqa: E402
+_H, _W = 40, 640
+_img = np.zeros((_H, _W, 3))
+for _col, _rgb in [(100, (0.2, 0.4, 1.0)), (500, (1.0, 0.3, 0.1))]:
+    _band = np.exp(-((np.arange(_W) - _col) / 4.0) ** 2)
+    for _c, _ch in enumerate(_rgb):
+        _img[:, :, _c] += _band * _ch * 255
+_img = np.clip(_img, 0, 255)
+_prof = _spm.extract_profile(_img, channel="luminance")
+check("profile length = width", _prof.size == _W)
+check("emission lines are profile maxima",
+      _prof[100] == _prof[95:106].max() and _prof[500] == _prof[495:506].max())
+check("red channel favours the red line, blue the blue line",
+      _spm.extract_profile(_img, "red")[500] > _spm.extract_profile(_img, "blue")[500]
+      and _spm.extract_profile(_img, "blue")[100] > _spm.extract_profile(_img, "red")[100])
+_c, _r2, _deg = _spm.fit_calibration([100, 500], [435.8, 611.6], "linear")
+check("linear calibration R^2 ~ 1 (degree 1)", _r2 > 0.999 and _deg == 1)
+_sp = _spm.image_to_spectrum(_img, calibration=[(100, 435.8), (500, 611.6)])
+check("calibrated -> wavelength axis, ascending",
+      _sp["x_label"] == "wavelength (nm)" and np.all(np.diff(_sp["x"]) > 0))
+check("line pixel maps to its wavelength",
+      abs(_sp["x"][np.argmin(np.abs(_sp["x"] - 435.8))] - 435.8) < 1.0)
+_raw = _spm.image_to_spectrum(_img, calibration=None)
+check("no calibration -> pixel axis",
+      _raw["x_label"] == "pixel" and _raw["x"][0] == 0 and _raw["x"][-1] == _W - 1)
+_q = _spm.image_to_spectrum(_img, calibration=[(50, 400), (300, 530), (600, 680)],
+                            model="quadratic")
+check("quadratic calibration uses degree 2", _q["calibration"]["degree"] == 2)
+_flip = _spm.image_to_spectrum(_img, calibration=None, flip=True)
+check("flip reverses the profile", np.allclose(_flip["y"][::-1], _raw["y"]))
+try:
+    _spm.fit_calibration([1], [2])
+    check("too few calibration points raises", False)
+except ValueError:
+    check("too few calibration points raises", True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
