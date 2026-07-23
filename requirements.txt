@@ -11,3 +11,16 @@ matplotlib>=3.6          # vector export (SVG / PDF / EPS)
 # GRAMS/Galactic .spc — its legacy build imports numpy, so disable isolation:
 #     pip install --no-build-isolation spc-spectra
 # The app degrades gracefully (clear message) when these are absent.
+
+# --- Optional: MATLAB v7.3 (HDF5) .mat files ---
+#     pip install h5py
+
+# --- Optional live-instrument backends (儀器 ▸ 光譜儀擷取) ---
+# Ocean Optics / Ocean Insight (USB2000/USB4000/Flame/QE Pro/...):
+#     pip install seabreeze
+#     seabreeze_os_setup          # one-time driver/udev setup
+# Vernier Go Direct (sensors; SpectroVis Plus spectra come in via the
+# Spectral Analysis CSV watch-folder — see specview/devices/godirect_dev.py):
+#     pip install godirect
+# InnoSpectra NIRScan: no pip package — needs the ISC_NIRScan_PyQt SDK folder
+# plus 32-bit Python 3.11 (see specview/devices/innospectra.py docstring).

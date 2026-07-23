@@ -238,6 +238,11 @@ class MainWindow(QtWidgets.QMainWindow):
         m_an.addAction(QtGui.QAction("Clear analysis overlays", self,
                                      triggered=self.clear_analysis))
 
+        m_dev = mb.addMenu("儀器(&Instrument)")
+        m_dev.addAction(QtGui.QAction(
+            "光譜儀擷取 (Ocean Optics / Go Direct / InnoSpectra)…", self,
+            triggered=self.open_acquisition))
+
         m_lib = mb.addMenu("&Library")
         m_lib.addAction(QtGui.QAction("Add selected to library", self,
                                       triggered=self.library_add))
@@ -394,6 +399,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plotview.refresh()
         self.plotview.autoscale()
         self.status.showMessage("Loaded demo spectra (FTIR, Raman, UV/Vis, NIR).", 5000)
+
+    # ===================================================== live instruments
+    def open_acquisition(self) -> None:
+        """儀器 ▸ 光譜儀擷取 — non-modal instrument acquisition window."""
+        from .acquisition import AcquisitionDialog
+        dlg = AcquisitionDialog(
+            add_spectrum=self._add_result,
+            load_paths=self._load_paths,
+            status=lambda msg: self.status.showMessage(msg, 5000),
+            parent=self)
+        self._show_dialog(dlg)
 
     def _default_save_path(self, filename: str) -> str:
         """Default for save dialogs: last-used folder + a sensible filename."""
