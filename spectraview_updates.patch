@@ -1,0 +1,188 @@
+From 4b37cd433ef0c611b9f5740d1d0f962567a4b88d Mon Sep 17 00:00:00 2001
+From: Tai-Sheng Yeh <tsyeh0909@gmail.com>
+Date: Mon, 22 Jun 2026 15:11:53 +0000
+Subject: [PATCH] UI: hideable spectra sidebar (F9) + hover spectrum names;
+ support .Spectrum files
+
+- View > Show spectra list (F9) toggles the left sidebar so it stops
+  taking up space when not in use
+- Hovering near a curve shows a floating label with that spectrum's name
+  (nearest line within ~8 px; works at any zoom, handles descending x)
+- Register .Spectrum (NeoSpectra tab-separated export) in the loader and
+  the File > Open dialog filter
+---
+ specview/formats/__init__.py |  6 ++--
+ specview/ui/main_window.py   | 11 ++++++++
+ specview/ui/plotview.py      | 53 +++++++++++++++++++++++++++++++++++-
+ 3 files changed, 67 insertions(+), 3 deletions(-)
+
+diff --git a/specview/formats/__init__.py b/specview/formats/__init__.py
+index 987e39e..13d4709 100644
+--- a/specview/formats/__init__.py
++++ b/specview/formats/__init__.py
+@@ -20,6 +20,7 @@ from .mat_io import load_mat
+ _READERS = {
+     ".csv": load_ascii, ".txt": load_ascii, ".dat": load_ascii,
+     ".tsv": load_ascii, ".asc": load_ascii, ".prn": load_ascii, ".xy": load_ascii,
++    ".spectrum": load_ascii,   # NeoSpectra export: tab-separated x/y with a unit header
+     ".dx": load_jcamp, ".jdx": load_jcamp, ".jcm": load_jcamp, ".jcamp": load_jcamp,
+     ".spc": load_spc,
+     ".json": load_json,
+@@ -28,9 +29,10 @@ _READERS = {
+ 
+ # OPUS files often have numeric extensions (.0, .1, ...).
+ OPEN_FILTER = (
+-    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.dx *.jdx *.jcamp *.spc "
+-    "*.json *.mat);;"
++    "Spectra (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy *.Spectrum *.dx *.jdx "
++    "*.jcamp *.spc *.json *.mat);;"
+     "ASCII (*.csv *.txt *.dat *.tsv *.asc *.prn *.xy);;"
++    "NeoSpectra (*.Spectrum);;"
+     "JCAMP-DX (*.dx *.jdx *.jcamp);;"
+     "JSON (*.json);;"
+     "MATLAB (*.mat);;"
+diff --git a/specview/ui/main_window.py b/specview/ui/main_window.py
+index 3ac62d4..95ee8ec 100644
+--- a/specview/ui/main_window.py
++++ b/specview/ui/main_window.py
+@@ -86,6 +86,11 @@ class MainWindow(QtWidgets.QMainWindow):
+         splitter.setStretchFactor(1, 1)
+         splitter.setSizes([300, 900])
+         self.setCentralWidget(splitter)
++        self.left_panel = left   # the spectra-list sidebar (hideable via View menu)
++
++    def _set_list_visible(self, visible: bool) -> None:
++        """Show/hide the spectra-list sidebar so it stops taking up space."""
++        self.left_panel.setVisible(visible)
+ 
+     def _build_actions(self) -> None:
+         SP = QtWidgets.QStyle.StandardPixmap
+@@ -114,6 +119,10 @@ class MainWindow(QtWidgets.QMainWindow):
+         self.act_autoscale = QtGui.QAction(icon(SP.SP_FileDialogContentsView),
+                                            "Auto-scale", self, shortcut="Ctrl+0",
+                                            triggered=self.plotview.autoscale)
++        self.act_toggle_list = QtGui.QAction("Show spectra list", self,
++                                             checkable=True, checked=True,
++                                             shortcut="F9",
++                                             triggered=self._set_list_visible)
+ 
+     def _build_menus(self) -> None:
+         mb = self.menuBar()
+@@ -150,6 +159,8 @@ class MainWindow(QtWidgets.QMainWindow):
+         m_view.addActions([self.act_flip, self.act_grid, self.act_logy, self.act_dark])
+         m_view.addAction(QtGui.QAction("Stack / offset…", self, triggered=self.set_stack))
+         m_view.addAction(self.act_autoscale)
++        m_view.addSeparator()
++        m_view.addAction(self.act_toggle_list)
+ 
+         m_proc = mb.addMenu("&Process")
+         ms = m_proc.addMenu("Smoothing")
+diff --git a/specview/ui/plotview.py b/specview/ui/plotview.py
+index a8fd0fb..bdcca54 100644
+--- a/specview/ui/plotview.py
++++ b/specview/ui/plotview.py
+@@ -37,6 +37,8 @@ class PlotView(QtWidgets.QWidget):
+         layout.addWidget(self.plot_widget)
+ 
+         self._curves: list[pg.PlotDataItem] = []
++        #: (name, x, y_plotted) parallel to visible curves, for hover hit-testing
++        self._curve_data: list[tuple[str, np.ndarray, np.ndarray]] = []
+         self._peak_items: list = []      # scatter + text markers from find_peaks
+         self._fit_items: list = []       # fitted sum + component overlays
+ 
+@@ -46,6 +48,15 @@ class PlotView(QtWidgets.QWidget):
+         self.hline = pg.InfiniteLine(angle=0, movable=False, pen=pen)
+         self.plot.addItem(self.vline, ignoreBounds=True)
+         self.plot.addItem(self.hline, ignoreBounds=True)
++
++        # floating label that names the spectrum under the cursor
++        self._hover_label = pg.TextItem(color="#000000", anchor=(0, 1),
++                                        fill=pg.mkBrush(255, 255, 255, 220),
++                                        border=pg.mkPen(120, 120, 120))
++        self._hover_label.setZValue(100)
++        self.plot.addItem(self._hover_label, ignoreBounds=True)
++        self._hover_label.hide()
++
+         self._proxy = pg.SignalProxy(self.plot.scene().sigMouseMoved,
+                                      rateLimit=60, slot=self._on_mouse_move)
+ 
+@@ -62,6 +73,8 @@ class PlotView(QtWidgets.QWidget):
+         for c in self._curves:
+             self.plot.removeItem(c)
+         self._curves.clear()
++        self._curve_data.clear()
++        self._hover_label.hide()
+         self.legend.clear()
+ 
+         span = self._global_span()
+@@ -71,11 +84,14 @@ class PlotView(QtWidgets.QWidget):
+             if spec.npoints == 0:
+                 continue
+             offset = i * self.stack_offset * span
++            y_plot = spec.y + offset
+             pen = pg.mkPen(color=spec.color or "#1f77b4",
+                            width=float(spec.meta.get("line_width", 1.4)))
+-            curve = self.plot.plot(spec.x, spec.y + offset, pen=pen, name=spec.name,
++            curve = self.plot.plot(spec.x, y_plot, pen=pen, name=spec.name,
+                                    antialias=True)
+             self._curves.append(curve)
++            self._curve_data.append((spec.name, np.asarray(spec.x),
++                                     np.asarray(y_plot)))
+             x_label, y_label = spec.x_label, spec.y_label
+ 
+         self.plot.setLabel("bottom", x_label or "x")
+@@ -186,9 +202,36 @@ class PlotView(QtWidgets.QWidget):
+         self.clear_fit()
+ 
+     # ---- crosshair -------------------------------------------------------
++    #: how close (in screen pixels) the cursor must be to a line to name it
++    HOVER_TOLERANCE_PX = 8.0
++
++    def _nearest_curve_name(self, scene_pos, x: float) -> str | None:
++        """Return the name of the visible curve closest to the cursor, or None.
++
++        Closeness is measured in screen pixels so it behaves consistently
++        regardless of zoom or axis scaling.
++        """
++        vb = self.plot.getViewBox()
++        best_name, best_dist = None, self.HOVER_TOLERANCE_PX
++        for name, cx, cy in self._curve_data:
++            if cx.size == 0 or x < cx.min() or x > cx.max():
++                continue
++            # np.interp needs ascending x; flip for descending (e.g. IR) axes
++            if cx.size > 1 and cx[0] > cx[-1]:
++                yc = np.interp(x, cx[::-1], cy[::-1])
++            else:
++                yc = np.interp(x, cx, cy)
++            curve_scene = vb.mapViewToScene(QtCore.QPointF(x, float(yc)))
++            dist = (curve_scene - scene_pos)
++            dpx = (dist.x() ** 2 + dist.y() ** 2) ** 0.5
++            if dpx < best_dist:
++                best_name, best_dist = name, dpx
++        return best_name
++
+     def _on_mouse_move(self, evt) -> None:
+         pos = evt[0]
+         if not self.plot.sceneBoundingRect().contains(pos):
++            self._hover_label.hide()
+             return
+         mp = self.plot.getViewBox().mapSceneToView(pos)
+         x, y = mp.x(), mp.y()
+@@ -196,6 +239,14 @@ class PlotView(QtWidgets.QWidget):
+         self.hline.setPos(y)
+         self.cursorMoved.emit(x, y)
+ 
++        name = self._nearest_curve_name(pos, x)
++        if name:
++            self._hover_label.setText(name)
++            self._hover_label.setPos(x, y)
++            self._hover_label.show()
++        else:
++            self._hover_label.hide()
++
+     # ---- export ----------------------------------------------------------
+     def export_image(self, path: str, width: int = 1920) -> None:
+         """Export the current view.
+-- 
+2.34.1
+
