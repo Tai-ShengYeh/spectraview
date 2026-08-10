@@ -77,6 +77,7 @@
   <span class="langtoggle"><a href="orange.html">中文</a> · <a class="on" href="orange_en.html">English</a></span>
   ⬅ <a href="https://tai-shengyeh.github.io/">Teaching portal</a> ・
   <a href="index.html">SpectraView</a> ・
+  <a href="raman-tutorial/">Raman pigment tutorial (zh)</a> ・
   <a href="https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra">Source on GitHub</a>
 </div>
 
@@ -92,6 +93,7 @@
     <a class="btn ghost" href="#widgets">Widget guide</a>
     <a class="btn ghost" href="#demo">Live demo</a>
     <a class="btn ghost" href="#workflows">Example workflows</a>
+    <a class="btn ghost" href="raman-tutorial/">Beginner tutorial ▸</a>
   </div>
 </div>
 
@@ -543,12 +545,53 @@ python -m Orange.canvas</pre>
        Savitzky-Golay, etc.) before comparison; or do airPLS in SpectraView first and export.</p></details>
 </section>
 
+<section id="tutorial">
+  <p class="kicker">Getting started</p>
+  <h2>New to spectral analysis? Start with the tutorial</h2>
+  <p class="lead">This page is a reference manual for the 11 widgets. If terms like
+     <i>baseline correction</i>, <i>peak finding</i> or <i>spectral library matching</i> are new to you,
+     work through the beginner tutorial first, then come back here for widget details.</p>
+  <div class="wsec">
+    <h3>📘 <a href="raman-tutorial/">Raman Pigment Analysis — A Beginner's Tutorial</a>
+      <span style="font-size:12.5px;font-weight:700;color:#fff;background:var(--coral);
+                   border-radius:999px;padding:3px 11px;margin-left:6px;white-space:nowrap">
+        Chinese-language tutorial 中文教材</span></h3>
+    <p style="color:var(--soft);font-size:15px;margin:6px 0 12px">
+      Written for first-year undergraduates with no prior coding experience. Using real pigment
+      spectra, it walks through the whole chain — <b>baseline correction → peak finding →
+      spectral library matching → mixture unmixing</b> — three times over, once in
+      <b>Python</b>, once in <b>R</b>, and once <b>entirely code-free using the widgets on this page</b>.
+    </p>
+    <div class="io" style="border-color:var(--coral)">
+      <b>Please note</b>　The tutorial text is written in <b>Traditional Chinese</b>.
+      The <b>code, data files and widget names are all in English</b>, so the Python and R scripts,
+      the 10 downloadable spectra and the Orange workflows are usable regardless of the language
+      you read. An English edition is not currently available.
+    </div>
+    <div class="io">
+      <b>Contents</b>　5 parts, 26 chapters ・ 8 figures ・ 50 interactive quiz questions
+      (with a progress dashboard and CSV export) ・ 10 downloadable teaching spectra
+      ・ Python and R analysis scripts
+    </div>
+    <ol>
+      <li>Part 4 covers exactly how to chain the widgets on this page:
+          Load Spectra Files → Peak Finder → Spectra Similarity → Spectral Library → Mixture Analysis.</li>
+      <li>Part 5 works through three real cases, plus the three kinds of mistakes an automated
+          matcher will always make — the part beginners most need, and least often get told.</li>
+    </ol>
+    <p style="margin-top:12px">
+      <a class="btn solid" style="background:var(--teal);color:#fff" href="raman-tutorial/">Open the tutorial ▸</a>
+    </p>
+  </div>
+</section>
+
 </main>
 
 <footer>
   orange-spectra ・ MIT License ・
   <a href="https://github.com/Tai-ShengYeh/spectraview">GitHub</a> ・
   <a href="orange.html">中文版</a> ・
+  <a href="raman-tutorial/">Raman tutorial (zh)</a> ・
   <a href="https://tai-shengyeh.github.io/">Food-science teaching portal</a>
 </footer>
 

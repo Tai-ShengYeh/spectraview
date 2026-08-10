@@ -77,6 +77,7 @@
   <span class="langtoggle"><a class="on" href="orange.html">中文</a> · <a href="orange_en.html">English</a></span>
   ⬅ <a href="https://tai-shengyeh.github.io/">課程入口 Teaching portal</a> ・
   <a href="index.html">SpectraView 教學頁</a> ・
+  <a href="raman-tutorial/">拉曼顏料分析教材</a> ・
   <a href="https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra">GitHub 原始碼</a>
 </div>
 
@@ -90,6 +91,7 @@
     <a class="btn ghost" href="#widgets">Widget 教學</a>
     <a class="btn ghost" href="#demo">真實數據 Demo</a>
     <a class="btn ghost" href="#workflows">範例工作流</a>
+    <a class="btn ghost" href="raman-tutorial/">新手教材 ▸</a>
   </div>
 </div>
 
@@ -519,6 +521,34 @@ python -m Orange.canvas</pre>
     <p>可以。相似度與 NNLS 都會先取重疊波段、內插到共同格點再計算；完全沒有重疊才會回報錯誤。</p></details>
   <details><summary>可以先做基線校正／平滑再比對嗎？</summary>
     <p>建議可以：接 Orange-Spectroscopy 的 Preprocess Spectra widget（含基線、SNV、Savitzky-Golay 等）在比對之前處理；或先在 SpectraView 做 airPLS 再匯出。</p></details>
+</section>
+
+<section id="tutorial">
+  <p class="kicker">Getting started</p>
+  <h2>第一次做光譜分析？先看這份教材</h2>
+  <p class="lead">本頁是 11 個 widget 的參考手冊；如果你還不知道「扣基線、找峰、比對譜庫」在做什麼，
+     建議先走一遍入門教材，再回來查 widget 的細節。</p>
+  <div class="wsec">
+    <h3>📘 <a href="raman-tutorial/">拉曼光譜顏料分析入門</a></h3>
+    <p style="color:var(--soft);font-size:15px;margin:6px 0 12px">
+      寫給大一零基礎的教材，用真實顏料光譜資料把
+      <b>扣基線 → 找峰 → 比對譜庫 → 混合物解混</b>整條流程走一遍。
+      同一件事有三條路線可選：<b>Python</b>、<b>R</b>、以及<b>用本頁的 widget 完全不寫程式</b>。
+    </p>
+    <div class="io">
+      <b>內容</b>　5 篇 26 章 ・ 8 張圖表 ・ 50 題互動測驗（含學習儀表板與成績單匯出）
+      ・ 10 個可下載的教學光譜檔 ・ Python 與 R 分析腳本
+    </div>
+    <ol>
+      <li>第四篇專門講怎麼把本頁的 widget 串成分析流程：Load Spectra Files → Peak Finder →
+          Spectra Similarity → Spectral Library → Mixture Analysis。</li>
+      <li>第五篇有三個真實案例，以及「自動化程式一定會犯的三種錯」——
+          這是初學者最需要知道、卻最少人講的部分。</li>
+    </ol>
+    <p style="margin-top:12px">
+      <a class="btn solid" style="background:var(--teal);color:#fff" href="raman-tutorial/">開始閱讀 ▸</a>
+    </p>
+  </div>
 </section>
 
 </main>
