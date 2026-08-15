@@ -15,6 +15,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+.claude/
 
 # Local scratch (keep docs/ — referenced by README)
 *.log

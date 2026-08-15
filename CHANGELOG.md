@@ -10,6 +10,22 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
 > 已在 `main` 分支、但尚未納入 [v0.2.0](https://github.com/Tai-ShengYeh/spectraview/releases/tag/v0.2.0) 發行標籤的變更。
 
 ### 新增（Added）
+- **`split_fields()`：空白分隔的儀器匯出檔也能直接讀**（`orange-spectra/orangespectra/core.py`）：
+  資料列優先以逗號／Tab／分號／直線分隔；若都沒有，改用連續空白切分，讓拉曼與其他儀器
+  常見的空白分隔 `.txt`／`.dat`／`.asc`／`.xy` 匯出檔比照 CSV 解析。空行與註解列
+  （`#`、`%`、`!`、`'`）自動略過。`parse_csv()` 與 `files.py` 的資料夾／ZIP 批次載入
+  共用同一套切分邏輯。
+- **開發與投稿用基礎檔**：新增 `CONTRIBUTING.md`（開發環境、測試怎麼跑、widget 撰寫慣例、
+  數值正確性規範）與 `CODE_OF_CONDUCT.md`（Contributor Covenant 2.1）；新增
+  `paper/paper.md`＋`paper.bib`（JOSS 投稿草稿）。
+- **`.gitattributes`：統一行尾**。先前在 Windows 端 clone 後，工作目錄是 CRLF 而 repo 存 LF，
+  且未設 `core.autocrlf`，會讓 `git status` 把 131 個未修改的檔案全列為 modified
+  （43,220 行幽靈差異）。現在一律以 LF 入庫，並明確標示二進位檔不做轉換。
+- **`orange-spectra/pyproject.toml`**：新增 `[project.optional-dependencies] dev`
+  （`pip install -e ".[dev]"` 會裝 pytest／pytest-qt／ruff／build）、`license-files`
+  （讓 LICENSE 進得了 sdist 與 wheel）、以及 `[tool.ruff]` 明確鎖定 lint 規則集
+  （`E4,E7,E9,F,W,I`；刻意不啟用 `RUF100`，否則保護 `matplotlib.use()` 順序的
+  `# noqa: E402` 會被自動移除）。
 - **Orange widgets 內建 Help + 教學頁真實數據 Demo**：五個 widget 左上角都有
   「ℹ 說明 How to use」盒子與「📖 開啟線上教學」按鈕（跳到對應段落）；教學頁
   `docs/orange.html` 新增「真實數據 Demo」——用內建範例（9 糖 NIR 光譜庫、未知樣品、
@@ -41,6 +57,13 @@ SpectraView 的更新紀錄，最新在上。每筆變更的完整技術細節�
   （如 Orange）與化學計量學 ML 匯出的矩陣檔，以及本程式自己的 `layout='rows'`
   合併匯出，逐列載入成多條光譜。支援多個前導中繼欄（如 Sample ID、Concentration），
   其值會帶進光譜名稱與 meta。
+
+### 修正（Fixed）
+- **ruff 清理**：移除未使用的 import、拆開同行分號敘述、統一 import 排序，`ruff check` 全綠。
+  同時還原 7 個 widget 中被自動移除的 `# noqa: E402` —— 那些標記保護的是
+  「Qt backend 必須在 `matplotlib.use("Qt5Agg")` 之後 import」的順序，被拿掉後
+  任何 import sorter 都可能把它們搬到前面而讓 widget 無法啟動。
+
 
 ## 2026-06-24
 
