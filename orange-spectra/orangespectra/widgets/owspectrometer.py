@@ -6,16 +6,16 @@ wavelength from known reference lines. Outputs an Orange spectrum Table.
 """
 import os
 
+import matplotlib
 import numpy as np
-
 from AnyQt.QtWidgets import QFileDialog
 
-import matplotlib
 matplotlib.use("Qt5Agg")
+# The Qt backend must be imported *after* matplotlib.use(); do not let an
+# import sorter hoist the lines below above it.
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
-
 from Orange.data import Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Msg, Output, OWWidget
@@ -174,7 +174,8 @@ class OWSpectrometer(OWWidget):
         self.ax_img.add_patch(Rectangle(
             (0, row_center - half), self._rgb.shape[1], 2 * half, fill=False,
             edgecolor="#ffd54f", lw=1.5))
-        self.ax_img.set_xticks([]); self.ax_img.set_yticks([])
+        self.ax_img.set_xticks([])
+        self.ax_img.set_yticks([])
         self.ax_img.set_title("ROI strip", fontsize=9)
 
         # bottom: the extracted spectrum

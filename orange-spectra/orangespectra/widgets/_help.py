@@ -1,7 +1,6 @@
 """Shared in-widget Help box (so beginners can learn each widget in place)."""
 from AnyQt.QtCore import QUrl
 from AnyQt.QtGui import QDesktopServices
-
 from Orange.widgets import gui
 
 TUTORIAL_URL = "https://tai-shengyeh.github.io/spectraview/orange.html"

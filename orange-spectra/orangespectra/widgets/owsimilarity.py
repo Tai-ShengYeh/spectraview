@@ -1,6 +1,5 @@
 """Spectra Similarity — pairwise similarity scores between two sets of spectra."""
 import numpy as np
-
 from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget

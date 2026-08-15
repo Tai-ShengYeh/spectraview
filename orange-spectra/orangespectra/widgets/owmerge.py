@@ -5,13 +5,14 @@ multiple Import Spectrum URL widgets, or Orange's File), see them on one plot,
 and get a single combined Table (each row a spectrum on a shared grid) for
 Similarity / Library / PLS-DA.
 """
+import matplotlib
 import numpy as np
 
-import matplotlib
 matplotlib.use("Qt5Agg")
+# The Qt backend must be imported *after* matplotlib.use(); do not let an
+# import sorter hoist the lines below above it.
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-
 from Orange.data import Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget

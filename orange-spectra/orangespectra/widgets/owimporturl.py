@@ -1,9 +1,6 @@
 """Import Spectrum URL — fetch a spectrum from IRUG / SOPRANO / any URL."""
-from AnyQt.QtCore import Qt
-from AnyQt.QtWidgets import QLineEdit, QListWidget, QSizePolicy
-
 import pyqtgraph as pg
-
+from AnyQt.QtWidgets import QLineEdit, QListWidget, QSizePolicy
 from Orange.data import Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Msg, Output, OWWidget

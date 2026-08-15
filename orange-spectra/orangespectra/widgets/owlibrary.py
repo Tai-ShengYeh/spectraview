@@ -4,9 +4,7 @@ The library file format (.speclib, JSON) is identical to SpectraView's, so
 libraries built here open in SpectraView and vice versa.
 """
 import numpy as np
-
 from AnyQt.QtWidgets import QFileDialog, QListWidget, QSizePolicy
-
 from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget

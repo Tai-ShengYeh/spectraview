@@ -1,9 +1,7 @@
 """Mixture Analysis — decompose a mixed spectrum into reference components (NNLS)."""
 import numpy as np
-
 import pyqtgraph as pg
 from AnyQt.QtWidgets import QTableWidget, QTableWidgetItem
-
 from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget

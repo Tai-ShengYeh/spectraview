@@ -27,6 +27,16 @@ dependencies = [
     "Orange3>=3.34",
 ]
 
+# Used by CONTRIBUTING.md and by .github/workflows/test.yml:
+#     pip install -e ".[dev]"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-qt>=4.2",
+    "ruff>=0.4",
+    "build>=1.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/Tai-ShengYeh/spectraview/tree/main/orange-spectra"
 Tutorial = "https://tai-shengyeh.github.io/spectraview/orange.html"
@@ -41,8 +51,36 @@ orange-spectra = "orangespectra"
 [project.entry-points."orange.canvas.help"]
 html-index = "orangespectra.widgets:WIDGET_HELP_PATH"
 
+[tool.setuptools]
+# Ship the licence inside the sdist and wheel, not just in the repo.
+license-files = ["LICENSE"]
+
 [tool.setuptools.packages.find]
 include = ["orangespectra*"]
 
 [tool.setuptools.package-data]
 "orangespectra.widgets" = ["icons/*.svg"]
+
+# ---------------------------------------------------------------- linting
+# Pinned explicitly so `ruff check` behaves the same for everyone and does not
+# change meaning when ruff ships new default rules.
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E4",   # imports
+    "E7",   # statement style
+    "E9",   # syntax / IO errors
+    "F",    # pyflakes
+    "W",    # whitespace warnings
+    "I",    # import sorting
+]
+# Several widgets must import the Qt backend *after* matplotlib.use("Qt5Agg").
+# Ruff's isort keeps import blocks separated by statements, so that ordering is
+# preserved -- but the `# noqa: E402` markers on those lines are deliberate.
+# Do not enable RUF100 (unused-noqa), or they will be stripped.
+
+[tool.ruff.lint.isort]
+known-first-party = ["orangespectra"]

@@ -1,13 +1,19 @@
 """PLS-DA — partial least squares discriminant analysis of spectra."""
+import matplotlib
 import numpy as np
 
-import matplotlib
 matplotlib.use("Qt5Agg")
+# The Qt backend must be imported *after* matplotlib.use(); do not let an
+# import sorter hoist the lines below above it.
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
-
-from Orange.data import (ContinuousVariable, DiscreteVariable, Domain,
-                         StringVariable, Table)
+from Orange.data import (
+    ContinuousVariable,
+    DiscreteVariable,
+    Domain,
+    StringVariable,
+    Table,
+)
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
