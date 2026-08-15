@@ -1,0 +1,42 @@
+# Line endings ------------------------------------------------------------
+# Store everything as LF in the repository; check out with whatever the
+# platform prefers. Without this, a Windows clone can show every file as
+# modified even when nothing changed.
+* text=auto
+
+# Always LF in the working tree too -- editors on every platform cope with
+# LF, and it keeps diffs clean for code and config.
+*.py     text eol=lf
+*.R      text eol=lf
+*.sh     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.toml   text eol=lf
+*.cfg    text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.csv    text eol=lf
+*.json   text eol=lf
+*.ipynb  text eol=lf
+*.html   text eol=lf
+*.svg    text eol=lf
+
+# Windows-only files keep CRLF
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+*.ps1    text eol=crlf
+
+# Binary -- never touch these
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.zip    binary
+*.mat    binary
+*.mat_   binary
+*.speclib binary
+*.xlsx   binary
+*.pptx   binary
+*.docx   binary
