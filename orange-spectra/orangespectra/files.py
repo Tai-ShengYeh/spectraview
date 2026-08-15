@@ -23,7 +23,7 @@ import zipfile
 
 import numpy as np
 
-from .core import make_spectrum, parse_csv, parse_jcamp
+from .core import make_spectrum, parse_csv, parse_jcamp, split_fields
 
 TEXT_EXTS = {".dx", ".jdx", ".jcm", ".csv", ".txt", ".tsv", ".dat", ".asc",
              ".xy", ".prn"}
@@ -42,12 +42,9 @@ def parse_matrix_text(text: str, source: str = ""):
     """Parse the two matrix CSV layouts into a list of spectra (or None)."""
     rows = []
     for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        parts = re.split(r"[,\t;]+", line)
+        parts = split_fields(line)
         if len(parts) >= 3:
-            rows.append([p.strip() for p in parts])
+            rows.append(parts)
     if len(rows) < 2:
         return None
     header, data = rows[0], rows[1:]

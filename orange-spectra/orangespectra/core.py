@@ -147,7 +147,7 @@ def parse_soprano(text: str, source: str = ""):
     if arr.ndim != 2 or arr.shape[1] < 2 or arr.shape[0] < 2:
         return None
     name = ""
-    lm = re.search(r"labels\s*:\s*(\[[^\]]+\])", text, re.S)
+    lm = re.search(r"labels\s*:\s*(\[[^\]]+\])", text, re.DOTALL)
     if lm:
         try:
             labels = [_strip_tags(str(v)) for v in ast.literal_eval(lm.group(1))]
@@ -215,11 +215,32 @@ def parse_jcamp(text: str, source: str = ""):
 
 
 # ----------------------------------------------------------------- CSV / TSV
+_DELIM_RE = re.compile(r"[,\t;|]+")
+_WS_RE = re.compile(r"\s+")
+_COMMENT_RE = re.compile(r"^\s*[#%!']")
+
+
+def split_fields(line: str) -> list:
+    """Split one data line into fields.
+
+    Uses comma / tab / semicolon / pipe when any is present; otherwise falls
+    back to runs of whitespace, so space-delimited instrument exports (Raman
+    ``.txt``, ``.dat``, ``.asc``, ``.xy`` …) parse like CSV. Returns ``[]`` for
+    blank and comment lines (``#``, ``%``, ``!``, ``'``).
+    """
+    s = line.strip()
+    if not s or _COMMENT_RE.match(s):
+        return []
+    if _DELIM_RE.search(s):
+        return [p.strip() for p in _DELIM_RE.split(s) if p.strip() != ""]
+    return _WS_RE.split(s)
+
+
 def parse_csv(text: str, source: str = ""):
     rows = []
     header = None
     for line in text.splitlines():
-        parts = re.split(r"[,\t;]+", line.strip())
+        parts = split_fields(line)
         if len(parts) < 2:
             continue
         try:
@@ -590,8 +611,10 @@ def plsda_fit(X, labels, n_components: int = 2) -> dict:
 
     x_mean, y_mean = X.mean(axis=0), Y.mean(axis=0)
     Xc, Yc = X - x_mean, Y - y_mean
-    T = np.zeros((n, A)); W = np.zeros((p, A))
-    P = np.zeros((p, A)); Q = np.zeros((len(classes), A))
+    T = np.zeros((n, A))
+    W = np.zeros((p, A))
+    P = np.zeros((p, A))
+    Q = np.zeros((len(classes), A))
     Xa, Ya = Xc.copy(), Yc.copy()
     for a in range(A):
         u = Ya[:, int(np.argmax(Ya.var(axis=0)))]
