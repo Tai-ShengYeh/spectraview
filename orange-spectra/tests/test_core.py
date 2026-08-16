@@ -391,5 +391,56 @@ try:
 except ValueError:
     check("too few calibration points raises", True)
 
+print("== split_fields (delimiter / whitespace / comments) ==")
+check("comma", core.split_fields("100.0,2.5") == ["100.0", "2.5"])
+check("tab", core.split_fields("100.0\t2.5") == ["100.0", "2.5"])
+check("semicolon", core.split_fields("100.0;2.5") == ["100.0", "2.5"])
+check("pipe", core.split_fields("100.0|2.5") == ["100.0", "2.5"])
+check("single space", core.split_fields("100.0 2.5") == ["100.0", "2.5"])
+check("runs of spaces collapse",
+      core.split_fields("   100.0     2.5   ") == ["100.0", "2.5"])
+check("padding around commas is stripped",
+      core.split_fields(" 100.0 ,  2.5 ") == ["100.0", "2.5"])
+check("repeated delimiters do not yield empty fields",
+      core.split_fields("100.0,,2.5") == ["100.0", "2.5"])
+check("delimiter wins over whitespace",
+      core.split_fields("100.0, 2.5, 3.5") == ["100.0", "2.5", "3.5"])
+for _c in "#%!'":
+    check(f"comment line {_c!r} -> []", core.split_fields(f"{_c} header text") == [])
+check("indented comment -> []", core.split_fields("   # note") == [])
+check("blank line -> []", core.split_fields("") == [])
+check("whitespace-only line -> []", core.split_fields("   \t  ") == [])
+check("three whitespace columns",
+      core.split_fields("1 2 3") == ["1", "2", "3"])
+
+# whitespace-delimited instrument export parses like CSV
+_ws_txt = "\n".join([
+    "# Raman shift / cm-1    Intensity",
+    "",
+    "150.0    1200.5",
+    "151.0    1210.0",
+    "152.0    1198.25",
+])
+_sp_ws = core.parse_csv(_ws_txt, source="http://x/scan.txt")
+check("parse_csv reads a space-delimited export", _sp_ws is not None)
+check("space-delimited: 3 points", len(_sp_ws["x"]) == 3)
+check("space-delimited: x values", np.allclose(_sp_ws["x"], [150.0, 151.0, 152.0]))
+check("space-delimited: y values",
+      np.allclose(_sp_ws["y"], [1200.5, 1210.0, 1198.25]))
+check("space-delimited: name from URL", _sp_ws["name"] == "scan")
+
+# the same numbers as CSV must give the same spectrum
+_csv_txt = "\n".join(["150.0,1200.5", "151.0,1210.0", "152.0,1198.25"])
+_sp_csv = core.parse_csv(_csv_txt, source="http://x/scan.csv")
+check("comma and whitespace forms agree on x",
+      np.allclose(_sp_ws["x"], _sp_csv["x"]))
+check("comma and whitespace forms agree on y",
+      np.allclose(_sp_ws["y"], _sp_csv["y"]))
+
+# a comment-only / too-short file is rejected rather than half-parsed
+check("all-comment text -> None",
+      core.parse_csv("# a\n% b\n! c\n' d\n") is None)
+check("single data row -> None", core.parse_csv("150.0 1200.5\n") is None)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

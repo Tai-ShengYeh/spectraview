@@ -9,7 +9,7 @@ from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 
-from ..core import load_library, save_library, search_library
+from ..core import available_libraries, load_library, save_library, search_library
 from ..table_io import spectra_from_table, table_from_spectra
 from ._help import add_help
 
@@ -38,6 +38,7 @@ class OWSpectralLibrary(OWWidget):
         file_error = Msg("{}")
 
     rank_by: int = settings.Setting(0)
+    builtin_idx: int = settings.Setting(0)
     last_dir: str = settings.Setting("")
     want_main_area = False
 
@@ -49,8 +50,12 @@ class OWSpectralLibrary(OWWidget):
 
         add_help(self,
                  "① 參考譜接 Spectra 輸入 → Add to library；可 Save/Load .speclib"
-                 "（與 SpectraView 桌面版互通）。② 未知譜接 Query → Hits 輸出排名。\n"
-                 "Build a reference library and search unknowns against it.",
+                 "（與 SpectraView 桌面版互通）。Add built-in 可載入 UCL 55 種"
+                 "顏料拉曼庫：第一次使用會直接向 UCL 官網下載並快取到本機"
+                 "（本套件不隨附該資料）。② 未知譜接 Query → Hits 輸出排名。\n"
+                 "Build a reference library and search unknowns against it; "
+                 "the built-in UCL library is fetched from UCL's site on "
+                 "first use and cached locally.",
                  "library")
 
         inbox = gui.widgetBox(self.controlArea, "Build")
@@ -62,6 +67,12 @@ class OWSpectralLibrary(OWWidget):
         self.listing = QListWidget()
         self.listing.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         lbox.layout().addWidget(self.listing)
+        self._builtin = sorted(available_libraries().items())
+        if self._builtin:
+            bb = gui.hBox(lbox)
+            gui.comboBox(bb, self, "builtin_idx",
+                         items=[name for name, _ in self._builtin])
+            gui.button(bb, self, "Add built-in", callback=self.add_builtin)
         hb = gui.hBox(lbox)
         gui.button(hb, self, "Load…", callback=self.load_file)
         gui.button(hb, self, "Save…", callback=self.save_file)
@@ -118,6 +129,37 @@ class OWSpectralLibrary(OWWidget):
         self.listing.clear()
         self.commit()
 
+    def add_builtin(self):
+        """Add the selected built-in library. The UCL pigment library is
+        downloaded from UCL's own site on first use (then cached locally) -
+        the data is deliberately not redistributed with this package."""
+        self.Error.file_error.clear()
+        if not self._builtin:
+            return
+        idx = min(max(int(self.builtin_idx), 0), len(self._builtin) - 1)
+        name, loader = self._builtin[idx]
+
+        self.progressBarInit()
+
+        def _progress(done, total, label=""):
+            self.progressBarSet(100.0 * done / max(total, 1))
+
+        try:
+            try:
+                entries = loader(progress=_progress)
+            except TypeError:           # loader without progress support
+                entries = loader()
+        except Exception as exc:  # noqa: BLE001
+            self.Error.file_error(
+                f"Could not load built-in library '{name}': {exc}")
+            return
+        finally:
+            self.progressBarFinished()
+        for s in entries:
+            self._library.append(s)
+            self.listing.addItem(f"{s['name']}  ({s['x'].size} pts)")
+        self.commit()
+
     def load_file(self):
         self.Error.file_error.clear()
         path, _ = QFileDialog.getOpenFileName(
@@ -157,8 +199,19 @@ class OWSpectralLibrary(OWWidget):
         self.last_dir = os.path.dirname(path)
 
     # ------------------------------------------------------------- search
+    def _table_or_none(self, spectra):
+        """Library/Best output on a union grid - entries with disjoint
+        x-ranges (like the UCL pigment library) must not break commit()."""
+        if not spectra:
+            return None
+        try:
+            return table_from_spectra(spectra, union=True)
+        except Exception as exc:  # noqa: BLE001 - outputs are best-effort
+            self.Error.bad_table(f"Could not build output table: {exc}")
+            return None
+
     def commit(self):
-        lib_table = (table_from_spectra(self._library) if self._library else None)
+        lib_table = self._table_or_none(self._library)
         self.Outputs.library.send(lib_table)
 
         if not self._queries or not self._library:
@@ -189,7 +242,7 @@ class OWSpectralLibrary(OWWidget):
         out.name = "library hits"
         self.result_label.setText("\n".join(lines))
         self.Outputs.hits.send(out)
-        self.Outputs.best.send(table_from_spectra(best_specs) if best_specs else None)
+        self.Outputs.best.send(self._table_or_none(best_specs))
 
     def send_report(self):
         self.report_items("Spectral Library", [

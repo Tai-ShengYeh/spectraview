@@ -18,6 +18,7 @@ from Orange.data import Table
 from Orange.widgets import gui, settings
 from Orange.widgets.widget import Msg, Output, OWWidget
 
+from .. import mplfonts  # noqa: E402, F401  (CJK-capable preview fonts)
 from ..files import SPECTRA_EXTS, load_spectra_folder, load_spectra_path
 from ..table_io import table_from_spectra
 from ._help import add_help

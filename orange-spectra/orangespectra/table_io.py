@@ -10,12 +10,19 @@ from __future__ import annotations
 import numpy as np
 from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 
-from .core import make_spectrum, merge_spectra
+from .core import make_spectrum, merge_spectra, merge_spectra_union
 
 
-def table_from_spectra(spectra: list, x_label: str = "") -> Table:
-    """Build a Table (rows = spectra) on a shared x-grid."""
-    gx, ys = merge_spectra(spectra)
+def table_from_spectra(spectra: list, x_label: str = "",
+                       union: bool = False) -> Table:
+    """Build a Table (rows = spectra) on a shared x-grid.
+
+    With ``union=True`` the grid spans the union of all x-ranges and cells
+    outside a spectrum's measured range are NaN, so spectra with disjoint
+    ranges (e.g. a whole reference library) still fit in one table. The
+    default keeps the historical overlap-cropping behaviour.
+    """
+    gx, ys = (merge_spectra_union if union else merge_spectra)(spectra)
     attrs = [ContinuousVariable.make(f"{v:.6g}") for v in gx]
     metas = [StringVariable.make("name"), StringVariable.make("source")]
     domain = Domain(attrs, metas=metas)

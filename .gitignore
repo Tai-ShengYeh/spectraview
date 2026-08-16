@@ -23,3 +23,6 @@ tmp/
 scratch/
 orange-spectra/validation/corn.mat
 CGL_nir.mat
+
+# UCL spectral data - never commit (copyright)
+*.speclib

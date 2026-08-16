@@ -128,6 +128,68 @@ class TestLibrary(WidgetTest):
         loaded = core.load_library(path)
         self.assertEqual([e["name"] for e in loaded], ["R1", "R2"])
 
+    def test_add_builtin_library(self):
+        # the UCL entry is offered (download-on-first-use, so not exercised
+        # over the network here); widget mechanics are tested with a stub
+        names = [n for n, _ in self.widget._builtin]
+        self.assertTrue(any(n.startswith("UCL ") for n in names))
+
+        spectra = [core.make_spectrum([1, 2, 3], [1.0, 5.0, 1.0], name="R1"),
+                   core.make_spectrum([1, 2, 3], [4.0, 1.0, 4.0], name="R2")]
+        calls = []
+
+        def stub_loader(progress=None):
+            calls.append(progress)
+            if progress:
+                progress(1, 1, "done")
+            return spectra
+
+        self.widget._builtin = [("Stub library", stub_loader)]
+        self.widget.builtin_idx = 0
+        self.widget.add_builtin()
+        self.assertEqual(len(calls), 1)                 # progress passed in
+        self.assertEqual(len(self.widget._library), 2)
+        self.assertEqual(self.widget.listing.count(), 2)
+
+        query = table_from_spectra([dict(spectra[0], name="unknown")])
+        self.send_signal(self.widget.Inputs.query, query)
+        hits = self.get_output(self.widget.Outputs.hits)
+        self.assertEqual(len(hits), 2)
+        self.assertEqual(str(hits.metas[0][1]), "R1")
+
+    def test_disjoint_ranges_do_not_break_commit(self):
+        # regression: UCL's 55 pigments share no common x-range; commit()
+        # used to crash in table_from_spectra and never send Hits
+        lo = _table(("low", _g(600, 30)))
+        xhi = np.linspace(2400, 3000, 200)
+        hi = table_from_spectra([core.make_spectrum(
+            xhi, np.exp(-((xhi - 2700) ** 2) / (2.0 * 40 * 40)),
+            name="high", x_label="wavenumber (cm-1)")])
+        self.send_signal(self.widget.Inputs.spectra, lo)
+        self.widget.add_pending()
+        self.send_signal(self.widget.Inputs.spectra, hi)
+        self.widget.add_pending()
+
+        lib_out = self.get_output(self.widget.Outputs.library)
+        self.assertIsNotNone(lib_out)                   # union table, no crash
+        self.assertEqual(len(lib_out), 2)
+
+        query = _table(("unknown", _g(600, 30) + 0.02))
+        self.send_signal(self.widget.Inputs.query, query)
+        hits = self.get_output(self.widget.Outputs.hits)
+        self.assertIsNotNone(hits)                      # search now runs
+        self.assertEqual(len(hits), 2)
+        self.assertEqual(str(hits.metas[0][1]), "low")
+
+    def test_add_builtin_error_is_reported(self):
+        def boom(progress=None):
+            raise OSError("no network")
+        self.widget._builtin = [("Broken", boom)]
+        self.widget.builtin_idx = 0
+        self.widget.add_builtin()
+        self.assertTrue(self.widget.Error.file_error.is_shown())
+        self.assertEqual(len(self.widget._library), 0)
+
 
 class TestMixture(WidgetTest):
     def setUp(self):

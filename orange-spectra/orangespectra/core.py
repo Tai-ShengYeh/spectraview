@@ -381,10 +381,16 @@ def similarity_scores(xa, ya, xb, yb) -> dict:
 # ================================================================== library
 def save_library(entries: list, path: str, name: str = "library") -> None:
     """Write a SpectraView-compatible .speclib (JSON) file."""
-    obj = {"name": name, "library": [
-        {"name": s["name"], "x_unit": _unit_from_label(s.get("x_label", "")),
-         "y_unit": "intensity", "x": np.asarray(s["x"]).tolist(),
-         "y": np.asarray(s["y"]).tolist()} for s in entries]}
+    def _entry(s):
+        e = {"name": s["name"], "x_unit": _unit_from_label(s.get("x_label", "")),
+             "y_unit": "intensity", "x": np.asarray(s["x"]).tolist(),
+             "y": np.asarray(s["y"]).tolist()}
+        for extra in ("color", "source"):
+            if s.get(extra):
+                e[extra] = s[extra]
+        return e
+
+    obj = {"name": name, "library": [_entry(s) for s in entries]}
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(obj, fh, ensure_ascii=False, indent=1)
 
@@ -395,9 +401,36 @@ def load_library(path: str) -> list:
         obj = json.load(fh)
     out = []
     for e in obj.get("library", []):
-        out.append(make_spectrum(
+        s = make_spectrum(
             e["x"], e["y"], name=e.get("name", "ref"),
-            x_label=_label_from_unit(e.get("x_unit", "")), source=path))
+            x_label=_label_from_unit(e.get("x_unit", "")),
+            source=e.get("source", path))
+        if e.get("color"):
+            s["color"] = e["color"]
+        out.append(s)
+    return out
+
+
+def builtin_libraries() -> dict:
+    """Map display name -> path for the .speclib files shipped with the
+    package (``orangespectra/libraries/``). The display name is the
+    library's own "name" field, falling back to the file name."""
+    lib_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "libraries")
+    out = {}
+    if not os.path.isdir(lib_dir):
+        return out
+    for fn in sorted(os.listdir(lib_dir)):
+        if not fn.lower().endswith(".speclib"):
+            continue
+        path = os.path.join(lib_dir, fn)
+        name = os.path.splitext(fn)[0]
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                name = json.load(fh).get("name") or name
+        except Exception:  # noqa: BLE001 - unreadable file: keep file name
+            pass
+        out[name] = path
     return out
 
 
@@ -427,6 +460,295 @@ def search_library(query: dict, entries: list, rank_by: str = "correlation"):
     hits.sort(key=lambda h: h["scores"].get(rank_by, 0.0), reverse=reverse)
     return hits
 
+
+
+# =================================================== UCL pigment library
+# The UCL Raman pigment library (Bell, Clark & Gibbs 1997) is downloaded from
+# UCL's own website on first use and cached locally. The data itself is NOT
+# redistributed with this package: UCL's site states its material may not be
+# reproduced without permission, so each user downloads their own copy,
+# exactly as they would in a browser.
+UCL_BASE_URL = "https://www.chem.ucl.ac.uk/resources/raman"
+# UCL's server blocks some regions/networks (403). The Internet Archive's
+# copy of the same pages is world-readable, so it serves as a fallback.
+UCL_WAYBACK_BASE = ("https://web.archive.org/web/2023/"
+                    "https://www.chem.ucl.ac.uk/resources/raman")
+UCL_LIBRARY_NAME = "UCL Raman Library of Pigments (Bell, Clark & Gibbs 1997)"
+UCL_CITATION = ("I. M. Bell, R. J. H. Clark and P. J. Gibbs, Spectrochim. "
+                "Acta A 53 (1997) 2159-2179, doi:10.1016/S1386-1425(97)00140-6")
+
+# Canonical pigment names -> colour group, as organised on the UCL site.
+UCL_PIGMENT_COLORS = {
+    "Ivory Black": "black", "Lamp Black": "black",
+    "Azurite": "blue", "Cerulean Blue": "blue", "Cobalt Blue": "blue",
+    "Egyptian Blue": "blue", "Lazurite": "blue", "Prussian Blue": "blue",
+    "Smalt": "blue",
+    "Atacamite": "green", "Chromium(III) Oxide": "green",
+    "Cobalt Green": "green", "Emerald Green": "green", "Malachite": "green",
+    "Scheele's Green": "green", "Terre Verte": "green",
+    "Verdigris (1)": "green", "Verdigris (2)": "green",
+    "Verdigris (raw)": "green", "Viridian": "green",
+    "Mars Orange": "orange",
+    "Mars Red": "red", "Purpurin": "red", "Realgar": "red", "Red Lead": "red",
+    "Red Ochre": "red", "Vermilion": "red",
+    "Barium White": "white", "Bone White": "white", "Chalk": "white",
+    "Gypsum": "white", "Lead White": "white", "Lithopone": "white",
+    "Zinc White": "white",
+    "Barium Yellow": "yellow", "Berberine": "yellow",
+    "Cadmium Yellow": "yellow", "Chrome Yellow": "yellow",
+    "Chrome Yellow (deep)": "yellow", "Chrome Yellow-Orange": "yellow",
+    "Cobalt Yellow": "yellow", "Gamboge": "yellow", "Indian Yellow": "yellow",
+    "Lead Tin Yellow (type I)": "yellow",
+    "Lead Tin Yellow (type II)": "yellow", "Litharge": "yellow",
+    "Mars Yellow": "yellow", "Massicot": "yellow", "Naples Yellow": "yellow",
+    "Orpiment": "yellow", "Pararealgar": "yellow", "Saffron": "yellow",
+    "Strontium Yellow": "yellow", "Yellow Ochre": "yellow",
+    "Zinc Yellow": "yellow",
+}
+
+# Known lowercase file/page stems on the UCL site whose canonical name cannot
+# be recovered from the file name alone. Anything not listed here is named
+# from the pigment page's <title>.
+UCL_STEM_NAMES = {
+    "atacamit": "Atacamite", "barytes": "Barium White",
+    "berberin": "Berberine", "bonewhit": "Bone White",
+    "cerulblu": "Cerulean Blue", "chromoxi": "Chromium(III) Oxide",
+    "cobaltgr": "Cobalt Green", "emeraldg": "Emerald Green",
+    "ivoryblk": "Ivory Black", "leadwhit": "Lead White",
+    "lithopon": "Lithopone", "malachit": "Malachite",
+    "naplesyl": "Naples Yellow", "parareal": "Pararealgar",
+    "prusblue": "Prussian Blue", "redlead": "Red Lead",
+    "verdiraw": "Verdigris (raw)", "vermilio": "Vermilion",
+    "zincwhit": "Zinc White",
+}
+_UCL_NAMES_LOWER = {n.lower(): n for n in UCL_PIGMENT_COLORS}
+
+
+def read_spc(data: bytes, name: str = "spectrum", source: str = "") -> dict:
+    """Parse a Thermo GRAMS .spc file (new format, LSB) into a spectrum dict.
+
+    Supports the single-subfile files used by spectral libraries such as
+    UCL's: evenly spaced x (or an explicit x array, TXVALS) with y stored as
+    float32 or as int32 with a binary exponent. Multifile and the pre-1996
+    "old format" are rejected with a clear error.
+    """
+    import struct
+
+    if len(data) < 512 + 32:
+        raise ValueError("Not an SPC file (too short).")
+    ftflg, fversn, _fexper, fexp = struct.unpack_from("<BBBb", data, 0)
+    if fversn == 0x4d:
+        raise ValueError("Old-format (pre-1996) SPC files are not supported.")
+    if fversn == 0x4c:
+        raise ValueError("Big-endian SPC files are not supported.")
+    if fversn != 0x4b:
+        raise ValueError(f"Not an SPC file (version byte {fversn:#x}).")
+    fnpts, ffirst, flast, fnsub = struct.unpack_from("<iddi", data, 4)
+    if ftflg & 0x04 or fnsub > 1:                       # TMULTI
+        raise ValueError("Multifile SPC files are not supported.")
+    if ftflg & 0x40:                                    # TXYXYS
+        raise ValueError("XYXY-format SPC files are not supported.")
+    if not 2 <= fnpts <= 10_000_000:
+        raise ValueError(f"Implausible SPC point count ({fnpts}).")
+    off = 512
+    if ftflg & 0x80:                                    # TXVALS: explicit x
+        x = np.frombuffer(data, "<f4", fnpts, off).astype(float)
+        off += 4 * fnpts
+    else:
+        x = np.linspace(ffirst, flast, fnpts)
+    subexp = struct.unpack_from("<b", data, off + 1)[0]
+    exp = fexp if fexp != 0 else subexp
+    off += 32
+    if len(data) < off + 4 * fnpts:
+        raise ValueError("Truncated SPC file.")
+    if exp == -128:                                     # IEEE float32 y
+        y = np.frombuffer(data, "<f4", fnpts, off).astype(float)
+    else:
+        y = np.frombuffer(data, "<i4", fnpts, off) * 2.0 ** (exp - 32)
+    return make_spectrum(x, y, name=name,
+                         x_label="Raman shift (cm-1)", source=source)
+
+
+def _find_links(html: str, base_url: str, suffix: str) -> list:
+    """All distinct absolute href targets in ``html`` ending in ``suffix``."""
+    hrefs = re.findall(r"""(?:href|src)\s*=\s*["']?([^"'\s>]+)""",
+                       html, re.IGNORECASE)
+    out, seen = [], set()
+    for h in hrefs:
+        h = _html.unescape(h).strip()
+        if not h.lower().endswith(suffix.lower()):
+            continue
+        absu = urllib.parse.urljoin(base_url, h)
+        if absu not in seen:
+            seen.add(absu)
+            out.append(absu)
+    return out
+
+
+def _page_title(html: str) -> str:
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    if not m:
+        return ""
+    return re.sub(r"\s+", " ", _html.unescape(m.group(1))).strip()
+
+
+def _ucl_entry_name(stem: str, title: str, n_on_page: int) -> str:
+    """Canonical pigment name for one .spc file found on a pigment page."""
+    if stem in UCL_STEM_NAMES:
+        return UCL_STEM_NAMES[stem]
+    if title.lower() in _UCL_NAMES_LOWER:
+        name = _UCL_NAMES_LOWER[title.lower()]
+        # several files on one page (e.g. verdigris variants): disambiguate
+        return name if n_on_page == 1 else f"{name} ({stem})"
+    if stem.lower() in _UCL_NAMES_LOWER:
+        return _UCL_NAMES_LOWER[stem.lower()]
+    return title or stem
+
+
+def _wayback_raw(url: str) -> str:
+    """For a web.archive.org URL, ask for the original bytes (``id_`` flag) -
+    needed for binary .spc files, harmless to skip for HTML."""
+    return re.sub(r"(://web\.archive\.org/web/\d{1,14})/", r"\1id_/", url,
+                  count=1)
+
+
+def ucl_cache_path() -> str:
+    """Where the downloaded UCL library is cached (override the directory
+    with the ORANGE_SPECTRA_CACHE environment variable)."""
+    d = os.environ.get("ORANGE_SPECTRA_CACHE") or os.path.join(
+        os.path.expanduser("~"), ".orange-spectra")
+    return os.path.join(d, "ucl_pigments_raman.speclib")
+
+
+def _fetch_ucl_from(base_url: str, fetch, progress=None) -> list:
+    """Crawl one source (UCL itself or a Wayback snapshot) for the library."""
+    index_html = fetch(base_url)[0].decode("latin-1", "replace")
+    linked = _find_links(index_html, base_url + "/", ".html")
+    pages = [p for p in linked if "/pigfiles/" in p.lower()]
+    if not pages:
+        # frameset / palette layout: pigment pages sit one level deeper
+        for nav in linked[:40]:
+            try:
+                nav_html = fetch(nav)[0].decode("latin-1", "replace")
+            except Exception:  # noqa: BLE001 - skip unreachable nav pages
+                continue
+            pages.extend(p for p in _find_links(nav_html, nav, ".html")
+                         if "/pigfiles/" in p.lower())
+        pages = list(dict.fromkeys(pages))          # dedupe, keep order
+    if not pages:
+        raise ValueError("no pigment pages found")
+
+    entries, seen_spc = [], set()
+    for i, page in enumerate(pages):
+        if progress:
+            progress(i, len(pages), page.rsplit("/", 1)[-1])
+        try:
+            page_html = fetch(page)[0].decode("latin-1", "replace")
+        except Exception:  # noqa: BLE001 - skip unreachable pages
+            continue
+        title = _page_title(page_html)
+        spc_urls = [u for u in _find_links(page_html, page, ".spc")
+                    if u not in seen_spc]
+        for url in spc_urls:
+            seen_spc.add(url)
+            stem = url.rsplit("/", 1)[-1]
+            stem = stem[:-4].lower() if stem.lower().endswith(".spc") else stem
+            try:
+                blob = fetch(_wayback_raw(url))[0]
+                s = read_spc(blob,
+                             name=_ucl_entry_name(stem, title, len(spc_urls)),
+                             source=url)
+            except Exception:  # noqa: BLE001 - skip one bad file, keep going
+                continue
+            color = UCL_PIGMENT_COLORS.get(s["name"], "")
+            if color:
+                s["color"] = color
+            entries.append(s)
+    if progress:
+        progress(len(pages), len(pages), "done")
+    if not entries:
+        raise ValueError("pigment pages found but no readable .spc spectra")
+    return entries
+
+
+def fetch_ucl_library(fetch=None, cache_path: str = None,
+                      progress=None, force: bool = False) -> list:
+    """Download the UCL pigment Raman library from UCL's website (first use
+    only; afterwards the local cache is read).
+
+    The pigment pages are discovered from the site's own HTML, so no file
+    names are hard-coded beyond the index URL. ``fetch(url) -> (bytes, str)``
+    is injectable for tests and mirrors; ``progress(done, total, label)`` is
+    called as files arrive. Returns a list of spectrum dicts and writes a
+    .speclib cache at ``cache_path`` (default: :func:`ucl_cache_path`).
+    """
+    cache_path = cache_path or ucl_cache_path()
+    if not force and os.path.isfile(cache_path):
+        return load_library(cache_path)
+    fetch = fetch or default_fetch
+
+    # UCL first (or a mirror via ORANGE_SPECTRA_UCL_BASE), then the Internet
+    # Archive's copy - UCL's server 403s whole regions (observed from Taiwan).
+    bases = [os.environ.get("ORANGE_SPECTRA_UCL_BASE") or UCL_BASE_URL]
+    if UCL_WAYBACK_BASE not in bases:
+        bases.append(UCL_WAYBACK_BASE)
+    entries, errors = [], []
+    for base in bases:
+        try:
+            entries = _fetch_ucl_from(base, fetch, progress)
+        except Exception as exc:  # noqa: BLE001 - try the next source
+            errors.append(f"{base}: {exc}")
+            entries = []
+        if entries:
+            break
+    if not entries:
+        raise ValueError(
+            "Could not download the UCL library from any source:\n  "
+            + "\n  ".join(errors) +
+            "\nIf your network is blocked by UCL, download the .spc files "
+            "another way and run build_ucl_library_from_folder(folder).")
+
+    entries.sort(key=lambda s: s["name"].lower())
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    save_library(entries, cache_path, name=UCL_LIBRARY_NAME)
+    return entries
+
+
+def build_ucl_library_from_folder(folder: str, cache_path: str = None) -> list:
+    """Offline alternative to :func:`fetch_ucl_library`: build the library
+    from a folder of .spc files downloaded manually from UCL's site. Writes
+    the same cache, so the widget's built-in entry works afterwards."""
+    entries = []
+    for fn in sorted(os.listdir(folder)):
+        if not fn.lower().endswith(".spc"):
+            continue
+        stem = os.path.splitext(fn)[0].lower()
+        path = os.path.join(folder, fn)
+        with open(path, "rb") as fh:
+            s = read_spc(fh.read(), name=_ucl_entry_name(stem, "", 1),
+                         source=path)
+        color = UCL_PIGMENT_COLORS.get(s["name"], "")
+        if color:
+            s["color"] = color
+        entries.append(s)
+    if not entries:
+        raise ValueError(f"No .spc files found in {folder!r}.")
+    entries.sort(key=lambda s: s["name"].lower())
+    if cache_path is None:
+        cache_path = ucl_cache_path()
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    save_library(entries, cache_path, name=UCL_LIBRARY_NAME)
+    return entries
+
+
+def available_libraries() -> dict:
+    """Name -> zero-argument loader for every library the widget can offer:
+    .speclib files shipped in ``orangespectra/libraries/`` plus the
+    download-on-first-use UCL pigment library."""
+    libs = {name: (lambda p=path: load_library(p))
+            for name, path in builtin_libraries().items()}
+    libs.setdefault(UCL_LIBRARY_NAME, fetch_ucl_library)
+    return libs
 
 # ================================================================== mixture
 def mixture_nnls(mixture: dict, references: list, fit_offset: bool = True) -> dict:
@@ -463,6 +785,36 @@ def mixture_nnls(mixture: dict, references: list, fit_offset: bool = True) -> di
 
 
 # ===================================================== common-grid resampling
+def merge_spectra_union(spectra: list, max_points: int = 16384):
+    """Put spectra onto one shared x-grid covering the UNION of their ranges.
+
+    Unlike :func:`merge_spectra` (which needs a common overlap and crops to
+    it), this never fails for disjoint ranges - y is NaN wherever a spectrum
+    was not measured. Suited to reference libraries such as UCL's, whose 55
+    pigments have no shared x-interval at all. The grid step is the finest
+    native step among the inputs (bounded by ``max_points``).
+    """
+    spectra = [s for s in spectra if s["x"].size]
+    if not spectra:
+        raise ValueError("No spectra to merge.")
+    x0 = spectra[0]["x"]
+    if all(s["x"].size == x0.size and np.allclose(s["x"], x0) for s in spectra):
+        return x0, [np.asarray(s["y"], float) for s in spectra]
+    lo = min(float(s["x"][0]) for s in spectra)
+    hi = max(float(s["x"][-1]) for s in spectra)
+    if hi <= lo:
+        raise ValueError("Spectra have no x-extent to merge.")
+    steps = [float(np.median(np.diff(s["x"])))
+             for s in spectra if s["x"].size > 1]
+    step = max(min(steps) if steps else (hi - lo) / max_points,
+               (hi - lo) / float(max_points))
+    n = int(np.floor((hi - lo) / step + 0.5)) + 1
+    gx = lo + (hi - lo) * np.arange(n) / max(n - 1, 1)
+    ys = [np.interp(gx, s["x"], s["y"], left=np.nan, right=np.nan)
+          for s in spectra]
+    return gx, ys
+
+
 def merge_spectra(spectra: list):
     """Put spectra onto one shared x-grid (overlap region, max point count)."""
     spectra = [s for s in spectra if s["x"].size]
