@@ -294,8 +294,10 @@ python -m Orange.canvas</pre>
     <ol>
       <li>把參考譜接到 <i>Spectra</i> 輸入，按 <b>Add input spectra to library</b> 入庫。</li>
       <li><b>Save…</b> 存成 <code>.speclib</code>；<b>Load…</b> 載入既有庫——<b>檔案格式與 SpectraView 桌面版相同</b>，例如可直接載入 repo 附的 <code>examples/sugars_nir.speclib</code>（9 種糖類 NIR 庫）。</li>
-      <li>未知譜接 <i>Query</i>：Hits 輸出每個 query 對每筆庫藏的排名與四個相似度指標，接 <b>Data Table</b> widget 即可檢視。</li>
+      <li><b>Add built-in</b> 一鍵載入內建的 <b>UCL 顏料拉曼庫</b>（55 種，Bell, Clark &amp; Gibbs 1997）：下拉選單選庫名→按鈕。第一次按會直接向 UCL 官網下載（連不上時自動改抓 Internet Archive 存檔），之後讀本機快取、離線可用；套件本身不含該資料。</li>
+	  <li>未知譜接 <i>Query</i>：Hits 輸出每個 query 對每筆庫藏的排名與四個相似度指標，接 <b>Data Table</b> widget 即可檢視。</li>
       <li><i>Library</i> 輸出把整個庫變成資料表——可以直接接 <b>Mixture Analysis</b> 當參考譜，或接 Spectra 檢視。</li>
+	  <li>實例：硃砂樣品接 <i>Query</i>，最佳比對就是 Vermilion（HgS）。<b>小訣竅</b>：庫裡是未經基線校正的原始強度，未知譜先做基線校正（如 ALS）再查詢，correlation 會明顯拉開。發表時請引用 Bell, Clark &amp; Gibbs, <i>Spectrochim. Acta A</i> <b>53</b> (1997) 2159。</li>
     </ol>
   </div>
 

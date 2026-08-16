@@ -298,9 +298,11 @@ python -m Orange.canvas</pre>
     <ol>
       <li>Connect references to the <i>Spectra</i> input and click <b>Add input spectra to library</b>.</li>
       <li><b>Save…</b> as <code>.speclib</code>; <b>Load…</b> an existing one — <b>the file format is identical to the SpectraView desktop app</b>, so you can load e.g. the bundled <code>examples/sugars_nir.speclib</code> (a 9-sugar NIR library).</li>
-      <li>Connect unknowns to <i>Query</i>: Hits outputs each query's ranking against every library entry with all four metrics — connect a <b>Data Table</b> to view.</li>
+      <li><b>Add built-in</b> loads the built-in <b>UCL Raman Library of Pigments</b> (55 pigments, Bell, Clark &amp; Gibbs 1997) in one click: pick it in the dropdown, press the button. The first press downloads from UCL's own site (falling back to the Internet Archive if unreachable); afterwards the local cache works offline. The data is not bundled with the package.</li>
+	  <li>Connect unknowns to <i>Query</i>: Hits outputs each query's ranking against every library entry with all four metrics — connect a <b>Data Table</b> to view.</li>
       <li>The <i>Library</i> output turns the whole library into a table — feed it straight into <b>Mixture Analysis</b> as references, or view it as spectra.</li>
-    </ol>
+      <li>Example: feed a cinnabar sample to <i>Query</i> — the top hit is Vermilion (HgS). <b>Tip</b>: the library holds raw, baseline-uncorrected intensities, so baseline-correct your query (e.g. ALS) first for clearer separation. Please cite Bell, Clark &amp; Gibbs, <i>Spectrochim. Acta A</i> <b>53</b> (1997) 2159 when publishing.</li>
+	</ol>
   </div>
 
   <div class="wsec" id="mixture">
