@@ -16,7 +16,7 @@ aquaphotomics aquagrams — all inside Orange's visual workflow canvas.
 | **Spectrometer** | Turn a camera + diffraction-grating spectrum photo (Theremino-style) into a calibrated intensity-vs-wavelength spectrum: strip profile + pixel→nm calibration. |
 | **Merge Spectra** | Overlay several spectra sources on one plot and output a single combined `Table` (each row a spectrum on a shared grid) — like SpectraView's multi-file overlay. |
 | **Spectra Similarity** | Score similarity between two sets of spectra: correlation, cosine, spectral angle (SAM), and Euclidean distance. |
-| **Spectral Library** | Build a reference library, save it as **`.speclib`** (interoperable with SpectraView), and rank an unknown spectrum against the library. |
+| **Spectral Library** | Build a reference library, save it as **`.speclib`** (interoperable with SpectraView), and rank an unknown spectrum against the library. Offers the **UCL Raman Library of Pigments** (55 pigments, Bell, Clark & Gibbs 1997) as a built-in download — fetched from UCL's own site on first use and cached locally; the data is **not** bundled with the package. |
 | **Mixture Analysis** | Decompose a mixed spectrum with non‑negative least squares (NNLS): solve `mixture ≈ Σ cᵢ·refᵢ` and report coefficients, proportions, and R². |
 | **Aquagram** | Aquaphotomics: read normalized absorbance at water's 12 characteristic bands (WAMACs) and draw a 12‑axis radar chart (raw / SNV / aquagram normalization). |
 | **Peak Finder** | Detect peaks, label them on the plot, and output a peak table (position, height, FWHM, prominence, area). |
@@ -69,6 +69,9 @@ in the toolbox.
    blue Raman spectrum) → **Fetch**.
 2. Fetch a few reference spectra → feed them to the **Spectral Library**
    *Spectra* input → *Add input spectra to library* → *Save…* as a `.speclib`.
+*(or skip fetching: pick the built-in **UCL Raman Library of Pigments**
+   in the Library box and press **Add built-in** — 55 reference pigments in
+   one click; the data is downloaded from UCL on first use and cached.)*
 3. Feed an unknown spectrum to the library's *Query* input → the *Hits* output
    is the ranked match table.
 4. Feed a mixed spectrum to **Mixture Analysis** *Mixture* and the references
@@ -77,6 +80,32 @@ in the toolbox.
 
 Every widget has an **ℹ How to use** box and a **📖 Open tutorial** button in
 its top‑left corner, and **F1** (or the ? button) opens its online help page.
+
+## Built-in UCL pigment library
+
+The Spectral Library widget offers the **UCL Raman Library of Pigments**
+(55 natural and synthetic pigments in use before ~1850 AD):
+
+> I. M. Bell, R. J. H. Clark and P. J. Gibbs, "Raman spectroscopic library
+> of natural and synthetic pigments (pre- ≈ 1850 AD)", *Spectrochim. Acta A*
+> **53** (1997) 2159–2179. doi:10.1016/S1386-1425(97)00140-6
+
+Please cite the paper when you use these spectra in published work.
+
+**The data is not redistributed with this package.** On first use the
+widget downloads the spectra from UCL's own website (falling back to the
+Internet Archive's copy if UCL's server is unreachable from your region)
+and caches them at `~/.orange-spectra/ucl_pigments_raman.speclib`; after
+that it works offline. Set the `ORANGE_SPECTRA_CACHE` environment variable
+to move the cache, or `ORANGE_SPECTRA_UCL_BASE` to point at a mirror. If
+you already have the `.spc` files, build the cache offline with
+`orangespectra.core.build_ucl_library_from_folder(folder)`.
+
+Notes on the data: intensities are raw counts (no baseline or instrument
+response correction — baseline-correct your query the way you normally
+would before searching), measurement ranges differ per pigment, and UCL
+notes the downloadable band positions are uncorrected and may differ
+slightly from the values tabulated on its site.
 
 ## Supported URL formats
 
@@ -128,7 +157,7 @@ MIT.
 | **Spectrometer** | 把相機＋繞射光柵拍到的光譜照片（Theremino 分光儀）變成校準光譜：取水平帶讀強度、像素→波長校準。 |
 | **Merge Spectra** | 把多個光譜來源疊在一張圖，輸出成一個合併 `Table`（每列一條光譜、共同波段）——等同 SpectraView 的多檔疊圖。 |
 | **Spectra Similarity** | 兩組光譜間的相似度：correlation / cosine / 光譜角 SAM / Euclidean。 |
-| **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名。 |
+| **Spectral Library** | 建立參考光譜庫、存成 **`.speclib`（與 SpectraView 互通）**、對庫比對未知譜並輸出排名。提供 **UCL 顏料拉曼庫**（55 種，Bell, Clark & Gibbs 1997）一鍵下載：第一次使用時自 UCL 官網取得並快取到本機，**套件本身不含該資料**。 |
 | **Mixture Analysis** | 混合光譜的成分分析：以非負最小平方（NNLS）解 `mixture ≈ Σ cᵢ·refᵢ`，回報係數、比例與 R²。 |
 | **Aquagram** | Aquaphotomics：在水的 12 個特徵吸收帶（WAMACs）取正規化吸光度，畫 12 軸雷達圖（raw / SNV / aquagram 三種正規化）。 |
 | **Peak Finder** | 自動尋峰並在圖上標記，輸出峰表（峰位、峰高、FWHM、顯著度、面積）。 |
@@ -177,11 +206,36 @@ pip install PyQt5 PyQtWebEngine
    → **Fetch**。
 2. 多抓幾條參考譜 → 接 **Spectral Library** 的 *Spectra* 輸入 →
    *Add input spectra to library* → *Save…* 存成 `.speclib`。
+（也可以不用自己抓：在 Library 區選內建的 **UCL 顏料拉曼庫**按
+   **Add built-in**，一鍵載入 55 種參考顏料；資料第一次使用時自 UCL
+   官網下載並快取。）
 3. 未知譜接 Library 的 *Query* 輸入 → *Hits* 輸出就是排名表。
 4. 混合譜接 **Mixture Analysis** 的 *Mixture*、參考譜（或 Library 的 *Library*
    輸出）接 *References* → 得成分比例與 R²。
 
 每個 widget 左上角都有「**ℹ 說明 How to use**」盒子與「**📖 開啟線上教學**」按鈕；選取 widget 按 **F1**（或 ? 鈕）會開啟線上說明頁。
+
+## 內建 UCL 顏料拉曼庫
+
+Spectral Library widget 內建 **UCL 顏料拉曼庫**（約 1850 年以前使用的
+55 種天然與合成顏料）：
+
+> I. M. Bell, R. J. H. Clark and P. J. Gibbs, "Raman spectroscopic library
+> of natural and synthetic pigments (pre- ≈ 1850 AD)", *Spectrochim. Acta A*
+> **53** (1997) 2159–2179. doi:10.1016/S1386-1425(97)00140-6
+
+發表時使用到這些光譜請引用上面這篇論文。
+
+**本套件不隨附這批資料。**第一次使用時 widget 會自 UCL 官網下載
+（若你所在地區連不上 UCL 伺服器，會自動改抓 Internet Archive 的存檔副本），
+快取在 `~/.orange-spectra/ucl_pigments_raman.speclib`，之後完全離線可用。
+環境變數 `ORANGE_SPECTRA_CACHE` 可改快取位置、`ORANGE_SPECTRA_UCL_BASE`
+可指定鏡像；已有 .spc 檔者可用
+`orangespectra.core.build_ucl_library_from_folder(資料夾)` 離線建庫。
+
+資料注意事項：強度為原始 counts（未做基線與儀器響應校正——比對前請照
+你平常的流程先對未知譜做基線校正）；各顏料量測範圍不同；UCL 官網註明
+可下載檔案的譜帶位置未經校正，可能與其網頁表格數值略有出入。
 
 ## 支援的網址格式
 
