@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "SpectraView"
+abstract: >-
+  A desktop spectroscopy viewer and processor with companion widgets for
+  Orange Data Mining, designed for teaching and research in food analysis
+  and instrumental analysis. Loads, overlays, converts and pre-processes
+  FTIR, Raman, UV-Vis, NIR and XRF/LIBS spectra; the orange-spectra add-on
+  provides URL import from public databases (IRUG, SOPRANO), similarity
+  search, spectral libraries (.speclib), NNLS mixture analysis, and a
+  webcam-spectrometer image-to-spectrum widget with wavelength calibration.
+authors:
+  - family-names: "Yeh"
+    given-names: "Tai-Sheng"
+doi: 10.5281/zenodo.21961304
+version: 0.7.0
+date-released: 2026-08-25
+license: MIT
+repository-code: "https://github.com/Tai-ShengYeh/spectraview"
+url: "https://tai-shengyeh.github.io/spectraview/"
+keywords:
+  - spectroscopy
+  - Raman
+  - FTIR
+  - chemometrics
+  - spectral library
+  - Orange Data Mining
+  - food analysis
+  - education
