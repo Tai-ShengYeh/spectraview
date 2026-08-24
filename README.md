@@ -143,7 +143,8 @@ SOPRANO 線上光譜庫可用 **File ▸ Open SOPRANO URL…** 貼上網址後�
 - **自建光譜庫**：把載入的光譜「加入庫」，存成 `.speclib`（JSON）庫檔、之後可載入。
 - **相似度搜尋**：拿未知譜對庫比對，依**相關係數**排序，命中清單同時顯示
   correlation / cosine / 光譜角 SAM / 歐氏距離，可一鍵把最佳命中疊到圖上。
-- **現成範例**：[`examples/sugars_nir.speclib`](examples/) — 9 種糖類／添加物的 NIR 光譜庫（見下）。
+- **現成範例**：[`examples/sugars_nir.speclib`](examples/) — 9 種糖類／添加物的 NIR 光譜庫（見下；
+  orange-spectra 0.7.2 起也內建於套件，Spectral Library widget 的 Add built-in 一鍵載入）。
 
 > **範例：糖類 NIR 鑑別**
 > [`examples/`](examples/) 內含一個用真實 DLP-Hadamard 近紅外（1600–2400 nm）量測建成的光譜庫：

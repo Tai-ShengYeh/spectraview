@@ -9,6 +9,11 @@
 - 另附 3 個單次量測的「未知譜」查詢檔：`unknown_glucose.csv`、`unknown_sucrose.csv`、
   `unknown_caffeine.csv`。
 
+## 怎麼用（在 Orange 裡）
+orange-spectra **0.7.2 起這個庫已內建於套件**：Spectral Library widget 按
+**Add built-in**、下拉選「Sugars & food additives (NIR, Hadamard)」即可一鍵載入，
+不需要這個檔案。詳見[教學頁](https://tai-shengyeh.github.io/spectraview/orange.html#library)。
+
 ## 怎麼用（在 SpectraView 裡）
 1. `Library ▸ Load library…` 選 `examples/sugars_nir.speclib`
 2. `File ▸ Open…` 載入一個 `unknown_*.csv`（或你自己的 NIR 譜）
