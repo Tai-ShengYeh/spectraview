@@ -46,6 +46,7 @@ class OWSpectrometer(OWWidget):
     class Error(OWWidget.Error):
         load_failed = Msg("{}")
         bad_calibration = Msg("Calibration: {}")
+        render_failed = Msg("Could not draw this calibration: {}")
 
     class Warning(OWWidget.Warning):
         exact_fit = Msg("{n} calibration lines for a degree-{d} fit: R² is 1 by "
@@ -202,6 +203,9 @@ class OWSpectrometer(OWWidget):
         self.file_label.setText(os.path.basename(path))
         self._recompute()
 
+    # Anything outside this is a typo, not a spectrum line (visible ≈ 380-780).
+    NM_MIN, NM_MAX = 10.0, 100000.0
+
     def _parse_calibration(self):
         pts = []
         for tok in self.cal_text.replace(";", ",").replace("\n", ",").split(","):
@@ -211,7 +215,23 @@ class OWSpectrometer(OWWidget):
             if "=" not in tok:
                 raise ValueError(f"'{tok}' is not pixel=nm")
             p, w = tok.split("=", 1)
-            pts.append((float(p), float(w)))
+            try:
+                px, nm = float(p), float(w)
+            except ValueError:
+                raise ValueError(f"'{tok}' is not a pair of numbers") from None
+            if not (np.isfinite(px) and np.isfinite(nm)):
+                raise ValueError(f"'{tok}' contains inf/nan")
+            if not (self.NM_MIN <= nm <= self.NM_MAX):
+                raise ValueError(
+                    f"{nm:g} nm is out of range ({self.NM_MIN:g}-"
+                    f"{self.NM_MAX:g}); check for a typo")
+            if self._profile is not None and not (
+                    -1e4 < px < self._profile.size + 1e4):
+                raise ValueError(f"pixel {px:g} is far outside the image "
+                                 f"(0-{self._profile.size - 1})")
+            pts.append((px, nm))
+        if pts and len({p for p, _ in pts}) < 2:
+            raise ValueError("need at least 2 different pixel positions")
         return pts
 
     # ------------------------------------------------------- peak / cursor
@@ -323,7 +343,32 @@ class OWSpectrometer(OWWidget):
 
     # ---------------------------------------------------------- main logic
     def _recompute(self):
+        """Wrapper: a failed render must never escape into Qt's paint loop."""
+        try:
+            self._recompute_inner()
+        except Exception as exc:                       # noqa: BLE001
+            self.Error.render_failed(str(exc))
+            self._safe_blank_plot()
+            self.Outputs.spectrum.send(None)
+
+    def _safe_blank_plot(self):
+        """Reset the figure to a drawable state after a failure."""
+        try:
+            self.ax_img.clear()
+            self.ax_spec.clear()
+            self._cursor_artists = []
+            self.ax_spec.set_xlim(0, 1)
+            self.ax_spec.set_ylim(0, 1)
+            self.ax_spec.text(0.5, 0.5, "calibration error", ha="center",
+                              va="center", color="#c44e52",
+                              transform=self.ax_spec.transAxes)
+            self.canvas.draw_idle()
+        except Exception:                              # noqa: BLE001
+            pass
+
+    def _recompute_inner(self):
         self.Error.bad_calibration.clear()
+        self.Error.render_failed.clear()
         self.Warning.exact_fit.clear()
         self.Warning.folded.clear()
         self.ax_img.clear()
@@ -392,6 +437,15 @@ class OWSpectrometer(OWWidget):
         sl = self._slider
         if sl is not None:
             sl.setMaximum(max(0, n - 1))
+            # gui.hSlider fixed the value label's width at creation time,
+            # when the range was still 0-1; widen it for the real pixel
+            # range or 3-4 digit readouts get clipped.
+            lbl = getattr(sl, "label", None)
+            if lbl is not None:
+                lbl.setFixedWidth(max(
+                    lbl.width(),
+                    lbl.fontMetrics().horizontalAdvance(" %d" % sl.maximum())
+                    + 4))
         self.cursor_px = int(np.clip(self.cursor_px, 0, max(0, n - 1)))
         self._find_peaks()
 
@@ -409,6 +463,12 @@ class OWSpectrometer(OWWidget):
         self.ax_img.set_title(title, fontsize=9)
 
         # bottom: the extracted spectrum
+        if spec["x"].size < 2 or not np.all(np.isfinite(spec["x"])):
+            self.Error.bad_calibration(
+                "the fit maps the image outside a drawable range")
+            self._safe_blank_plot()
+            self.Outputs.spectrum.send(None)
+            return
         self.ax_spec.plot(spec["x"], spec["y"], color="#4c72b0", lw=1.0)
         self.ax_spec.set_xlabel(spec["x_label"])
         self.ax_spec.set_ylabel(f"intensity ({CHANNELS[self.channel_idx]})")
@@ -420,7 +480,8 @@ class OWSpectrometer(OWWidget):
                 pad = 0.2 * max(hi_px - lo_px, 1.0)
                 edges = [np.polyval(self._coeffs, lo_px - pad),
                          np.polyval(self._coeffs, hi_px + pad)]
-                self.ax_spec.set_xlim(min(edges), max(edges))
+                if all(np.isfinite(edges)) and edges[0] != edges[1]:
+                    self.ax_spec.set_xlim(min(edges), max(edges))
         self.figure.tight_layout()
         self._cursor_moved()          # draws peaks + cursor, then draw_idle()
 
