@@ -24,6 +24,9 @@ scratch/
 orange-spectra/validation/corn.mat
 CGL_nir.mat
 
+# InnoSpectra NIRScan SDKs - vendor code, never commit
+ISC_NIRScan_*.zip
+
 # UCL spectral data - never commit (copyright)
 *.speclib
 # ...but our own bundled teaching library (shipped in the wheel) is fine
