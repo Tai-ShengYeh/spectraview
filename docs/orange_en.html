@@ -126,7 +126,7 @@
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
       <h3>Spectrometer</h3>
-      <p>Turn a camera + diffraction-grating spectrum photo into a calibrated spectrum: read intensity along a horizontal strip and map pixel → wavelength from known lines (a Theremino-style spectrometer).</p>
+      <p>Turn a camera + diffraction-grating spectrum photo into a calibrated spectrum: rotate the image, read intensity along a horizontal strip, snap an <b>interactive peak cursor</b> to auto-detected peaks and write known lines into the calibration table with one click (a Theremino-style spectrometer).</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -179,20 +179,19 @@
   <p class="lead">Use the App's built-in Add-ons dialog to install from PyPI by name:</p>
   <div class="step"><div class="n">1</div><div><h4>Open Add-ons</h4><p>Orange menu <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… and type the name</h4>
-    <p>Click <b>Add more…</b> (top-right), type <code>orange-spectra</code> (<b>not</b> a git URL — this box only takes PyPI names), tick it and click <b>OK</b>.</p></div></div>
+    <p>Click <b>Add more…</b> (top-right), type <code>orange-spectra</code> (<b>not</b> a git URL — this box only takes PyPI names), tick it and click <b>OK</b>. The package is on
+    <a href="https://pypi.org/project/orange-spectra/">PyPI</a> (currently 0.7.0).</p></div></div>
   <div class="step"><div class="n">3</div><div><h4>Restart Orange</h4><p>The <b>Spectra</b> category with 11 widgets appears in the toolbox.</p></div></div>
-  <div class="note"><b><code>orange-spectra</code> not found?</b> It isn't on PyPI yet. See
-    <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>
-    to publish it. Until then, the desktop App can install via its own Python: locate the App's
+  <div class="note"><b>Add-ons dialog failing?</b> (e.g. the cp950 encoding issue on Traditional-Chinese Windows, see FAQ) — install into the App's own environment from the command line: locate the App's
     <code>python.exe</code> (e.g. <code>…\Orange\python.exe</code>) and run
-    <code>python.exe -m pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>.</div>
+    <code>python.exe -m pip install orange-spectra</code>.</div>
 
   <h3 style="margin-top:26px;">Method B ── pip Orange</h3>
 <pre class="code"><span class="c"># 1) Orange + a Qt binding (without PyQt5 you get "PyQt5 ... not available" and it won't start)</span>
 pip install orange3 PyQt5 PyQtWebEngine
 
-<span class="c"># 2) orange-spectra widgets (straight from GitHub)</span>
-pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+<span class="c"># 2) orange-spectra widgets (from PyPI; use the git URL only for the latest dev version)</span>
+pip install orange-spectra
 
 <span class="c"># 3) Launch (use this command; do NOT click the desktop App icon — that's a different env)</span>
 python -m Orange.canvas</pre>
@@ -205,7 +204,7 @@ python -m Orange.canvas</pre>
     <b>Install once — you don't reinstall every time.</b> Installation is <strong>one-off</strong>: after
     it, the 11 widgets in the Spectra category are there every time you open Orange.<br>
     ▸ Reinstall <b>only to update</b>:
-    <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>,
+    <code>pip install --upgrade orange-spectra</code>,
     then <strong>fully close and reopen Orange</strong>.<br>
     ▸ Every widget has an <b>"ℹ How to use"</b> box and a <b>"📖 Open tutorial"</b> button at the top —
     click it whenever you're unsure.
@@ -241,12 +240,14 @@ python -m Orange.canvas</pre>
       Spectrometer — image spectroscopy (camera + grating)</h3>
     <div class="io"><b>Output</b>: Spectra (a single-spectrum Table)</div>
     <ol>
-      <li>Click <b>Choose spectrum photo…</b> and pick a camera + diffraction-grating photo (a horizontal colour band).</li>
-      <li><b>Channel</b> (luminance / R / G / B / sum) and <b>Strip centre / height</b> select the horizontal band to read.</li>
-      <li><b>Calibration</b>: enter <code>pixel=nm</code> pairs (e.g. fluorescent mercury lines <code>120=435.8, 410=546.1, 560=611.6</code>), fit linear / quadratic; leave empty to keep the x-axis in pixels.</li>
-      <li>Top: photo + ROI band; bottom: extracted spectrum. Feed the output to Similarity / Library / Peak Finder / Data Table.</li>
+      <li>Click <b>Choose spectrum photo…</b> and pick a camera + diffraction-grating photo. If the colour band is <b>vertical</b> (common with phone shots), use <b>Rotate</b> 90°/270° to make the dispersion axis horizontal — rotation is lossless (an axis swap, no interpolation).</li>
+      <li><b>Channel</b> (luminance / R / G / B / sum) and <b>Strip centre / height</b> select the horizontal band to read (the yellow box on the image).</li>
+      <li><b>Peak cursor</b>: the widget auto-detects peaks (tune <b>Min prominence / distance / Smoothing</b>); the ◀ / ▶ buttons jump between peaks, and the cursor snaps to the <b>sub-pixel peak position</b> within ±4 px. The readout shows pixel, intensity and λ live.</li>
+      <li><b>Calibration</b>: put the cursor on a line you recognise → pick its wavelength from the <b>λ =</b> dropdown (built-in fluorescent-lamp lines: 405.4 / 435.8 / 546.1 Hg, 611.6 Eu; or type any value) → click <b>write into the calibration table</b>. Repeat for 2-3 lines, then fit linear / quadratic; you can also type <code>pixel=nm</code> pairs by hand. Leave empty to keep the x-axis in pixels.</li>
+      <li>Check <b>R² in the Status bar</b>: a linear fit should give R² close to 1 (≥ 0.999); a mis-assigned line drags it down visibly. When points = degree + 1, R² = 1 by construction (the exact-fit warning) — add another line before trusting it.</li>
+      <li>Tick <b>Zoom plot to the calibrated range</b> to show only the calibrated interval (polynomials diverge outside the calibration points; display only, the output is unaffected). Feed the output to Similarity / Library / Peak Finder / Data Table.</li>
     </ol>
-    <div class="note">The core of a <b>Theremino Spectrometer</b>: horizontal strip → intensity along it → calibrate pixel → wavelength from known lines. In Orange it works on a <b>captured photo</b> (not a live camera stream); photos from the same setup can reuse the same calibration points.</div>
+    <div class="note"><b>Reading the three kinds of lines on the plot:</b> red <b>dashed</b> = reference wavelengths from the calibration table; grey <b>dotted</b> = auto-detected peaks; solid <b>red</b> = the cursor (drawn at the fitted wavelength). With the cursor on a calibration point, the gap between the solid and dashed lines <b>is that point's fit residual</b> — a large gap means the pixel=nm pair is suspect. The core of a <b>Theremino Spectrometer</b>, but working on a <b>captured photo</b> (not a live stream); photos from the same setup can reuse the same calibration points.</div>
   </div>
 
   <div class="wsec" id="loadfiles">
@@ -525,9 +526,14 @@ python -m Orange.canvas</pre>
   <details><summary>Do I have to pip-install every time I use it?</summary>
     <p>No. Installation is <b>one-off</b> — once installed, the 11 widgets in the Spectra category are
        there every time you open Orange. Reinstall <b>only to update to a new version</b>
-       (<code>pip install --upgrade --force-reinstall --no-deps …</code>), and after reinstalling
-       <b>fully close and reopen Orange</b> for it to take effect. Once the desktop App version is on
-       PyPI, the Add-ons dialog remembers it and offers online updates.</p></details>
+       (<code>pip install --upgrade orange-spectra</code>), and after reinstalling
+       <b>fully close and reopen Orange</b> for it to take effect.</p></details>
+  <details><summary>Spectrometer: why doesn't the cursor line land on a calibration dashed line?</summary>
+    <p>The red dashed lines are drawn at the <b>reference wavelengths you typed</b>; the solid cursor line is drawn
+       at the <b>fitted wavelength of its pixel</b> — the gap between them is the <b>fit residual</b>. A gap of
+       several nm usually means one pixel=nm pair is assigned to the wrong line: switch Fit to linear, check R²
+       (should be ≥ 0.999), re-aim the peak cursor at the actual peak and write the pair again. Also note the
+       ◀ / ▶ buttons only jump between <b>detected</b> peaks — lower Min prominence to pick up weak lines first.</p></details>
   <details><summary>I don't know how to use a widget — how do I learn?</summary>
     <p>Every widget has an <b>"ℹ How to use"</b> box (short guidance) and a <b>"📖 Open tutorial"</b>
        button at the top-left; the button opens the matching section of this page. You can also look at
@@ -592,9 +598,12 @@ python -m Orange.canvas</pre>
 <footer>
   orange-spectra ・ MIT License ・
   <a href="https://github.com/Tai-ShengYeh/spectraview">GitHub</a> ・
+  <a href="https://pypi.org/project/orange-spectra/">PyPI</a> ・
   <a href="orange.html">中文版</a> ・
   <a href="raman-tutorial/">Raman tutorial (zh)</a> ・
-  <a href="https://tai-shengyeh.github.io/">Food-science teaching portal</a>
+  <a href="https://tai-shengyeh.github.io/">Food-science teaching portal</a><br>
+  Cite: Yeh, T.-S. <i>SpectraView</i> (v0.7.0). Zenodo.
+  <a href="https://doi.org/10.5281/zenodo.21961304">doi:10.5281/zenodo.21961304</a>
 </footer>
 
 </body>

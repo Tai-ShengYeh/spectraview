@@ -123,7 +123,7 @@
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#1f9ec4"/><path d="M6 14 L14 24 L6 34 Z" fill="#fff"/><rect x="15" y="20" width="27" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.5"/><rect x="16" y="21" width="4" height="6" fill="#7b5cff"/><rect x="21" y="21" width="4" height="6" fill="#3b9dff"/><rect x="26" y="21" width="4" height="6" fill="#3ddc84"/><rect x="31" y="21" width="4" height="6" fill="#ffd54f"/><rect x="36" y="21" width="4" height="6" fill="#ff5a3c"/></svg>
       <h3>Spectrometer</h3>
-      <p>把「相機＋繞射光柵」拍到的光譜照片變成校準光譜：取水平帶讀強度、用已知譜線把像素校準成波長（Theremino 分光儀的核心功能）。</p>
+      <p>把「相機＋繞射光柵」拍到的光譜照片變成校準光譜：影像旋轉、取水平帶讀強度、<b>峰值游標</b>自動找峰對準、一鍵把已知譜線寫進校準表，把像素校準成波長（Theremino 分光儀的核心功能）。</p>
     </div>
     <div class="card">
       <svg class="wicon" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -176,20 +176,19 @@
   <p class="lead">用 App 內建的 Add-ons 對話框，從 PyPI 依名稱安裝：</p>
   <div class="step"><div class="n">1</div><div><h4>開 Add-ons</h4><p>Orange 選單 <b>Options ▸ Add-ons…</b></p></div></div>
   <div class="step"><div class="n">2</div><div><h4>Add more… 輸入名稱</h4>
-    <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。</p></div></div>
+    <p>按右上 <b>Add more…</b>，輸入 <code>orange-spectra</code>（<b>不是</b> git 網址——這個框只吃 PyPI 名稱），打勾後按 <b>OK</b>。套件已在
+    <a href="https://pypi.org/project/orange-spectra/">PyPI</a> 上（目前 0.7.0）。</p></div></div>
   <div class="step"><div class="n">3</div><div><h4>重啟 Orange</h4><p>工具箱出現 <b>Spectra</b> 分類的 11 個 widgets。</p></div></div>
-  <div class="note"><b>找不到 <code>orange-spectra</code>？</b>代表尚未發佈到 PyPI。發佈方式見
-    <a href="https://github.com/Tai-ShengYeh/spectraview/blob/main/orange-spectra/PUBLISHING.md">PUBLISHING.md</a>；
-    在那之前，桌面版可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
+  <div class="note"><b>Add-ons 對話框失敗？</b>（如繁中 Windows 的 cp950 編碼問題，見 FAQ）可改用「命令列安裝進 App 環境」：找到 App 的 Python（如
     <code>…\Orange\python.exe</code>）執行
-    <code>python.exe -m pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>。</div>
+    <code>python.exe -m pip install orange-spectra</code>。</div>
 
   <h3 style="margin-top:26px;">方式 B ── pip 版 Orange</h3>
 <pre class="code"><span class="c"># 1) Orange 與 Qt 綁定（缺 PyQt5 會出現 "PyQt5 ... not available" 而開不了）</span>
 pip install orange3 PyQt5 PyQtWebEngine
 
-<span class="c"># 2) orange-spectra widgets（直接從 GitHub 裝）</span>
-pip install "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"
+<span class="c"># 2) orange-spectra widgets（從 PyPI 裝；要最新開發版才用 git 網址）</span>
+pip install orange-spectra
 
 <span class="c"># 3) 啟動（用這個指令，不要點桌面 App 圖示——那是另一個環境）</span>
 python -m Orange.canvas</pre>
@@ -200,9 +199,9 @@ python -m Orange.canvas</pre>
 
   <div class="note" style="background:#E8F6F5;border-color:#A8D9D6;color:#0a4746;">
     <b>裝一次就好，不用每次都裝。</b>安裝是<strong>一次性</strong>的——裝完之後每次開 Orange，
-    Spectra 分類的 10 個 widgets 都在，直接用。<br>
+    Spectra 分類的 11 個 widgets 都在，直接用。<br>
     ▸ <b>只有要「更新」到新版時</b>才需要重裝：
-    <code>pip install --upgrade --force-reinstall --no-deps "git+https://github.com/Tai-ShengYeh/spectraview.git#subdirectory=orange-spectra"</code>，
+    <code>pip install --upgrade orange-spectra</code>，
     然後<strong>完全關掉 Orange 再重開</strong>。<br>
     ▸ 每個 widget 左上角都有 <b>「ℹ 說明 How to use」</b>盒子與 <b>「📖 開啟線上教學」</b>按鈕，
     不會用時點一下就能學。
@@ -237,12 +236,14 @@ python -m Orange.canvas</pre>
       Spectrometer — 影像分光（相機＋繞射光柵）</h3>
     <div class="io"><b>輸出</b>：Spectra（單一光譜的 Table）</div>
     <ol>
-      <li>按 <b>Choose spectrum photo…</b> 選一張相機＋繞射光柵拍到的光譜照片（水平展開的彩色條）。</li>
-      <li><b>Channel</b>（luminance／R／G／B／sum）與 <b>Strip centre / height</b> 選要取的水平帶。</li>
-      <li><b>校準</b>：填 <code>像素=波長</code> 對（如日光燈汞線 <code>120=435.8, 410=546.1, 560=611.6</code>），選 linear／quadratic；留空則 x 軸維持像素。</li>
-      <li>上圖照片＋選取帶、下圖萃取光譜；輸出接 Similarity / Library / Peak Finder / Data Table。</li>
+      <li>按 <b>Choose spectrum photo…</b> 選一張相機＋繞射光柵拍到的光譜照片。若彩色條是<b>直的</b>（手機直拍很常見），用 <b>Rotate 旋轉</b> 轉 90°／270° 讓色散方向變水平——旋轉是無損的（只換軸、不內插）。</li>
+      <li><b>Channel</b>（luminance／R／G／B／sum）與 <b>Strip centre / height</b> 選要取的水平帶（上圖黃框）。</li>
+      <li><b>Peak cursor 峰值游標</b>：widget 會自動找峰（<b>Min prominence / distance / Smoothing</b> 可調），按「◀ 前一峰／下一峰 ▶」在峰之間跳，游標會吸附到 ±4 px 內的<b>次像素峰位</b>；左下角即時讀出 pixel、強度與 λ。</li>
+      <li><b>校準</b>：游標對準一個認得的譜線 → 在 <b>λ =</b> 下拉選波長（內建日光燈特徵線 405.4／435.8／546.1 汞、611.6 銪，也可手動輸入）→ 按 <b>寫進校準表 ↓</b>。重複 2–3 條線後選 linear／quadratic 擬合；也可直接手填 <code>像素=波長</code> 對。留空則 x 軸維持像素。</li>
+      <li>看 <b>Status 的 R²</b> 檢查校準品質：linear 擬合 R² 應接近 1（≥0.999），某點配錯譜線 R² 會明顯掉下來。注意「點數 = 次數+1」時 R²=1 是必然（exact fit 警告），不能當品質指標——加第 4 條線再看。</li>
+      <li>勾 <b>Zoom plot to the calibrated range</b> 只顯示校準區間（多項式在校準點外會發散，只影響顯示、不影響輸出）；輸出接 Similarity / Library / Peak Finder / Data Table。</li>
     </ol>
-    <div class="note">等效 <b>Theremino Spectrometer</b> 的核心：水平帶 → 沿水平讀強度 → 已知譜線校準像素成波長。在 Orange 裡是對<b>拍好的照片</b>處理（非即時相機串流）；同機況照片可沿用同一組校準點。</div>
+    <div class="note"><b>圖上三種線怎麼讀：</b>紅色<b>虛線</b>＝校準表裡的參考波長；灰色<b>點線</b>＝自動偵測到的峰；紅色<b>實線</b>＝游標位置（畫在擬合後的波長上）。游標停在校準點上時，實線與虛線的<b>間距就是該點的擬合殘差</b>——差越多代表那個 pixel=nm 配對越可疑。等效 <b>Theremino Spectrometer</b> 的核心，但處理<b>拍好的照片</b>（非即時串流）；同機況照片可沿用同一組校準點。</div>
   </div>
 
   <div class="wsec" id="loadfiles">
@@ -508,9 +509,14 @@ python -m Orange.canvas</pre>
       <li><b>讓 Python 走 UTF-8</b>——「編輯系統環境變數 ▸ 環境變數 ▸（使用者變數）新增」：名稱 <code>PYTHONUTF8</code>、值 <code>1</code>；重開 Orange 後 Add-ons 對話框就能正常用。</li>
     </ol></details>
   <details><summary>要每次用都重新 pip 安裝嗎？</summary>
-    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 10 個 widgets 都在，直接用。
-       只有要<b>更新到新版</b>時才重裝（<code>pip install --upgrade --force-reinstall --no-deps …</code>），
-       且重裝後要<b>完全關掉 Orange 再重開</b>才會生效。桌面版 App 若日後上了 PyPI，用 Add-ons 對話框安裝更會自動記住、可線上更新。</p></details>
+    <p>不用。安裝是<b>一次性</b>的——裝完之後每次開 Orange，Spectra 分類的 11 個 widgets 都在，直接用。
+       只有要<b>更新到新版</b>時才重裝（<code>pip install --upgrade orange-spectra</code>），
+       且重裝後要<b>完全關掉 Orange 再重開</b>才會生效。</p></details>
+  <details><summary>Spectrometer：游標紅線為何對不到校準的紅色虛線？</summary>
+    <p>紅色虛線畫在你「填進校準表的參考波長」上，游標紅線畫在「擬合後該像素換算的波長」上——兩者的間距就是<b>擬合殘差</b>。
+       差距明顯（如好幾 nm）通常代表某個 pixel=nm 配對錯了譜線：把 Fit 切回 linear 看 R²（應 ≥0.999），
+       用峰值游標重新對準實際的峰再「寫進校準表」。另外「◀ 前一峰／下一峰 ▶」只在<b>偵測到的峰</b>之間跳；
+       太弱的譜線要先調低 Min prominence 才找得到。</p></details>
   <details><summary>不會用某個 widget，怎麼學？</summary>
     <p>每個 widget 左上角都有 <b>「ℹ 說明 How to use」</b>盒子（簡短中英說明）和 <b>「📖 開啟線上教學」</b>按鈕，
        點按鈕就會開這頁對應段落。也可先看上面的 <a href="#demo">真實數據 Demo</a> 看每個 widget 實際跑出什麼。</p></details>
@@ -558,7 +564,10 @@ python -m Orange.canvas</pre>
 <footer>
   orange-spectra ・ MIT License ・
   <a href="https://github.com/Tai-ShengYeh/spectraview">GitHub</a> ・
-  <a href="https://tai-shengyeh.github.io/">食品科學教學課程入口</a>
+  <a href="https://pypi.org/project/orange-spectra/">PyPI</a> ・
+  <a href="https://tai-shengyeh.github.io/">食品科學教學課程入口</a><br>
+  引用 Cite：Yeh, T.-S. <i>SpectraView</i> (v0.7.0). Zenodo.
+  <a href="https://doi.org/10.5281/zenodo.21961304">doi:10.5281/zenodo.21961304</a>
 </footer>
 
 </body>
