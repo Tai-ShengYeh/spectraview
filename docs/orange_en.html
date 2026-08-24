@@ -412,8 +412,11 @@ python -m Orange.canvas</pre>
       <div class="node orange">Heat Map<small>native Orange widget</small></div>
     </div>
     <div class="note"><b>Reproduce this inside Orange:</b> wire it as above — the Similarity Matrix output (since 0.7.1) is the
-      9×9 correlation matrix; Heat Map colours it, Data Table shows the numbers, identical to this figure
-      (the figure itself is the same algorithm laid out with matplotlib).</div>
+      9×9 correlation matrix, numerically identical to this figure (the figure itself is the same algorithm laid out with matplotlib).<br>
+      <b>Heat Map settings:</b> set Clustering Rows/Columns to <b>(None)</b> (this figure is alphabetical; Clustering is also instructive —
+      the sugars group together and caffeine stands alone), set Row Annotations to <b>spectrum</b> (row labels = spectrum names),
+      and pick a red-yellow-green-ish palette (Orange has no exact match for the matplotlib colours).
+      Heat Map does not print numbers inside cells — connect the Similarity Matrix to a <b>Data Table</b> to read each value.</div>
   </div>
 
   <div class="wsec">

@@ -403,7 +403,10 @@ python -m Orange.canvas</pre>
       <div class="node orange">Heat Map<small>Orange 原生 widget</small></div>
     </div>
     <div class="note"><b>在 Orange 裡重現這張圖：</b>照上面接線即可——Similarity Matrix 輸出（0.7.1 起）就是 9×9 相關係數矩陣，
-      Heat Map 上色、Data Table 看數字，數值與本圖完全相同（上圖本身是用同一演算法以 matplotlib 排版輸出）。</div>
+      數值與本圖完全相同（上圖本身是用同一演算法以 matplotlib 排版輸出）。<br>
+      <b>Heat Map 設定：</b>Clustering 的 Rows/Columns 選 <b>(None)</b>（本圖是字母序；開 Clustering 也很有教學價值——糖類自動聚成一群、咖啡因自己一群）、
+      Row Annotations 選 <b>spectrum</b>（列名顯示光譜名）、Color 挑一個紅黃綠系色盤（Orange 沒有與 matplotlib 一模一樣的配色）。
+      Heat Map 不會在格內印數字——把 Similarity Matrix 再接一個 <b>Data Table</b> 就能看到每格的相關係數。</div>
   </div>
 
   <div class="wsec">
