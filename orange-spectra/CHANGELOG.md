@@ -4,6 +4,16 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.7.1] - 2026-08-25
+
+### Added
+
+- Spectra Similarity: new **Similarity Matrix** output — a wide
+  queries × references matrix of the "Sort scores by" metric (Data-only
+  mode gives the full n×n symmetric matrix, diagonal = 1). Feed it to
+  Orange's native Heat Map widget to reproduce the tutorial's 9×9
+  correlation heatmap entirely inside Orange.
+
 ## [0.7.0] - 2026-08-25
 
 ### Added

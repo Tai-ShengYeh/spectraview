@@ -273,11 +273,12 @@ python -m Orange.canvas</pre>
   <div class="wsec" id="similarity">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
       Spectra Similarity — 光譜相似度</h3>
-    <div class="io"><b>輸入</b>：Data（待比對光譜）、References（參考光譜，可省略）　<b>輸出</b>：Scores（逐對分數表）</div>
+    <div class="io"><b>輸入</b>：Data（待比對光譜）、References（參考光譜，可省略）　<b>輸出</b>：Scores（逐對分數表）、Similarity Matrix（寬矩陣）</div>
     <ol>
       <li>接上 Data 與 References：輸出 Data × References 每一對的四個指標。</li>
       <li>只接 Data：改為 Data 內部兩兩互比（適合看一批樣品彼此像不像）。</li>
       <li>排序依據可選 correlation / cosine（越大越像）或 SAM / Euclidean（越小越像）。</li>
+      <li><b>Similarity Matrix</b> 輸出（0.7.1 起）＝「Sort scores by」所選指標的 Data × References 寬矩陣（只接 Data 時為 n×n 對稱矩陣、對角線＝1）——接 Orange 原生 <b>Heat Map</b> widget 直接畫相似度熱圖，接 <b>Data Table</b> 看矩陣數字。</li>
     </ol>
     <table class="t">
       <tr><th>指標</th><th>意義</th><th>特性</th></tr>
@@ -394,6 +395,15 @@ python -m Orange.canvas</pre>
     <p class="lead">對 9 條糖譜兩兩算 correlation。化學上合理：<b>蔗糖 vs 果糖 ≈ 0.99</b>（蔗糖＝葡萄糖＋果糖），
        糖類 vs 咖啡因 ≈ 0.71 明顯拉開。</p>
     <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
+    <div class="flow">
+      <div class="node gold">Spectral Library<small>Load sugars_nir.speclib</small></div>
+      <div class="arrow">→<small>Library</small></div>
+      <div class="node">Spectra Similarity<small>Sort by: correlation</small></div>
+      <div class="arrow">→<small>Similarity Matrix</small></div>
+      <div class="node orange">Heat Map<small>Orange 原生 widget</small></div>
+    </div>
+    <div class="note"><b>在 Orange 裡重現這張圖：</b>照上面接線即可——Similarity Matrix 輸出（0.7.1 起）就是 9×9 相關係數矩陣，
+      Heat Map 上色、Data Table 看數字，數值與本圖完全相同（上圖本身是用同一演算法以 matplotlib 排版輸出）。</div>
   </div>
 
   <div class="wsec">

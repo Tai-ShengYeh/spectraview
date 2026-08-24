@@ -277,11 +277,12 @@ python -m Orange.canvas</pre>
   <div class="wsec" id="similarity">
     <h3><svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#55a868"/><path d="M5 20 Q11 18 14 10 T23 6 Q26 18 31 14 T42 18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M5 38 Q11 36 14 28 T23 24 Q26 36 31 32 T42 36" fill="none" stroke="#ffd54f" stroke-width="2.5" stroke-linecap="round"/></svg>
       Spectra Similarity — pairwise similarity</h3>
-    <div class="io"><b>Inputs</b>: Data (spectra to compare), References (optional)　<b>Output</b>: Scores (per-pair table)</div>
+    <div class="io"><b>Inputs</b>: Data (spectra to compare), References (optional)　<b>Outputs</b>: Scores (per-pair table), Similarity Matrix (wide matrix)</div>
     <ol>
       <li>Connect Data and References: outputs four metrics for every Data × References pair.</li>
       <li>Connect only Data: switches to all-pairs within Data (good for "how alike is this batch?").</li>
       <li>Sort by correlation / cosine (higher = more similar) or SAM / Euclidean (lower = more similar).</li>
+      <li>The <b>Similarity Matrix</b> output (since 0.7.1) is a Data × References wide matrix of the "Sort scores by" metric (Data-only mode gives an n×n symmetric matrix, diagonal = 1) — feed it to Orange's native <b>Heat Map</b> widget for a similarity heatmap, or <b>Data Table</b> for the numbers.</li>
     </ol>
     <table class="t">
       <tr><th>Metric</th><th>Meaning</th><th>Property</th></tr>
@@ -403,6 +404,16 @@ python -m Orange.canvas</pre>
     <p class="lead">Pairwise correlation of the 9 sugar spectra. Chemically sensible: <b>sucrose vs fructose ≈ 0.99</b>
        (sucrose = glucose + fructose), while sugars vs caffeine ≈ 0.71 separate clearly.</p>
     <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
+    <div class="flow">
+      <div class="node gold">Spectral Library<small>Load sugars_nir.speclib</small></div>
+      <div class="arrow">→<small>Library</small></div>
+      <div class="node">Spectra Similarity<small>Sort by: correlation</small></div>
+      <div class="arrow">→<small>Similarity Matrix</small></div>
+      <div class="node orange">Heat Map<small>native Orange widget</small></div>
+    </div>
+    <div class="note"><b>Reproduce this inside Orange:</b> wire it as above — the Similarity Matrix output (since 0.7.1) is the
+      9×9 correlation matrix; Heat Map colours it, Data Table shows the numbers, identical to this figure
+      (the figure itself is the same algorithm laid out with matplotlib).</div>
   </div>
 
   <div class="wsec">

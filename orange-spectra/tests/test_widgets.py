@@ -95,6 +95,30 @@ class TestSimilarity(WidgetTest):
         out = self.get_output(self.widget.Outputs.scores)
         self.assertEqual(len(out), 3)                     # C(3,2) pairs
 
+    def test_matrix_within_data(self):
+        data = _table(("a", _g(600, 30)), ("b", _g(600, 30)), ("c", _g(1200, 40)))
+        self.send_signal(self.widget.Inputs.data, data)
+        mat = self.get_output(self.widget.Outputs.matrix)
+        self.assertEqual(len(mat), 3)                          # 3x3
+        self.assertEqual(len(mat.domain.attributes), 3)
+        self.assertEqual([v.name for v in mat.domain.attributes],
+                         ["a", "b", "c"])
+        for i in range(3):                                     # self-corr = 1
+            self.assertAlmostEqual(float(mat.X[i][i]), 1.0, places=6)
+        self.assertAlmostEqual(float(mat.X[0][1]), float(mat.X[1][0]),
+                               places=10)                      # symmetric
+
+    def test_matrix_data_vs_references(self):
+        data = _table(("q", _g(600, 30)))
+        refs = _table(("match", _g(600, 30) * 2), ("other", _g(1200, 40)))
+        self.send_signal(self.widget.Inputs.data, data)
+        self.send_signal(self.widget.Inputs.references, refs)
+        mat = self.get_output(self.widget.Outputs.matrix)
+        self.assertEqual(len(mat), 1)                          # 1x2
+        self.assertEqual(len(mat.domain.attributes), 2)
+        self.assertEqual(str(mat.metas[0][0]), "q")
+        self.assertAlmostEqual(float(mat.X[0][0]), 1.0, places=6)
+
     def test_non_spectral_table_errors(self):
         from Orange.data import Table
         self.send_signal(self.widget.Inputs.data, Table("iris"))

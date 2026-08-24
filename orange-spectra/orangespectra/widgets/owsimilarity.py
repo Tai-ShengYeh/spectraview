@@ -25,6 +25,7 @@ class OWSpectraSimilarity(OWWidget):
 
     class Outputs:
         scores = Output("Scores", Table)
+        matrix = Output("Similarity Matrix", Table)
 
     class Error(OWWidget.Error):
         bad_table = Msg("{}")
@@ -40,7 +41,10 @@ class OWSpectraSimilarity(OWWidget):
         add_help(self,
                  "接 Data（和選用的 References）→ 算每一對光譜的四種相似度："
                  "correlation / cosine / SAM / Euclidean。只接 Data 時做組內兩兩互比。"
-                 "結果接 Data Table 檢視。\nScores each spectrum pair by 4 metrics.",
+                 "Scores 接 Data Table 看排名；Similarity Matrix（Sort by 選的指標）"
+                 "接 Orange 的 Heat Map 畫相似度熱圖。"
+                 "\nScores each spectrum pair by 4 metrics; the Similarity Matrix "
+                 "output feeds Orange's Heat Map.",
                  "similarity")
         box = gui.widgetBox(self.controlArea, "Options")
         gui.comboBox(box, self, "rank_by", label="Sort scores by:",
@@ -66,6 +70,7 @@ class OWSpectraSimilarity(OWWidget):
         if self._data is None:
             self.info_label.setText("No data.")
             self.Outputs.scores.send(None)
+            self.Outputs.matrix.send(None)
             return
         try:
             queries = spectra_from_table(self._data)
@@ -74,20 +79,33 @@ class OWSpectraSimilarity(OWWidget):
         except ValueError as exc:
             self.Error.bad_table(str(exc))
             self.Outputs.scores.send(None)
+            self.Outputs.matrix.send(None)
             return
 
         within = self._refs is None
+        # Full query x reference grid; the metrics are symmetric, so the
+        # within-Data mode reuses the transposed half instead of recomputing.
+        all_s = [[None] * len(refs) for _ in queries]
+        for i, q in enumerate(queries):
+            for j, r in enumerate(refs):
+                if within and j < i:
+                    all_s[i][j] = all_s[j][i]
+                else:
+                    all_s[i][j] = similarity_scores(
+                        q["x"], q["y"], r["x"], r["y"])
+
         rows, metas = [], []
         for i, q in enumerate(queries):
             for j, r in enumerate(refs):
                 if within and j <= i:      # skip self- and duplicate pairs
                     continue
-                s = similarity_scores(q["x"], q["y"], r["x"], r["y"])
+                s = all_s[i][j]
                 rows.append([s[k] for k in RANK_KEYS])
                 metas.append([q["name"], r["name"]])
         if not rows:
             self.info_label.setText("Need at least 2 spectra.")
             self.Outputs.scores.send(None)
+            self.Outputs.matrix.send(None)
             return
 
         key = RANK_KEYS[self.rank_by]
@@ -108,6 +126,24 @@ class OWSpectraSimilarity(OWWidget):
             f"{len(rows)} pairs scored.\nBest ({key}): "
             f"{best[0]} ↔ {best[1]}  ({rows[0][self.rank_by]:.4f})")
         self.Outputs.scores.send(out)
+
+        # Wide-format matrix of the selected metric (queries x references),
+        # ready for Orange's Heat Map / Data Table widgets.
+        col_names, seen = [], {}
+        for r in refs:
+            n = r["name"]
+            seen[n] = seen.get(n, 0) + 1
+            col_names.append(n if seen[n] == 1 else f"{n} ({seen[n]})")
+        mdomain = Domain(
+            [ContinuousVariable(n) for n in col_names],
+            metas=[StringVariable.make("spectrum")])
+        mvals = np.array([[all_s[i][j][key] for j in range(len(refs))]
+                          for i in range(len(queries))], dtype=float)
+        mtab = Table.from_numpy(
+            mdomain, mvals,
+            metas=np.array([[q["name"]] for q in queries], dtype=object))
+        mtab.name = f"similarity matrix ({key})"
+        self.Outputs.matrix.send(mtab)
 
     def send_report(self):
         self.report_items("Spectra Similarity",
