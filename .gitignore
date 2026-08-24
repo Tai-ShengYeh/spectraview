@@ -27,6 +27,16 @@ CGL_nir.mat
 # InnoSpectra NIRScan SDKs - vendor code, never commit
 ISC_NIRScan_*.zip
 
+# Eigenvector datasets - not redistributed here; users download them from
+# eigenvector.com themselves (examples/cgl_mixture_nnls.py fetches CGL
+# automatically)
+ArtImageDataA.zip
+ArtImageDataA/
+CGL_nir.mat_.zip
+CGL_nir.mat_/
+corn.mat_.zip
+corn.mat_/
+
 # UCL spectral data - never commit (copyright)
 *.speclib
 # ...but our own bundled teaching library (shipped in the wheel) is fine
