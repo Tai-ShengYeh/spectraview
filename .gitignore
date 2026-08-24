@@ -26,3 +26,5 @@ CGL_nir.mat
 
 # UCL spectral data - never commit (copyright)
 *.speclib
+# ...but our own bundled teaching library (shipped in the wheel) is fine
+!orange-spectra/orangespectra/libraries/sugars_nir.speclib

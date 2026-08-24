@@ -50,12 +50,13 @@ class OWSpectralLibrary(OWWidget):
 
         add_help(self,
                  "① 參考譜接 Spectra 輸入 → Add to library；可 Save/Load .speclib"
-                 "（與 SpectraView 桌面版互通）。Add built-in 可載入 UCL 55 種"
-                 "顏料拉曼庫：第一次使用會直接向 UCL 官網下載並快取到本機"
-                 "（本套件不隨附該資料）。② 未知譜接 Query → Hits 輸出排名。\n"
+                 "（與 SpectraView 桌面版互通）。Add built-in 可載入內建庫："
+                 "糖類/添加物 NIR 庫（9 條，隨套件附、離線可用）與 UCL 55 種"
+                 "顏料拉曼庫（第一次使用向 UCL 官網下載並快取到本機，"
+                 "本套件不隨附該資料）。② 未知譜接 Query → Hits 輸出排名。\n"
                  "Build a reference library and search unknowns against it; "
-                 "the built-in UCL library is fetched from UCL's site on "
-                 "first use and cached locally.",
+                 "built-ins: a bundled sugars NIR library and the UCL pigment "
+                 "library (fetched from UCL's site on first use).",
                  "library")
 
         inbox = gui.widgetBox(self.controlArea, "Build")

@@ -129,6 +129,18 @@ class TestLibrary(WidgetTest):
     def setUp(self):
         self.widget = self.create_widget(OWSpectralLibrary)
 
+    def test_builtin_sugars_library(self):
+        # The 9-spectrum sugars NIR library ships inside the package, so the
+        # tutorial's demos work without downloading anything from the repo.
+        names = [n for n, _ in self.widget._builtin]
+        sugars = "Sugars & food additives (NIR, Hadamard)"
+        self.assertIn(sugars, names)
+        self.widget.builtin_idx = names.index(sugars)
+        self.widget.add_builtin()
+        lib_out = self.get_output(self.widget.Outputs.library)
+        self.assertEqual(len(lib_out), 9)
+        self.assertFalse(self.widget.Error.file_error.is_shown())
+
     def test_build_search_save_load(self):
         refs = _table(("R1", _g(600, 30)), ("R2", _g(1200, 40)))
         self.send_signal(self.widget.Inputs.spectra, refs)

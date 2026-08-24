@@ -4,6 +4,16 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.7.2] - 2026-08-25
+
+### Added
+
+- Spectral Library: the 9-spectrum **sugars & food additives NIR library**
+  (`sugars_nir.speclib`) now ships inside the package and appears in the
+  "Add built-in" dropdown, so the tutorial's demos work offline without
+  downloading anything from the repo. (The UCL pigment library remains
+  download-on-first-use for licensing reasons.)
+
 ## [0.7.1] - 2026-08-25
 
 ### Added

@@ -295,8 +295,10 @@ python -m Orange.canvas</pre>
     <div class="io"><b>輸入</b>：Spectra（要入庫的參考譜）、Query（未知譜）　<b>輸出</b>：Hits（排名表）、Best Match（最佳匹配譜）、Library（整個庫）</div>
     <ol>
       <li>把參考譜接到 <i>Spectra</i> 輸入，按 <b>Add input spectra to library</b> 入庫。</li>
-      <li><b>Save…</b> 存成 <code>.speclib</code>；<b>Load…</b> 載入既有庫——<b>檔案格式與 SpectraView 桌面版相同</b>，例如可直接載入 repo 附的 <code>examples/sugars_nir.speclib</code>（9 種糖類 NIR 庫）。</li>
-      <li><b>Add built-in</b> 一鍵載入內建的 <b>UCL 顏料拉曼庫</b>（55 種，Bell, Clark &amp; Gibbs 1997）：下拉選單選庫名→按鈕。第一次按會直接向 UCL 官網下載（連不上時自動改抓 Internet Archive 存檔），之後讀本機快取、離線可用；套件本身不含該資料。</li>
+      <li><b>Save…</b> 存成 <code>.speclib</code>；<b>Load…</b> 載入既有庫——<b>檔案格式與 SpectraView 桌面版相同</b>。</li>
+      <li><b>Add built-in</b> 一鍵載入內建庫（下拉選庫名→按鈕）：<br>
+        ▸ <b>糖類／食品添加物 NIR 庫</b>（9 條；0.7.2 起<b>隨套件內建</b>、離線可用）——教學 Demo ②③ 用的就是這個庫。<br>
+        ▸ <b>UCL 顏料拉曼庫</b>（55 種，Bell, Clark &amp; Gibbs 1997）——第一次按會直接向 UCL 官網下載（連不上時自動改抓 Internet Archive 存檔），之後讀本機快取、離線可用；因授權考量套件本身不含該資料。</li>
 	  <li>未知譜接 <i>Query</i>：Hits 輸出每個 query 對每筆庫藏的排名與四個相似度指標，接 <b>Data Table</b> widget 即可檢視。</li>
       <li><i>Library</i> 輸出把整個庫變成資料表——可以直接接 <b>Mixture Analysis</b> 當參考譜，或接 Spectra 檢視。</li>
 	  <li>實例：硃砂樣品接 <i>Query</i>，最佳比對就是 Vermilion（HgS）。<b>小訣竅</b>：庫裡是未經基線校正的原始強度，未知譜先做基線校正（如 ALS）再查詢，correlation 會明顯拉開。發表時請引用 Bell, Clark &amp; Gibbs, <i>Spectrochim. Acta A</i> <b>53</b> (1997) 2159。</li>
@@ -380,9 +382,9 @@ python -m Orange.canvas</pre>
 <section id="demo">
   <div class="kicker">Live demo · 真實數據跑出結果</div>
   <h2>用內建範例資料實際跑一遍</h2>
-  <p class="lead">下面所有圖與數字都是用 repo 內的<b>真實範例資料</b>（<code>examples/sugars_nir.speclib</code>
-     ——9 種糖類／添加物的 NIR 光譜、3 個未知樣品）與真實玉米 NIR，實際用這些 widgets 的演算法跑出來的，
-     不是示意圖。你在自己電腦照做會得到一樣的結果。</p>
+  <p class="lead">下面所有圖與數字都是用<b>真實範例資料</b>（9 種糖類／添加物的 NIR 光譜——0.7.2 起
+     用 Spectral Library 的 <b>Add built-in</b> 一鍵載入，亦即 repo 的 <code>examples/sugars_nir.speclib</code>）
+     與真實玉米 NIR，實際用這些 widgets 的演算法跑出來的，不是示意圖。你在自己電腦照做會得到一樣的結果。</p>
 
   <div class="wsec">
     <h3>① Import Spectrum URL → 一次載入一組光譜</h3>
@@ -396,7 +398,7 @@ python -m Orange.canvas</pre>
        糖類 vs 咖啡因 ≈ 0.71 明顯拉開。</p>
     <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
     <div class="flow">
-      <div class="node gold">Spectral Library<small>Load sugars_nir.speclib</small></div>
+      <div class="node gold">Spectral Library<small>Add built-in：糖類 NIR 庫</small></div>
       <div class="arrow">→<small>Library</small></div>
       <div class="node">Spectra Similarity<small>Sort by: correlation</small></div>
       <div class="arrow">→<small>Similarity Matrix</small></div>

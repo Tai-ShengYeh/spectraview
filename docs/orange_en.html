@@ -299,8 +299,10 @@ python -m Orange.canvas</pre>
     <div class="io"><b>Inputs</b>: Spectra (references to add), Query (unknowns)　<b>Outputs</b>: Hits (ranked table), Best Match, Library (the whole library)</div>
     <ol>
       <li>Connect references to the <i>Spectra</i> input and click <b>Add input spectra to library</b>.</li>
-      <li><b>Save…</b> as <code>.speclib</code>; <b>Load…</b> an existing one — <b>the file format is identical to the SpectraView desktop app</b>, so you can load e.g. the bundled <code>examples/sugars_nir.speclib</code> (a 9-sugar NIR library).</li>
-      <li><b>Add built-in</b> loads the built-in <b>UCL Raman Library of Pigments</b> (55 pigments, Bell, Clark &amp; Gibbs 1997) in one click: pick it in the dropdown, press the button. The first press downloads from UCL's own site (falling back to the Internet Archive if unreachable); afterwards the local cache works offline. The data is not bundled with the package.</li>
+      <li><b>Save…</b> as <code>.speclib</code>; <b>Load…</b> an existing one — <b>the file format is identical to the SpectraView desktop app</b>.</li>
+      <li><b>Add built-in</b> loads a built-in library in one click (pick it in the dropdown, press the button):<br>
+        ▸ <b>Sugars &amp; food additives NIR library</b> (9 spectra; <b>bundled with the package</b> since 0.7.2, works offline) — the library used by demos ② and ③.<br>
+        ▸ <b>UCL Raman Library of Pigments</b> (55 pigments, Bell, Clark &amp; Gibbs 1997) — the first press downloads from UCL's own site (falling back to the Internet Archive if unreachable); afterwards the local cache works offline. For licensing reasons the data is not bundled with the package.</li>
 	  <li>Connect unknowns to <i>Query</i>: Hits outputs each query's ranking against every library entry with all four metrics — connect a <b>Data Table</b> to view.</li>
       <li>The <i>Library</i> output turns the whole library into a table — feed it straight into <b>Mixture Analysis</b> as references, or view it as spectra.</li>
       <li>Example: feed a cinnabar sample to <i>Query</i> — the top hit is Vermilion (HgS). <b>Tip</b>: the library holds raw, baseline-uncorrected intensities, so baseline-correct your query (e.g. ALS) first for clearer separation. Please cite Bell, Clark &amp; Gibbs, <i>Spectrochim. Acta A</i> <b>53</b> (1997) 2159 when publishing.</li>
@@ -389,9 +391,9 @@ python -m Orange.canvas</pre>
   <div class="kicker">Live demo · real results from real data</div>
   <h2>Run it on the bundled example data</h2>
   <p class="lead">Every figure and number below was produced by actually running these widgets'
-     algorithms on the repo's <b>real example data</b> (<code>examples/sugars_nir.speclib</code> — NIR
-     spectra of 9 sugars/additives, 3 unknown samples) and real corn NIR — not mock-ups. Do the same
-     on your machine and you get the same results.</p>
+     algorithms on <b>real example data</b> (NIR spectra of 9 sugars/additives — load it with Spectral
+     Library's <b>Add built-in</b> since 0.7.2, also in the repo as <code>examples/sugars_nir.speclib</code>)
+     and real corn NIR — not mock-ups. Do the same on your machine and you get the same results.</p>
 
   <div class="wsec">
     <h3>① Import Spectrum URL → load a set of spectra at once</h3>
@@ -405,7 +407,7 @@ python -m Orange.canvas</pre>
        (sucrose = glucose + fructose), while sugars vs caffeine ≈ 0.71 separate clearly.</p>
     <img src="demo_similarity.png" alt="correlation heatmap" style="width:min(560px,100%);display:block;margin:auto;border-radius:10px;border:1px solid var(--line);">
     <div class="flow">
-      <div class="node gold">Spectral Library<small>Load sugars_nir.speclib</small></div>
+      <div class="node gold">Spectral Library<small>Add built-in: sugars NIR library</small></div>
       <div class="arrow">→<small>Library</small></div>
       <div class="node">Spectra Similarity<small>Sort by: correlation</small></div>
       <div class="arrow">→<small>Similarity Matrix</small></div>
