@@ -14,12 +14,12 @@ tags:
   - food analysis
 authors:
   - name: Tai-Sheng Yeh
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0002-7798-2669
     affiliation: 1
 affiliations:
-  - name: PLEASE FILL IN — institution, city, country
+  - name: Department of Food Science and Nutrition, Meiho University, Pingtung, Taiwan
     index: 1
-date: DD Month YYYY
+date: 7 September 2026
 bibliography: paper.bib
 ---
 
