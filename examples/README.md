@@ -27,6 +27,15 @@ orange-spectra **0.7.2 起這個庫已內建於套件**：Spectral Library widge
 - 對比同一份命中清單裡的 cosine（全擠在 0.95–1.0）可以看出：**相關係數的鑑別力更好**，
   這也是為什麼預設用相關係數排序。
 
+## 原始 5 重複資料與論文範例腳本
+- `sugars_nir_replicates.csv`：45 條原始吸光度譜（9 物質 × 5 次掃描；InnoSpectra NIR-S-R14，
+  DLP Hadamard，1600–2400 nm、200 點）。欄名 = 波長、每列一條譜，另有 `name`（物質）、
+  `class`（sugar / additive）、`scan` 三欄——Orange 的 **File** widget 可直接讀，`class`
+  設為 target 就能接 **PLS-DA**。
+- `sugars_nir_plsda.py`：重現論文（`paper/paper.md` Example 2）的所有數字與圖
+  `paper/fig_sugars_nir.png`：留一光譜庫辨識、NNLS、PLS-DA 留一準確率與 VIP 波段。
+  從 repo 根目錄執行 `python examples/sugars_nir_plsda.py`。
+
 ## 重建方式
 此庫由 `*_a.csv`（每物質 5 重複的吸光度譜）以「每物質取平均」建成。資料來源為
 使用者自有量測（DLP Hadamard NIR）。
