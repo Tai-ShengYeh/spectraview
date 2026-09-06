@@ -60,10 +60,12 @@ class OWLoadSpectraFiles(OWWidget):
         self._spectra = []
 
         add_help(self,
-                 "一鍵吃整包光譜：加入檔案、整個資料夾或 .zip（免解壓）→ 全部讀進來"
-                 "疊圖，輸出合併 Table（每列一條光譜）。支援 JCAMP-DX、兩欄 CSV、"
-                 "矩陣 CSV（欄名＝波長）與 NetCDF .cdf（如 applewine 等 chemometrics "
-                 "資料集）。\nLoad a whole folder/zip of spectra into one Table.",
+                 "Load a whole batch of spectra at once: add files, a folder or a "
+                 ".zip (no extraction needed). Everything is read, overlaid, and "
+                 "output as one merged Table (one spectrum per row). Supports "
+                 "JCAMP-DX, two-column CSV, matrix CSV (column names = "
+                 "wavelengths) and NetCDF .cdf (e.g. the applewine chemometrics "
+                 "dataset).",
                  "loadfiles")
 
         box = gui.widgetBox(self.controlArea, "Sources")

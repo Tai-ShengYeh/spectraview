@@ -58,9 +58,11 @@ class OWAquagram(OWWidget):
         self._spectra = []
 
         add_help(self,
-                 "接 NIR 光譜（需涵蓋 ~1300–1600 nm 的水吸收區）→ 在水的 12 個特徵帶"
-                 "（WAMACs）取正規化吸光度，畫 12 軸雷達圖。正規化選 aquagram 時 0＝組平均。"
-                 "\nAquaphotomics radar over the 12 water bands.", "aquagram")
+                 "Connect NIR spectra that cover the water region (~1300-1600 nm). "
+                 "The widget samples the normalized absorbance at water's 12 "
+                 "characteristic bands (WAMACs) and draws a 12-axis radar chart. "
+                 "With the 'aquagram' normalization, 0 is the group average.",
+                 "aquagram")
 
         box = gui.widgetBox(self.controlArea, "Normalization")
         gui.comboBox(box, self, "normalization", items=AQUAGRAM_NORMS,

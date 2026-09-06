@@ -56,10 +56,11 @@ class OWPLSDA(OWWidget):
         self._data = None
 
         add_help(self,
-                 "接含類別（target/class）的光譜 Table（用 Select Columns 指定 "
-                 "target）→ PLS-DA 把類別 one-hot 後做 PLS2（NIPALS）→ 分數圖依"
-                 "類別上色。輸出 Scores / Loadings / VIP（>1 常視為重要波數）/ "
-                 "Predictions。\nClass-aware projection; VIP > 1 ≈ important.",
+                 "Connect a spectra Table with a class (target) column - use "
+                 "Select Columns to set the target. PLS-DA one-hot encodes the "
+                 "classes and fits PLS2 (NIPALS); the score plot is coloured by "
+                 "class. Outputs: Scores / Loadings / VIP (VIP > 1 is the usual "
+                 "'important wavenumber' rule of thumb) / Predictions.",
                  "plsda")
 
         box = gui.widgetBox(self.controlArea, "Model")

@@ -38,9 +38,10 @@ class OWImportSpectrumURL(OWWidget):
         self._spectra: list[dict] = []
 
         add_help(self,
-                 "貼上 IRUG 編號（如 4119）、IRUG/SOPRANO 頁面網址，或 JCAMP-DX/CSV "
-                 "直接網址，按 Fetch。可連抓多條累積；輸出接 Data Table 或其他 widget。\n"
-                 "Paste an IRUG id / page URL / file URL and Fetch.", "importurl")
+                 "Paste an IRUG id (e.g. 4119), an IRUG/SOPRANO page URL, or a "
+                 "direct JCAMP-DX/CSV URL and press Fetch. Fetch repeatedly to "
+                 "accumulate several spectra; connect the output to a Data Table "
+                 "or any other widget.", "importurl")
 
         box = gui.widgetBox(self.controlArea, "Source")
         gui.label(box, self, "IRUG id (e.g. 4119), IRUG/SOPRANO page URL,\n"

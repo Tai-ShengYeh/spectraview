@@ -42,10 +42,12 @@ class OWMixtureAnalysis(OWWidget):
         self._refs = []
 
         add_help(self,
-                 "混合譜接 Mixture、純物質參考譜接 References → NNLS 解 "
-                 "mixture ≈ Σ cᵢ·refᵢ，回報各成分比例與 R²，圖上疊出擬合與殘差。"
-                 "參考譜可來自 Spectral Library 的 Library 輸出。\n"
-                 "Non-negative unmixing of a mixed spectrum.", "mixture")
+                 "Connect the mixed spectrum to Mixture and pure-component "
+                 "reference spectra to References. Non-negative least squares "
+                 "solves mixture ≈ Σ cᵢ·refᵢ and reports each component's "
+                 "proportion and the fit R²; the plot overlays the fit and the "
+                 "residual. References can come from Spectral Library's Library "
+                 "output.", "mixture")
 
         box = gui.widgetBox(self.controlArea, "Options")
         gui.checkBox(box, self, "fit_offset", "Fit a constant baseline offset",

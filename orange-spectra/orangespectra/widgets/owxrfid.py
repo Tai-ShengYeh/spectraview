@@ -55,10 +55,11 @@ class OWXRFElementID(OWWidget):
         self._spectra = []
 
         add_help(self,
-                 "接 XRF 能譜（x 軸＝keV）→ 自動尋峰並比對元素特徵譜線（Kα/Kβ/"
-                 "Lα/Lβ，X-ray Data Booklet 參考值）→ 圖上標記元素，Elements 輸出"
-                 "比對表。tolerance 是能量容差（keV）。\n"
-                 "Label XRF peaks with matching element lines.", "xrf")
+                 "Connect an XRF spectrum (x axis in keV). Peaks are found "
+                 "automatically and matched to element emission lines (Kα/Kβ/"
+                 "Lα/Lβ, X-ray Data Booklet values); the plot labels the elements "
+                 "and the Elements output lists the matches. 'tolerance' is the "
+                 "energy window in keV.", "xrf")
 
         box = gui.widgetBox(self.controlArea, "Identification")
         gui.doubleSpin(box, self, "tolerance", 0.01, 1.0, 0.01,

@@ -415,6 +415,13 @@ check("brightest_row prefers the thin band over a broad flare",
       _spm.brightest_row(_flare) in (30, 31, 32))
 check("brightest_row ignores the profile channel",
       _spm.brightest_row(_flare, channel="red") in (30, 31, 32))
+_vert = np.zeros((200, 300, 3)); _vert[40:160, 140:150, :] = 200.0   # tall band
+check("band_orientation: vertical band flagged",
+      _spm.band_orientation(_vert)["vertical"] is True)
+check("band_orientation: rotating 90 makes it horizontal",
+      _spm.band_orientation(_vert, rotate=90)["vertical"] is False)
+check("band_orientation: black image is not vertical",
+      _spm.band_orientation(np.zeros((20, 30, 3)))["vertical"] is False)
 check("brightest_row follows rotation",
       _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=90) in (41, 42, 43)
       or _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=270) in (41, 42, 43))

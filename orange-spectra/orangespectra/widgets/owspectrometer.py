@@ -24,7 +24,8 @@ from Orange.widgets.widget import Msg, Output, OWWidget
 
 from .. import mplfonts  # noqa: E402, F401  (CJK-capable preview fonts)
 from ..spectrometer import (CAL_MODELS, CHANNELS, FLUORESCENT_LINES, ROTATIONS,
-                            brightest_row, extract_profile, find_profile_peaks,
+                            band_orientation, brightest_row, extract_profile,
+                            find_profile_peaks,
                             image_to_spectrum, load_rgb, pixel_to_wavelength,
                             rotate_rgb)
 from ..table_io import table_from_spectra
@@ -55,6 +56,11 @@ class OWSpectrometer(OWWidget):
         folded = Msg("The fit turns over inside the image; {n} pixel(s) past "
                      "the turning point were dropped so the spectrum does not "
                      "fold onto itself.")
+        vertical_band = Msg(
+            "The bright band is taller ({h} px) than wide ({w} px) in this "
+            "view, so the horizontal strip cuts *across* the spectrum and the "
+            "profile is just noise. Set Rotate to 90° or 270° (or back to 0° "
+            "if it was rotated). 光譜在這個角度是直的，請改旋轉。")
         stale_calibration = Msg(
             "None of the {n} calibration pixels sits on a detected peak of "
             "this image (nearest is {d:.0f} px away). The table was probably "
@@ -91,11 +97,14 @@ class OWSpectrometer(OWWidget):
         self._cursor_artists = []
 
         add_help(self,
-                 "選一張『相機＋繞射光柵』拍到的光譜照片 → 需要時先旋轉，讓色散方向"
-                 "變成水平 → 取一條水平帶、沿水平方向讀強度 → 用已知譜線把像素校準成"
-                 "波長（例如日光燈汞線 435.8 / 546.1 / 611.6 nm）→ 輸出強度對波長的"
-                 "光譜。可用 Peak cursor 游標對準峰、讀出像素與波長，並一鍵寫入校準表。"
-                 "\nWebcam-spectrometer image → calibrated spectrum.",
+                 "Choose a photo of a spectrum taken through a camera + diffraction "
+                 "grating. Rotate it if needed so the dispersion axis is horizontal, "
+                 "take a horizontal strip and read the intensity along it, then "
+                 "calibrate pixel -> wavelength from known lines (e.g. the "
+                 "fluorescent-lamp mercury lines 435.8 / 546.1 / 611.6 nm). The "
+                 "output is intensity vs wavelength. Use the Peak cursor to snap "
+                 "to a peak, read its pixel and wavelength, and write it into the "
+                 "calibration table with one click.",
                  "spectrometer")
 
         fbox = gui.widgetBox(self.controlArea, "Image")
@@ -288,7 +297,13 @@ class OWSpectrometer(OWWidget):
         """
         if not cal or not self._peaks:
             return
-        peaks = np.array([p["position"] for p in self._peaks])
+        # Only strong peaks count: at a low prominence setting the profile of
+        # a mis-rotated or noisy photo yields dozens of "peaks", and a stale
+        # table would always find one within tolerance by chance.
+        top = max(p["prominence"] for p in self._peaks)
+        strong = [p["position"] for p in self._peaks
+                  if p["prominence"] >= 0.2 * top]
+        peaks = np.array(strong)
         dists = [float(np.min(np.abs(peaks - px))) for px, _ in cal["points"]]
         if min(dists) > self.STALE_TOLERANCE_PX:
             self.Warning.stale_calibration(n=len(dists), d=min(dists))
@@ -456,6 +471,7 @@ class OWSpectrometer(OWWidget):
         self.Warning.exact_fit.clear()
         self.Warning.folded.clear()
         self.Warning.stale_calibration.clear()
+        self.Warning.vertical_band.clear()
         self.ax_img.clear()
         self.ax_spec.clear()
         self._cursor_artists = []
@@ -470,6 +486,9 @@ class OWSpectrometer(OWWidget):
 
         # The ROI is taken from the rotated image, so the preview must show it.
         view = rotate_rgb(self._rgb, self.rotate_deg)
+        shape = band_orientation(self._rgb, self.rotate_deg)
+        if shape["vertical"]:
+            self.Warning.vertical_band(h=shape["height"], w=shape["width"])
         h = view.shape[0]
         row_center = self.row_center_pct / 100.0 * h
         row_frac = self.row_frac_pct / 100.0

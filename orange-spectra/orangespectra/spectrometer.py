@@ -126,6 +126,32 @@ def brightest_row(rgb: np.ndarray, channel: str = "sum(RGB)",
     return int(np.argmax(smooth_profile(score, smooth)))
 
 
+def band_orientation(rgb: np.ndarray, rotate: int = 0) -> dict:
+    """Shape of the bright spectrum band in the (rotated) image.
+
+    Pixels brighter than half-way between the image background (median) and
+    its brightest features (99.9th percentile of total intensity) belong to
+    the band; its height and width are the row and column extents of those
+    pixels (1st-99th percentile, so a few hot pixels do not count).
+    ``vertical`` is True when the band is taller than wide, i.e. the
+    dispersion axis runs up/down and the horizontal ROI strip would cut
+    across it instead of along it -- the photo needs a 90/270 degree rotation.
+    """
+    img = channel_image(rotate_rgb(np.asarray(rgb, float), rotate), "sum(RGB)")
+    if img.size == 0:
+        return {"height": 0, "width": 0, "vertical": False}
+    bg, top = np.median(img), np.percentile(img, 99.9)
+    thr = bg + 0.5 * (top - bg)
+    if top <= bg:
+        return {"height": 0, "width": 0, "vertical": False}
+    rows, cols = np.nonzero(img >= thr)
+    if rows.size == 0:
+        return {"height": 0, "width": 0, "vertical": False}
+    h = int(np.percentile(rows, 99) - np.percentile(rows, 1)) + 1
+    w = int(np.percentile(cols, 99) - np.percentile(cols, 1)) + 1
+    return {"height": h, "width": w, "vertical": h > w}
+
+
 def smooth_profile(profile, window: int = 1) -> np.ndarray:
     """Moving-average smoothing with edge padding; ``window <= 1`` is a no-op."""
     y = np.asarray(profile, float)

@@ -575,6 +575,19 @@ class TestOWSpectrometer(WidgetTest):
         w._recompute()
         self.assertFalse(w.Warning.stale_calibration.is_shown())
 
+    def test_vertical_band_warns(self):
+        w = self.widget
+        img = np.zeros((300, 200, 3))
+        img[40:260, 95:105, :] = 200.0        # spectrum runs top-to-bottom
+        w._rgb = img
+        w.cal_text = ""
+        w.rotate_idx = 0
+        w._recompute()
+        self.assertTrue(w.Warning.vertical_band.is_shown())
+        w.rotate_idx = 1                      # 90 deg: now horizontal
+        w._recompute()
+        self.assertFalse(w.Warning.vertical_band.is_shown())
+
     def test_render_failure_updates_status(self):
         w = self.widget
         w.cal_text = "100=435.8, 500=611.6"

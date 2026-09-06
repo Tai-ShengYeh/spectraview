@@ -4,6 +4,25 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.7.5] - 2026-09-07
+
+### Added
+
+- Spectrometer: a warning when the bright band is taller than wide in the
+  current view — the horizontal strip would cut across the spectrum and the
+  profile is noise — telling the user to change Rotate. This was the reason
+  "the photo shows sharp lines but the program shows no peaks".
+
+### Changed
+
+- All widgets: the in-widget "How to use" box is now in English only
+  (the Chinese tutorial remains at docs/orange.html; the box's button opens
+  the English tutorial page).
+- Spectrometer: the stale-calibration check only counts strong peaks
+  (prominence ≥ 20 % of the strongest), so a noisy or mis-rotated profile
+  with dozens of weak "peaks" can no longer mask a table written for
+  another photo.
+
 ## [0.7.4] - 2026-09-07
 
 ### Fixed

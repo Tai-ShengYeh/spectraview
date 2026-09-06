@@ -68,10 +68,11 @@ class OWMergeSpectra(OWWidget):
         self._inputs = {}                     # id -> Table
 
         add_help(self,
-                 "把多個光譜來源（多個 Import Spectrum URL、File…）接到 Spectra 輸入"
-                 "→ 疊在同一張圖，並輸出成一個合併 Table（每列一條光譜、共同波段），"
-                 "可再接 Similarity / Library / PLS-DA。可選正規化與顯示堆疊位移。\n"
-                 "Overlay multiple spectra into one plot & combined Table.", "merge")
+                 "Connect several spectra sources (multiple Import Spectrum URL, "
+                 "File, ...) to the Spectra input. They are overlaid on one plot "
+                 "and output as a single merged Table (one spectrum per row on a "
+                 "shared grid) ready for Similarity / Library / PLS-DA. Optional "
+                 "normalization and a display offset for stacking.", "merge")
 
         box = gui.widgetBox(self.controlArea, "Display / output")
         gui.comboBox(box, self, "normalization", label="Normalize each:",

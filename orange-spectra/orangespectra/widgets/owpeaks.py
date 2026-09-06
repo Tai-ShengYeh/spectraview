@@ -49,10 +49,11 @@ class OWPeakFinder(OWWidget):
         self._spectra = []
 
         add_help(self,
-                 "接光譜（Import Spectrum URL 或任何欄名＝波數的 Table）→ 調高度/"
-                 "顯著度門檻 → 圖上自動標記波峰位置，Peaks 輸出表（position, height, "
-                 "FWHM, prominence, area）可接 Data Table。\n"
-                 "Find & label peaks; outputs a peak table.", "peaks")
+                 "Connect spectra (Import Spectrum URL or any Table whose column "
+                 "names are wavenumbers), adjust the height / prominence "
+                 "thresholds, and peaks are labelled on the plot. The Peaks output "
+                 "(position, height, FWHM, prominence, area) feeds a Data Table.",
+                 "peaks")
 
         box = gui.widgetBox(self.controlArea, "Detection")
         gui.doubleSpin(box, self, "min_height", 0.0, 100.0, 0.5,

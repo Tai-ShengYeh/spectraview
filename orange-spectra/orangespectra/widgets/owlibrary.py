@@ -49,14 +49,14 @@ class OWSpectralLibrary(OWWidget):
         self._queries: list[dict] = []
 
         add_help(self,
-                 "① 參考譜接 Spectra 輸入 → Add to library；可 Save/Load .speclib"
-                 "（與 SpectraView 桌面版互通）。Add built-in 可載入內建庫："
-                 "糖類/添加物 NIR 庫（9 條，隨套件附、離線可用）與 UCL 55 種"
-                 "顏料拉曼庫（第一次使用向 UCL 官網下載並快取到本機，"
-                 "本套件不隨附該資料）。② 未知譜接 Query → Hits 輸出排名。\n"
-                 "Build a reference library and search unknowns against it; "
-                 "built-ins: a bundled sugars NIR library and the UCL pigment "
-                 "library (fetched from UCL's site on first use).",
+                 "1. Connect reference spectra to the Spectra input and press Add "
+                 "to library; Save/Load .speclib files (interoperable with the "
+                 "SpectraView desktop app). Add built-in loads a bundled library: "
+                 "the sugars & food additives NIR library (9 spectra, ships with "
+                 "the package, works offline) or the UCL Raman library of 55 "
+                 "pigments (downloaded from UCL's own site on first use and cached "
+                 "locally; not redistributed with this package). "
+                 "2. Connect an unknown to Query; Hits outputs the ranked matches.",
                  "library")
 
         inbox = gui.widgetBox(self.controlArea, "Build")

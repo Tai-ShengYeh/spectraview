@@ -39,12 +39,11 @@ class OWSpectraSimilarity(OWWidget):
         self._data = None
         self._refs = None
         add_help(self,
-                 "接 Data（和選用的 References）→ 算每一對光譜的四種相似度："
-                 "correlation / cosine / SAM / Euclidean。只接 Data 時做組內兩兩互比。"
-                 "Scores 接 Data Table 看排名；Similarity Matrix（Sort by 選的指標）"
-                 "接 Orange 的 Heat Map 畫相似度熱圖。"
-                 "\nScores each spectrum pair by 4 metrics; the Similarity Matrix "
-                 "output feeds Orange's Heat Map.",
+                 "Connect Data (and optionally References): every pair of spectra "
+                 "is scored by four metrics - correlation / cosine / SAM / "
+                 "Euclidean. With Data only, all pairs within Data are compared. "
+                 "Scores -> Data Table for the ranking; Similarity Matrix (the "
+                 "'Sort by' metric) -> Orange's Heat Map for a similarity heatmap.",
                  "similarity")
         box = gui.widgetBox(self.controlArea, "Options")
         gui.comboBox(box, self, "rank_by", label="Sort scores by:",
