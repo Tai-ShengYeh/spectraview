@@ -55,6 +55,11 @@ class OWSpectrometer(OWWidget):
         folded = Msg("The fit turns over inside the image; {n} pixel(s) past "
                      "the turning point were dropped so the spectrum does not "
                      "fold onto itself.")
+        stale_calibration = Msg(
+            "None of the {n} calibration pixels sits on a detected peak of "
+            "this image (nearest is {d:.0f} px away). The table was probably "
+            "written for another photo or rotation — clear it and re-assign "
+            "the lines here. 校準表可能來自另一張照片或另一個旋轉角度。")
 
     class Information(OWWidget.Information):
         no_image = Msg("Choose a spectrum photo to read.")
@@ -270,6 +275,24 @@ class OWSpectrometer(OWWidget):
         self._recompute()
 
     # ------------------------------------------------------- peak / cursor
+    STALE_TOLERANCE_PX = 6
+
+    def _check_calibration_matches_peaks(self, cal):
+        """Warn when the calibration pixels match none of this image's peaks.
+
+        The calibration table persists across photos and rotations, so the
+        classic slip is fitting last week's pixel=nm pairs to a new picture.
+        Every pair is checked against the detected peaks; if not a single one
+        lands within STALE_TOLERANCE_PX of a peak, the table is almost
+        certainly not for this image.
+        """
+        if not cal or not self._peaks:
+            return
+        peaks = np.array([p["position"] for p in self._peaks])
+        dists = [float(np.min(np.abs(peaks - px))) for px, _ in cal["points"]]
+        if min(dists) > self.STALE_TOLERANCE_PX:
+            self.Warning.stale_calibration(n=len(dists), d=min(dists))
+
     def _find_peaks(self):
         """Detect peaks in the current ROI profile (pixel coordinates)."""
         y = self._profile
@@ -402,6 +425,7 @@ class OWSpectrometer(OWWidget):
         except Exception as exc:                       # noqa: BLE001
             self.Error.render_failed(str(exc))
             self._safe_blank_plot(str(exc))
+            self.info_label.setText("Calibration error - see the message above.")
             self.Outputs.spectrum.send(None)
 
     def _safe_blank_plot(self, reason: str = ""):
@@ -431,6 +455,7 @@ class OWSpectrometer(OWWidget):
         self.Error.render_failed.clear()
         self.Warning.exact_fit.clear()
         self.Warning.folded.clear()
+        self.Warning.stale_calibration.clear()
         self.ax_img.clear()
         self.ax_spec.clear()
         self._cursor_artists = []
@@ -510,6 +535,7 @@ class OWSpectrometer(OWWidget):
                     + 4))
         self.cursor_px = int(np.clip(self.cursor_px, 0, max(0, n - 1)))
         self._find_peaks()
+        self._check_calibration_matches_peaks(cal)
 
         # top: the (rotated) image with the ROI strip drawn
         self.ax_img.imshow(np.clip(view / 255.0, 0, 1), aspect="auto")

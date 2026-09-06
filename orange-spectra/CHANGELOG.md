@@ -4,6 +4,26 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.7.4] - 2026-09-07
+
+### Fixed
+
+- Spectrometer: a quadratic calibration near its turning point maps
+  neighbouring pixels to wavelengths that agree to 6 significant digits, and
+  building the output table then failed with Orange's "All variables in the
+  domain should have unique names". Column names now get more digits (or an
+  ordinal suffix) until they are unique.
+- Spectrometer: the status line no longer shows stale text ("No image." or
+  the previous R²) after a render failure.
+
+### Added
+
+- Spectrometer: a warning when none of the calibration pixels lies within
+  6 px of a detected peak of the current image — the calibration table
+  persists across photos and rotations, so this catches "last photo's
+  pixel=nm pairs applied to a new picture", which was the actual cause of
+  the failure above.
+
 ## [0.7.3] - 2026-09-06
 
 ### Added

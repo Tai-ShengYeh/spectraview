@@ -553,6 +553,45 @@ class TestOWSpectrometer(WidgetTest):
         self.widget._recompute()
         self.assertTrue(self.widget.Error.bad_calibration.is_shown())
 
+    def test_near_duplicate_wavelengths_still_make_a_table(self):
+        # A quadratic fit near its turning point maps neighbouring pixels to
+        # wavelengths equal to 6 significant digits; the output table must
+        # still have unique column names instead of crashing in Orange.
+        from orangespectra.table_io import unique_axis_names
+        x = np.array([500.0, 500.0000001, 500.0000002, 600.0])
+        names = unique_axis_names(x)
+        self.assertEqual(len(set(names)), 4)
+        t = table_from_spectra([core.make_spectrum(x, np.ones(4), name="s")])
+        self.assertEqual(len(t.domain.attributes), 4)
+
+    def test_stale_calibration_warns(self):
+        w = self.widget
+        w.cal_text = ""
+        w._recompute()                     # peaks at ~100 and ~500
+        w.cal_text = "300=435.8, 620=611.6"  # nowhere near a peak
+        w._recompute()
+        self.assertTrue(w.Warning.stale_calibration.is_shown())
+        w.cal_text = "100=435.8, 500=611.6"
+        w._recompute()
+        self.assertFalse(w.Warning.stale_calibration.is_shown())
+
+    def test_render_failure_updates_status(self):
+        w = self.widget
+        w.cal_text = "100=435.8, 500=611.6"
+        w._recompute()
+        w.table_from_spectra = None
+        import orangespectra.widgets.owspectrometer as mod
+        orig = mod.table_from_spectra
+        mod.table_from_spectra = lambda *a, **k: (_ for _ in ()).throw(
+            ValueError("boom"))
+        try:
+            w._recompute()
+        finally:
+            mod.table_from_spectra = orig
+        self.assertTrue(w.Error.render_failed.is_shown())
+        self.assertIn("error", w.info_label.text().lower())
+        self.assertIsNone(self.get_output(w.Outputs.spectrum))
+
     def test_same_wavelength_twice_is_a_clear_error(self):
         # The classic slip: both peaks written with lambda still on 546.1.
         self.widget.cal_text = "100=546.1, 500=546.1"

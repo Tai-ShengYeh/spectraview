@@ -13,6 +13,28 @@ from Orange.data import ContinuousVariable, Domain, StringVariable, Table
 from .core import make_spectrum, merge_spectra, merge_spectra_union
 
 
+def unique_axis_names(values) -> list:
+    """Format axis values as column names that are guaranteed unique.
+
+    Six significant digits are enough for real wavelength grids, but a
+    polynomial pixel->nm calibration near its turning point maps neighbouring
+    pixels to values that only differ in the 7th digit; Orange refuses a
+    domain with duplicate names. Precision is raised until the names are
+    unique, and as a last resort an ordinal suffix is added.
+    """
+    vals = [float(v) for v in values]
+    for digits in (6, 8, 10, 12):
+        names = [f"{v:.{digits}g}" for v in vals]
+        if len(set(names)) == len(names):
+            return names
+    seen, out = {}, []
+    for n in names:
+        k = seen.get(n, 0)
+        seen[n] = k + 1
+        out.append(n if k == 0 else f"{n} ({k + 1})")
+    return out
+
+
 def table_from_spectra(spectra: list, x_label: str = "",
                        union: bool = False) -> Table:
     """Build a Table (rows = spectra) on a shared x-grid.
@@ -23,7 +45,7 @@ def table_from_spectra(spectra: list, x_label: str = "",
     default keeps the historical overlap-cropping behaviour.
     """
     gx, ys = (merge_spectra_union if union else merge_spectra)(spectra)
-    attrs = [ContinuousVariable.make(f"{v:.6g}") for v in gx]
+    attrs = [ContinuousVariable.make(n) for n in unique_axis_names(gx)]
     metas = [StringVariable.make("name"), StringVariable.make("source")]
     domain = Domain(attrs, metas=metas)
     X = np.vstack([np.asarray(y, float) for y in ys])
