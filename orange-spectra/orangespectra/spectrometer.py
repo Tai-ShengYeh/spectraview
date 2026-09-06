@@ -106,6 +106,21 @@ def extract_profile(rgb: np.ndarray, channel: str = "luminance",
     return img[lo:hi, :].mean(axis=0)
 
 
+def brightest_row(rgb: np.ndarray, channel: str = "luminance",
+                  rotate: int = 0, smooth: int = 5) -> int:
+    """Row index (in the rotated image) where the spectrum band is brightest.
+
+    A hand-held grating photo is mostly black with one thin bright band; the
+    row whose mean intensity peaks is where the ROI strip belongs. ``smooth``
+    (rows) suppresses single hot pixels before the argmax.
+    """
+    img = channel_image(rotate_rgb(np.asarray(rgb, float), rotate), channel)
+    if img.size == 0:
+        return 0
+    rows = smooth_profile(img.mean(axis=1), smooth)
+    return int(np.argmax(rows))
+
+
 def smooth_profile(profile, window: int = 1) -> np.ndarray:
     """Moving-average smoothing with edge padding; ``window <= 1`` is a no-op."""
     y = np.asarray(profile, float)
@@ -223,6 +238,14 @@ def fit_calibration(pixels, wavelengths, model: str = "linear"):
     wl = np.asarray(wavelengths, float)
     if px.size != wl.size or px.size < 2:
         raise ValueError("Calibration needs at least 2 (pixel, wavelength) points.")
+    if np.unique(px).size < 2:
+        raise ValueError("Calibration needs at least 2 different pixel positions.")
+    if np.unique(wl).size < 2:
+        # Typically every peak was written with the same lambda still selected
+        # in the combo box; the fit would be flat and the axis collapses.
+        raise ValueError(
+            f"every calibration line has the same wavelength ({wl[0]:g} nm); "
+            "give each line its own wavelength.")
     degree = dict(CAL_MODELS).get(model, 1)
     degree = min(degree, px.size - 1)
     coeffs = np.polyfit(px, wl, degree)

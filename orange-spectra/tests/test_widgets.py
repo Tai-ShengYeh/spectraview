@@ -553,6 +553,50 @@ class TestOWSpectrometer(WidgetTest):
         self.widget._recompute()
         self.assertTrue(self.widget.Error.bad_calibration.is_shown())
 
+    def test_same_wavelength_twice_is_a_clear_error(self):
+        # The classic slip: both peaks written with lambda still on 546.1.
+        self.widget.cal_text = "100=546.1, 500=546.1"
+        self.widget._recompute()
+        self.assertTrue(self.widget.Error.bad_calibration.is_shown())
+        self.assertIn("546.1", str(self.widget.Error.bad_calibration))
+        self.assertFalse(self.widget.Error.render_failed.is_shown())
+        self.assertIsNone(self.get_output(self.widget.Outputs.spectrum))
+
+    def test_assign_cursor_refuses_duplicates(self):
+        w = self.widget
+        w.cal_text = ""
+        w._recompute()
+        w.cursor_px = 100
+        w.assign_nm = "435.8"
+        w._assign_cursor()
+        self.assertIn("=435.8", w.cal_text)
+        # same lambda on another peak -> refused, table unchanged
+        before = w.cal_text
+        w.cursor_px = 500
+        w._assign_cursor()
+        self.assertEqual(w.cal_text, before)
+        self.assertTrue(w.Error.bad_calibration.is_shown())
+        # same peak again with a new lambda -> refused too
+        w.cursor_px = 100
+        w.assign_nm = "611.6"
+        w._assign_cursor()
+        self.assertEqual(w.cal_text, before)
+        # a genuinely new line is accepted and the fit succeeds
+        w.cursor_px = 500
+        w._assign_cursor()
+        self.assertIn("=611.6", w.cal_text)
+        self.assertFalse(w.Error.bad_calibration.is_shown())
+        self.assertIsNotNone(self.get_output(w.Outputs.spectrum))
+
+    def test_auto_centre_finds_the_band(self):
+        w = self.widget
+        img = np.zeros((100, 640, 3))
+        img[70:74, :, :] = self.widget._rgb[:4, :, :]     # band at ~72 %
+        w._rgb = img
+        w.row_center_pct = 10
+        w._auto_centre()
+        self.assertTrue(68 <= w.row_center_pct <= 76, w.row_center_pct)
+
     def test_no_image(self):
         w = self.create_widget(OWSpectrometer) if False else self.widget
         w._rgb = None

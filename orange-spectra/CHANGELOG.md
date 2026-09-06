@@ -4,6 +4,26 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [0.7.3] - 2026-09-06
+
+### Added
+
+- Spectrometer: **Auto-centre strip** button — moves the ROI strip onto the
+  brightest row of the (rotated) photo, so a thin spectrum band in a mostly
+  black hand-held grating photo is found without dragging the slider.
+- Spectrometer: the Channel combo explains when to prefer `blue` /
+  `sum(RGB)` (violet/blue lines such as Hg 405 / 436 nm are nearly invisible
+  in `luminance`, which weights blue at only 11 %).
+
+### Fixed
+
+- Spectrometer: writing every peak into the calibration table with `λ =`
+  still on the previous value produced a flat fit and the bare
+  "calibration error" placeholder. The widget now refuses to add a peak whose
+  wavelength (or pixel) is already in the table, `fit_calibration` rejects
+  identical wavelengths / identical pixels with a specific message, and the
+  placeholder plot echoes the actual reason.
+
 ## [0.7.2] - 2026-08-25
 
 ### Added

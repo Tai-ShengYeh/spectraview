@@ -6,6 +6,7 @@ profile along the columns, and calibrate pixel -> wavelength from known
 reference lines. Outputs an Orange spectrum Table.
 """
 import os
+import textwrap
 
 import matplotlib
 import numpy as np
@@ -23,7 +24,7 @@ from Orange.widgets.widget import Msg, Output, OWWidget
 
 from .. import mplfonts  # noqa: E402, F401  (CJK-capable preview fonts)
 from ..spectrometer import (CAL_MODELS, CHANNELS, FLUORESCENT_LINES, ROTATIONS,
-                            extract_profile, find_profile_peaks,
+                            brightest_row, extract_profile, find_profile_peaks,
                             image_to_spectrum, load_rgb, pixel_to_wavelength,
                             rotate_rgb)
 from ..table_io import table_from_spectra
@@ -105,9 +106,17 @@ class OWSpectrometer(OWWidget):
         rbox = gui.widgetBox(self.controlArea, "Strip (ROI) & channel")
         gui.comboBox(rbox, self, "channel_idx", label="Channel:",
                      items=CHANNELS, callback=self._recompute,
-                     orientation="horizontal")
-        gui.hSlider(rbox, self, "row_center_pct", minValue=0, maxValue=100,
-                    label="Strip centre (% h):", callback=self._recompute)
+                     orientation="horizontal",
+                     tooltip="luminance 只給藍 11% 權重，紫/藍端的線（405、436 nm）"
+                             "會被壓扁；要看紫端請用 blue 或 sum(RGB)，紅端用 red。"
+                             "sum(RGB) 是最不偏心的通用選擇。")
+        self.row_center_ctrl = gui.hSlider(
+            rbox, self, "row_center_pct", minValue=0, maxValue=100,
+            label="Strip centre (% h):", callback=self._recompute)
+        gui.button(rbox, self, "自動對準亮帶 Auto-centre strip",
+                   callback=self._auto_centre,
+                   tooltip="把 ROI 中心移到（旋轉後）平均最亮的那一列；"
+                           "照片大多是黑的、光譜只佔一條細帶時特別好用。")
         gui.hSlider(rbox, self, "row_frac_pct", minValue=1, maxValue=100,
                     label="Strip height (% h):", callback=self._recompute)
         gui.checkBox(rbox, self, "flip", "Flip (reverse the axis)",
@@ -206,7 +215,12 @@ class OWSpectrometer(OWWidget):
     # Anything outside this is a typo, not a spectrum line (visible ≈ 380-780).
     NM_MIN, NM_MAX = 10.0, 100000.0
 
-    def _parse_calibration(self):
+    def _parse_calibration(self, strict: bool = True):
+        """Parse ``cal_text`` into (pixel, nm) pairs.
+
+        ``strict=False`` skips the "at least 2 distinct" checks so a partial
+        table (one line so far) can still be inspected.
+        """
         pts = []
         for tok in self.cal_text.replace(";", ",").replace("\n", ",").split(","):
             tok = tok.strip()
@@ -230,9 +244,30 @@ class OWSpectrometer(OWWidget):
                 raise ValueError(f"pixel {px:g} is far outside the image "
                                  f"(0-{self._profile.size - 1})")
             pts.append((px, nm))
+        if not strict:
+            return pts
         if pts and len({p for p, _ in pts}) < 2:
             raise ValueError("need at least 2 different pixel positions")
+        if pts and len({w for _, w in pts}) < 2:
+            raise ValueError(
+                f"every line is set to {pts[0][1]:g} nm — change 'λ =' before "
+                "pressing 寫進校準表 for each peak (每條線要有自己的波長)")
         return pts
+
+    def _auto_centre(self):
+        """Move the ROI strip onto the brightest row of the (rotated) image."""
+        if self._rgb is None:
+            return
+        row = brightest_row(self._rgb, channel=CHANNELS[self.channel_idx],
+                            rotate=self.rotate_deg)
+        h = rotate_rgb(self._rgb, self.rotate_deg).shape[0]
+        self.row_center_pct = int(round(100.0 * row / max(h - 1, 1)))
+        ctrl = getattr(self, "row_center_ctrl", None)
+        sl = ctrl if isinstance(ctrl, QSlider) else (
+            ctrl.findChild(QSlider) if ctrl is not None else None)
+        if sl is not None:
+            sl.setValue(int(self.row_center_pct))
+        self._recompute()
 
     # ------------------------------------------------------- peak / cursor
     def _find_peaks(self):
@@ -310,6 +345,24 @@ class OWSpectrometer(OWWidget):
             self.Error.bad_calibration(f"'{self.assign_nm}' is not a number")
             return
         sub, _ = self._cursor_position()
+        # Refuse the two classic slips instead of producing a flat fit later:
+        # the same peak written twice, or a new peak with the lambda combo
+        # still on the previous line's value.
+        try:
+            existing = self._parse_calibration(strict=False)
+        except ValueError:
+            existing = []
+        for px, w in existing:
+            if abs(px - sub) < 1.0:
+                self.Error.bad_calibration(
+                    f"pixel {sub:.1f} is already in the table ({w:g} nm); "
+                    "move the cursor to another peak")
+                return
+            if w == nm:
+                self.Error.bad_calibration(
+                    f"{nm:g} nm is already assigned to pixel {px:.1f}; change "
+                    "'λ =' to this peak's wavelength first (先改波長再寫入)")
+                return
         entry = f"{sub:.2f}={nm:g}"
         current = (self.cal_text or "").strip().rstrip(",")
         self.cal_text = f"{current}, {entry}" if current else entry
@@ -348,19 +401,26 @@ class OWSpectrometer(OWWidget):
             self._recompute_inner()
         except Exception as exc:                       # noqa: BLE001
             self.Error.render_failed(str(exc))
-            self._safe_blank_plot()
+            self._safe_blank_plot(str(exc))
             self.Outputs.spectrum.send(None)
 
-    def _safe_blank_plot(self):
-        """Reset the figure to a drawable state after a failure."""
+    def _safe_blank_plot(self, reason: str = ""):
+        """Reset the figure to a drawable state after a failure.
+
+        ``reason`` is echoed under the "calibration error" title so the
+        cause is visible even when the widget's error bar is out of view.
+        """
         try:
             self.ax_img.clear()
             self.ax_spec.clear()
             self._cursor_artists = []
             self.ax_spec.set_xlim(0, 1)
             self.ax_spec.set_ylim(0, 1)
-            self.ax_spec.text(0.5, 0.5, "calibration error", ha="center",
-                              va="center", color="#c44e52",
+            text = "calibration error"
+            if reason:
+                text += "\n" + textwrap.fill(str(reason), 70)
+            self.ax_spec.text(0.5, 0.5, text, ha="center",
+                              va="center", color="#c44e52", fontsize=9,
                               transform=self.ax_spec.transAxes)
             self.canvas.draw_idle()
         except Exception:                              # noqa: BLE001
@@ -393,6 +453,7 @@ class OWSpectrometer(OWWidget):
             calib = self._parse_calibration()
         except ValueError as exc:
             self.Error.bad_calibration(str(exc))
+            self.info_label.setText("Calibration error - see the message above.")
             self.Outputs.spectrum.send(None)
             self.canvas.draw_idle()
             return
@@ -406,6 +467,7 @@ class OWSpectrometer(OWWidget):
                 or "spectrum", flip=self.flip, rotate=self.rotate_deg)
         except ValueError as exc:
             self.Error.bad_calibration(str(exc))
+            self.info_label.setText("Calibration error - see the message above.")
             self.Outputs.spectrum.send(None)
             self.canvas.draw_idle()
             return
@@ -464,9 +526,11 @@ class OWSpectrometer(OWWidget):
 
         # bottom: the extracted spectrum
         if spec["x"].size < 2 or not np.all(np.isfinite(spec["x"])):
-            self.Error.bad_calibration(
-                "the fit maps the image outside a drawable range")
-            self._safe_blank_plot()
+            reason = ("the fit maps the image outside a drawable range "
+                      "(check that pixels increase with wavelength and no "
+                      "two lines share a value)")
+            self.Error.bad_calibration(reason)
+            self._safe_blank_plot(reason)
             self.Outputs.spectrum.send(None)
             return
         self.ax_spec.plot(spec["x"], spec["y"], color="#4c72b0", lw=1.0)

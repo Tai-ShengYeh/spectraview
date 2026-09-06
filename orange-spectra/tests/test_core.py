@@ -390,6 +390,25 @@ try:
     check("too few calibration points raises", False)
 except ValueError:
     check("too few calibration points raises", True)
+# Every peak written with the lambda combo still on 546.1 -> flat fit.
+try:
+    _spm.fit_calibration([100, 500], [546.1, 546.1])
+    check("identical wavelengths raise a clear error", False)
+except ValueError as _e:
+    check("identical wavelengths raise a clear error",
+          "same wavelength" in str(_e))
+try:
+    _spm.fit_calibration([100, 100], [435.8, 546.1])
+    check("identical pixels raise", False)
+except ValueError:
+    check("identical pixels raise", True)
+# Auto-centre: a thin bright band in an otherwise black photo.
+_dark = np.zeros((60, 80, 3))
+_dark[41:44, :, :] = 200.0
+check("brightest_row finds the band", _spm.brightest_row(_dark) in (41, 42, 43))
+check("brightest_row follows rotation",
+      _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=90) in (41, 42, 43)
+      or _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=270) in (41, 42, 43))
 
 print("== split_fields (delimiter / whitespace / comments) ==")
 check("comma", core.split_fields("100.0,2.5") == ["100.0", "2.5"])
