@@ -106,19 +106,24 @@ def extract_profile(rgb: np.ndarray, channel: str = "luminance",
     return img[lo:hi, :].mean(axis=0)
 
 
-def brightest_row(rgb: np.ndarray, channel: str = "luminance",
+def brightest_row(rgb: np.ndarray, channel: str = "sum(RGB)",
                   rotate: int = 0, smooth: int = 5) -> int:
-    """Row index (in the rotated image) where the spectrum band is brightest.
+    """Row index (in the rotated image) where the spectrum band lies.
 
-    A hand-held grating photo is mostly black with one thin bright band; the
-    row whose mean intensity peaks is where the ROI strip belongs. ``smooth``
-    (rows) suppresses single hot pixels before the argmax.
+    Each row is scored by its 99th-percentile *total* (summed RGB) intensity,
+    i.e. by the brightest features it contains rather than by its mean.
+    Scoring the row mean lets a large, dim lens flare beat a thin, bright
+    spectrum band -- and a single colour channel makes that worse, because
+    the band's red or blue part is short. ``channel`` is accepted for API
+    symmetry with :func:`extract_profile` but has no effect on the choice of
+    row. ``smooth`` (rows) suppresses single hot rows.
     """
-    img = channel_image(rotate_rgb(np.asarray(rgb, float), rotate), channel)
+    del channel  # see docstring: the band is located on total intensity
+    img = channel_image(rotate_rgb(np.asarray(rgb, float), rotate), "sum(RGB)")
     if img.size == 0:
         return 0
-    rows = smooth_profile(img.mean(axis=1), smooth)
-    return int(np.argmax(rows))
+    score = np.percentile(img, 99, axis=1)
+    return int(np.argmax(smooth_profile(score, smooth)))
 
 
 def smooth_profile(profile, window: int = 1) -> np.ndarray:

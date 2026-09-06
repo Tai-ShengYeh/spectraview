@@ -15,6 +15,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](ht
   ordinal suffix) until they are unique.
 - Spectrometer: the status line no longer shows stale text ("No image." or
   the previous R²) after a render failure.
+- Spectrometer: **Auto-centre strip** scored rows by their mean intensity in
+  the selected channel, so a broad, dim lens flare could out-score the thin
+  spectrum band (with `red` selected it landed on the flare at the bottom of
+  a rotated photo). Rows are now scored by their brightest (99th-percentile) total-RGB
+  pixels, which favours a bright band over a broad haze regardless of the
+  profile channel.
 
 ### Added
 

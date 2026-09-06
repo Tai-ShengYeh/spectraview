@@ -406,6 +406,15 @@ except ValueError:
 _dark = np.zeros((60, 80, 3))
 _dark[41:44, :, :] = 200.0
 check("brightest_row finds the band", _spm.brightest_row(_dark) in (41, 42, 43))
+# A broad dim lens flare must not beat a thin bright spectrum band, in any
+# channel (the row *mean* of the flare is larger; its brightest pixels are not).
+_flare = np.zeros((200, 300, 3))
+_flare[120:180, :, :] = 40.0               # 60 rows of dim haze, full width
+_flare[30:33, 100:180, :] = [60.0, 200.0, 220.0]   # thin band, red channel weak
+check("brightest_row prefers the thin band over a broad flare",
+      _spm.brightest_row(_flare) in (30, 31, 32))
+check("brightest_row ignores the profile channel",
+      _spm.brightest_row(_flare, channel="red") in (30, 31, 32))
 check("brightest_row follows rotation",
       _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=90) in (41, 42, 43)
       or _spm.brightest_row(_dark.transpose(1, 0, 2), rotate=270) in (41, 42, 43))
