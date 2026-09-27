@@ -1012,3 +1012,120 @@ def plsda_fit(X, labels, n_components: int = 2) -> dict:
             "coef": B, "x_mean": x_mean, "y_mean": y_mean,
             "y_hat": y_hat, "predicted": predicted, "accuracy": accuracy,
             "confusion": confusion, "explained_x_variance": xvar}
+
+
+# ============================================================ PLS regression
+def pls_regression_fit(X, Y, n_components: int = 2, scale: bool = False) -> dict:
+    """PLS2 regression (NIPALS) for quantitative calibration, with VIP.
+
+    Same NIPALS engine and VIP definition as ``plsda_fit`` (this is a
+    standalone copy rather than a shared helper, so refactoring one can never
+    silently change the other's output). Y is one or more *continuous*
+    targets (e.g. % aspartame, acetic acid concentration) instead of one-hot
+    classes.
+
+    Mean-centering is always applied. If ``scale=True``, X and Y are also
+    divided by their (ddof=1) column standard deviation before fitting —
+    matching ``sklearn.cross_decomposition.PLSRegression(scale=True)``, which
+    is scikit-learn's default. Coefficients and the intercept are returned in
+    the *original* units regardless of ``scale``, so ``y_fitted == X @
+    coefficients + intercept`` always holds on the raw input.
+
+    VIP_j = sqrt(p * sum_a(ssy_a * (w_ja/||w_a||)^2) / sum_a ssy_a), where
+    ssy_a is summed across all targets for the combined VIP, or restricted to
+    one target's share of ssy_a for that target's ``vip_per_target`` column.
+
+    Returns a dict: n_components (A), scores T (n x A), x_loadings P (p x A),
+    weights W (p x A), y_loadings Q (m x A), coefficients (p x m, original
+    units), intercept (m,), vip (p,) combined across all targets,
+    vip_per_target (p x m), y_fitted (n x m), rmsec (m,), r2 (m,), x_mean,
+    y_mean, x_std, y_std.
+    """
+    X = np.asarray(X, float)
+    Y = np.asarray(Y, float)
+    if Y.ndim == 1:
+        Y = Y[:, None]
+    if X.ndim != 2 or Y.ndim != 2 or X.shape[0] != Y.shape[0]:
+        raise ValueError(
+            "X must be (n_samples, n_features) and Y (n_samples[, n_targets]) "
+            "with the same number of samples.")
+    n, p = X.shape
+    m = Y.shape[1]
+    if n < 2:
+        raise ValueError("Need at least 2 samples.")
+    max_A = min(n - 1, p)
+    if not (1 <= int(n_components) <= max_A):
+        raise ValueError(
+            f"n_components must be between 1 and {max_A} (= min(n_samples-1, "
+            f"n_features)), got {n_components}.")
+    A = int(n_components)
+
+    x_mean, y_mean = X.mean(axis=0), Y.mean(axis=0)
+    if scale:
+        x_std = X.std(axis=0, ddof=1)
+        y_std = Y.std(axis=0, ddof=1)
+        x_std = np.where(x_std > _EPS, x_std, 1.0)
+        y_std = np.where(y_std > _EPS, y_std, 1.0)
+    else:
+        x_std = np.ones(p)
+        y_std = np.ones(m)
+    Xc = (X - x_mean) / x_std
+    Yc = (Y - y_mean) / y_std
+
+    T = np.zeros((n, A))
+    W = np.zeros((p, A))
+    P = np.zeros((p, A))
+    Q = np.zeros((m, A))
+    Xa, Ya = Xc.copy(), Yc.copy()
+    for a in range(A):
+        u = Ya[:, int(np.argmax(Ya.var(axis=0)))]
+        for _ in range(500):
+            w = Xa.T @ u
+            w /= (np.linalg.norm(w) or 1.0)
+            t = Xa @ w
+            q = Ya.T @ t / max(t @ t, _EPS)
+            u_new = Ya @ q / max(q @ q, _EPS)
+            if np.linalg.norm(u_new - u) <= 1e-10 * max(np.linalg.norm(u), 1.0):
+                u = u_new
+                break
+            u = u_new
+        t = Xa @ w
+        pa = Xa.T @ t / max(t @ t, _EPS)
+        q = Ya.T @ t / max(t @ t, _EPS)
+        Xa = Xa - np.outer(t, pa)
+        Ya = Ya - np.outer(t, q)
+        T[:, a], W[:, a], P[:, a], Q[:, a] = t, w, pa, q
+
+    # Regression coefficients in the (possibly scaled) working units, then
+    # rescaled back to original units: Y = y_mean + y_std * (((X - x_mean)
+    # / x_std) @ B), i.e. coefficients[j,k] = B[j,k] * y_std[k] / x_std[j].
+    B = W @ np.linalg.solve(P.T @ W, Q.T)
+    coefficients = B * (y_std[None, :] / x_std[:, None])
+    intercept = y_mean - x_mean @ coefficients
+    y_fitted = X @ coefficients + intercept
+
+    resid = Y - y_fitted
+    sse = (resid ** 2).sum(axis=0)
+    sst = ((Y - y_mean) ** 2).sum(axis=0)
+    sst = np.where(sst > _EPS, sst, _EPS)
+    r2 = 1.0 - sse / sst
+    rmsec = np.sqrt(sse / n)
+
+    # VIP: combined (all targets pooled) and per-target (that target's own
+    # share of ssy_a). Both satisfy mean_j(VIP_j^2) == 1 since sum_j w_ja^2
+    # == wnorm2_a by construction.
+    wnorm2 = np.maximum((W ** 2).sum(axis=0), _EPS)
+    tt = (T ** 2).sum(axis=0)                    # (A,) == T[:,a] . T[:,a]
+    ssy_per_target = tt[None, :] * (Q ** 2)       # (m, A)
+    ssy_combined = ssy_per_target.sum(axis=0)     # (A,) same as plsda_fit's ssy
+    vip = np.sqrt(p * ((W ** 2) / wnorm2 @ ssy_combined) / max(ssy_combined.sum(), _EPS))
+    vip_per_target = np.zeros((p, m))
+    for k in range(m):
+        denom = max(ssy_per_target[k].sum(), _EPS)
+        vip_per_target[:, k] = np.sqrt(p * ((W ** 2) / wnorm2 @ ssy_per_target[k]) / denom)
+
+    return {"n_components": A, "scores": T, "x_loadings": P, "weights": W,
+            "y_loadings": Q, "coefficients": coefficients, "intercept": intercept,
+            "vip": vip, "vip_per_target": vip_per_target, "y_fitted": y_fitted,
+            "rmsec": rmsec, "r2": r2, "x_mean": x_mean, "y_mean": y_mean,
+            "x_std": x_std, "y_std": y_std}

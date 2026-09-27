@@ -270,6 +270,99 @@ try:
 except ValueError:
     check("single class raises", True)
 
+print("== PLS regression ==")
+_rs2 = np.random.RandomState(2)
+_p_pls = 200
+_grid2 = np.arange(_p_pls)
+_band = (_grid2 >= 40) & (_grid2 <= 50)          # known driving band, 11 vars
+_Xr, _yr = [], []
+for _ in range(60):
+    _base = 0.02 * _rs2.randn(_p_pls)
+    _conc = _rs2.uniform(0, 1)
+    _row = _base.copy()
+    _row[_band] += _conc                         # boxcar: only this band carries y
+    _Xr.append(_row)
+    _yr.append(_conc)
+_Xr = np.array(_Xr)
+_yr = np.array(_yr)
+
+_resr = core.pls_regression_fit(_Xr, _yr, n_components=3)
+check("scores shape (n, A)", _resr["scores"].shape == (60, 3))
+check("x_loadings shape (p, A)", _resr["x_loadings"].shape == (_p_pls, 3))
+check("weights shape (p, A)", _resr["weights"].shape == (_p_pls, 3))
+check("coefficients shape (p, 1)", _resr["coefficients"].shape == (_p_pls, 1))
+check("intercept shape (1,)", _resr["intercept"].shape == (1,))
+check("vip shape (p,)", _resr["vip"].shape == (_p_pls,))
+check("vip_per_target shape (p, 1)", _resr["vip_per_target"].shape == (_p_pls, 1))
+check("y_fitted shape (n, 1)", _resr["y_fitted"].shape == (60, 1))
+check("rmsec/r2 shape (1,)",
+      _resr["rmsec"].shape == (1,) and _resr["r2"].shape == (1,))
+
+# (a) the known band must dominate VIP: it's within the top-11 VIPs, and
+# every band variable has VIP > 1 while the max outside the band does not.
+_top11 = set(np.argsort(_resr["vip"])[::-1][:11].tolist())
+_band_idx = set(np.where(_band)[0].tolist())
+check("top-11 VIP contains the driving band", _band_idx.issubset(_top11))
+check("driving band has VIP > 1",
+      bool(np.all(_resr["vip"][_band] > 1.0)))
+check("outside the band, max VIP < 1",
+      bool(_resr["vip"][~_band].max() < 1.0))
+
+# (b) mean(VIP^2) == 1, combined and per-target (property of the VIP formula).
+check("mean(VIP^2) == 1 (combined)",
+      abs((_resr["vip"] ** 2).mean() - 1.0) < 1e-6)
+check("mean(VIP^2) == 1 (per-target)",
+      abs((_resr["vip_per_target"] ** 2).mean() - 1.0) < 1e-6)
+
+# (c) vs. sklearn.cross_decomposition.PLSRegression, if installed.
+try:
+    from sklearn.cross_decomposition import PLSRegression as _SkPLS
+    _HAVE_SKLEARN = True
+except ImportError:
+    _HAVE_SKLEARN = False
+if _HAVE_SKLEARN:
+    for _scale in (False, True):
+        _res_sk = core.pls_regression_fit(_Xr, _yr, n_components=3, scale=_scale)
+        _pls_sk = _SkPLS(n_components=3, scale=_scale, tol=1e-12, max_iter=5000)
+        _pls_sk.fit(_Xr, _yr)
+        _yhat_sk = _pls_sk.predict(_Xr).ravel()
+        check(f"y_fitted matches sklearn to 1e-8 (scale={_scale})",
+              np.max(np.abs(_res_sk["y_fitted"].ravel() - _yhat_sk)) < 1e-8)
+        _coef_sk = _pls_sk.coef_
+        if _coef_sk.shape == (1, _p_pls):
+            _coef_sk = _coef_sk.T
+        check(f"coefficients match sklearn to 1e-8 (scale={_scale})",
+              np.max(np.abs(_res_sk["coefficients"].ravel() - _coef_sk.ravel())) < 1e-8)
+else:
+    print("  (skipped: sklearn not installed) coefficients/y_fitted vs sklearn")
+
+# (d) multi-Y shape checks.
+_Y2 = np.column_stack([_yr, 1.0 - _yr])
+_res_my = core.pls_regression_fit(_Xr, _Y2, n_components=3)
+check("multi-Y: coefficients shape (p, 2)", _res_my["coefficients"].shape == (_p_pls, 2))
+check("multi-Y: vip_per_target shape (p, 2)", _res_my["vip_per_target"].shape == (_p_pls, 2))
+check("multi-Y: y_fitted shape (n, 2)", _res_my["y_fitted"].shape == (60, 2))
+check("multi-Y: rmsec/r2 shape (2,)",
+      _res_my["rmsec"].shape == (2,) and _res_my["r2"].shape == (2,))
+check("multi-Y: mean(VIP^2) == 1 per target",
+      np.allclose((_res_my["vip_per_target"] ** 2).mean(axis=0), 1.0, atol=1e-6))
+
+# 1-D Y accepted directly (not just column vectors).
+check("1-D Y accepted", core.pls_regression_fit(_Xr, _yr.tolist(), n_components=2)
+      ["coefficients"].shape == (_p_pls, 1))
+
+# n_components validated against min(n-1, p).
+try:
+    core.pls_regression_fit(_Xr[:5], _yr[:5], n_components=10)
+    check("n_components > min(n-1,p) raises", False)
+except ValueError:
+    check("n_components > min(n-1,p) raises", True)
+try:
+    core.pls_regression_fit(_Xr, _yr, n_components=0)
+    check("n_components < 1 raises", False)
+except ValueError:
+    check("n_components < 1 raises", True)
+
 
 print("== embedded JS chart parsing ==")
 _plotly = ('<script>var t={x:[400,401,402,403,404],y:[0.1,0.4,0.9,0.5,0.2]};'

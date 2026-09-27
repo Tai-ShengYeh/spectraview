@@ -4,6 +4,25 @@ All notable changes to orange-spectra are documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versioning: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **PLS Regression** widget (`owplsvip.py`) — quantitative PLS calibration
+  (e.g. % aspartame/sucralose in a powder blend, acetic acid in vinegar) for
+  one or more continuous targets: PLS2 (NIPALS), scores plot coloured by
+  target, and outputs for Scores / Loadings / VIP / Coefficients /
+  Predictions. VIP is reported both combined (all targets pooled) and per
+  target, and uses the same VIP formula as PLS-DA
+  (`VIP_j = sqrt(p * sum_a(ssy_a * (w_ja/||w_a||)^2) / sum_a ssy_a)`), so
+  students can check that high-VIP wavelengths line up with the chemical
+  bands they were assigned. `core.pls_regression_fit()` is the underlying
+  pure-numpy function (mean-centering always, optional autoscaling); its
+  coefficients and fitted values match
+  `sklearn.cross_decomposition.PLSRegression` to ~1e-8 (own tests) and its
+  standard-VIP definition to ~1e-15 against an external real dataset (see
+  `validation/validate_pls_regression_acetic.py`).
+
 ## [0.7.5] - 2026-09-07
 
 ### Added

@@ -432,6 +432,93 @@ class TestOWPLSDA(WidgetTest):
         self.assertEqual(len(scores.domain.attributes), 5)
 
 
+class TestOWPLSRegression(WidgetTest):
+    def setUp(self):
+        from orangespectra.widgets.owplsvip import OWPLSRegression
+        self.widget = self.create_widget(OWPLSRegression)
+
+    def _table(self, n=40, p=100, band=(20, 30)):
+        from Orange.data import ContinuousVariable, Domain, Table
+        rs = np.random.RandomState(0)
+        grid = np.arange(p)
+        mask = (grid >= band[0]) & (grid <= band[1])
+        X, y = [], []
+        for _ in range(n):
+            row = 0.02 * rs.randn(p)
+            conc = rs.uniform(0, 1)
+            row[mask] += conc
+            X.append(row)
+            y.append(conc)
+        dom = Domain([ContinuousVariable(f"{v:.1f}") for v in grid],
+                     ContinuousVariable("conc"))
+        return Table.from_numpy(dom, np.array(X), np.array(y)), mask
+
+    def test_outputs(self):
+        t, mask = self._table()
+        self.send_signal(self.widget.Inputs.data, t)
+        scores = self.get_output(self.widget.Outputs.scores)
+        self.assertEqual(len(scores), 40)
+        self.assertEqual(len(scores.domain.attributes), 2)
+
+        vip = self.get_output(self.widget.Outputs.vip)
+        self.assertEqual(len(vip), 100)
+        self.assertEqual([a.name for a in vip.domain.attributes],
+                         ["VIP", "VIP_conc"])
+        self.assertIn("wavelength", [m.name for m in vip.domain.metas])
+        vals = np.array([float(r["VIP"]) for r in vip])
+        # unsorted: kept in wavelength (input) order, not descending by VIP
+        self.assertFalse(np.all(vals == np.sort(vals)[::-1]))
+        self.assertTrue(np.all(vals[mask] > 1.0))
+
+        coef = self.get_output(self.widget.Outputs.coefficients)
+        self.assertEqual(len(coef), 100)
+        self.assertIn("intercept", coef.domain.attributes[0].attributes)
+
+        pred = self.get_output(self.widget.Outputs.predictions)
+        self.assertEqual(len(pred), 40)
+        self.assertEqual(str(pred.domain.metas[-1].name), "Predicted conc")
+        self.assertIn("R²", self.widget.info_label.text())
+
+    def test_no_target_errors(self):
+        from Orange.data import ContinuousVariable, Domain, Table
+        dom = Domain([ContinuousVariable(f"x{i}") for i in range(5)])
+        t = Table.from_numpy(dom, np.random.RandomState(0).rand(6, 5))
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Error.no_target.is_shown())
+
+    def test_discrete_target_errors(self):
+        from Orange.data import ContinuousVariable, DiscreteVariable, Domain, Table
+        dom = Domain([ContinuousVariable(f"x{i}") for i in range(5)],
+                     DiscreteVariable("cls", values=("a", "b")))
+        t = Table.from_numpy(dom, np.random.RandomState(0).rand(6, 5),
+                             np.array([0, 1, 0, 1, 0, 1], float))
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Error.discrete_target.is_shown())
+
+    def test_multi_target(self):
+        from Orange.data import ContinuousVariable, Domain, Table
+        rs = np.random.RandomState(0)
+        grid = np.arange(60)
+        X = rs.randn(30, 60).cumsum(axis=1)
+        y1 = X[:, 5:15].mean(axis=1)
+        y2 = X[:, 40:50].mean(axis=1)
+        dom = Domain([ContinuousVariable(f"{v:.1f}") for v in grid],
+                     [ContinuousVariable("y1"), ContinuousVariable("y2")])
+        t = Table.from_numpy(dom, X, np.column_stack([y1, y2]))
+        self.send_signal(self.widget.Inputs.data, t)
+        vip = self.get_output(self.widget.Outputs.vip)
+        self.assertEqual([a.name for a in vip.domain.attributes],
+                         ["VIP", "VIP_y1", "VIP_y2"])
+        pred = self.get_output(self.widget.Outputs.predictions)
+        self.assertEqual([m.name for m in pred.domain.metas[-2:]],
+                         ["Predicted y1", "Predicted y2"])
+
+    def test_components_clipped_warning(self):
+        t, _ = self._table(n=5, p=100)
+        self.widget.n_components = 20
+        self.send_signal(self.widget.Inputs.data, t)
+        self.assertTrue(self.widget.Warning.components_clipped.is_shown())
+
 
 class TestOWMergeSpectra(WidgetTest):
     def setUp(self):

@@ -2,7 +2,7 @@
 
 **English** ｜ [中文](#中文說明)
 
-Eleven spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
+Twelve spectroscopy widgets for [Orange Data Mining](https://orangedatamining.com/).
 They share their algorithms and the `.speclib` library format with
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview), a desktop
 spectroscopy viewer. Fetch spectra from public databases by URL, compare and
@@ -22,6 +22,7 @@ aquaphotomics aquagrams — all inside Orange's visual workflow canvas.
 | **Peak Finder** | Detect peaks, label them on the plot, and output a peak table (position, height, FWHM, prominence, area). |
 | **XRF Element ID** | Find peaks in an XRF spectrum (keV) and label them with matching element emission lines (Kα/Kβ/Lα/Lβ, 53 elements Na–U). |
 | **PLS-DA** | Partial least squares discriminant analysis: class-colored score plot, loadings, VIP variable importance, and predictions. |
+| **PLS Regression** | Quantitative PLS calibration for one or more continuous targets (e.g. % additive, acidity): scores, loadings, coefficients, VIP variable importance, RMSEC and R². |
 
 The output `Table` follows the
 [Orange-Spectroscopy](https://orange-spectroscopy.readthedocs.io/) convention
@@ -60,7 +61,7 @@ missing a Qt binding — install one:
 pip install PyQt5 PyQtWebEngine
 ```
 
-After (re)starting Orange, a **Spectra** category with the eleven widgets appears
+After (re)starting Orange, a **Spectra** category with the twelve widgets appears
 in the toolbox.
 
 ## Quick start
@@ -143,7 +144,7 @@ MIT.
 
 [English](#orange-spectra--spectroscopy-widgets-for-orange-data-mining) ｜ **中文**
 
-十一個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
+十二個給 [Orange Data Mining](https://orangedatamining.com/) 的光譜學 widgets，
 與桌面版光譜檢視程式
 [SpectraView](https://github.com/Tai-ShengYeh/spectraview) 共用演算法與
 `.speclib` 光譜庫格式。可用網址從公開資料庫抓光譜、比對與搜尋、建立可重複使用的
@@ -163,6 +164,7 @@ MIT.
 | **Peak Finder** | 自動尋峰並在圖上標記，輸出峰表（峰位、峰高、FWHM、顯著度、面積）。 |
 | **XRF Element ID** | XRF 能譜（keV）尋峰並比對元素特徵譜線（Kα/Kβ/Lα/Lβ，Na–U 53 元素），圖上直接標元素。 |
 | **PLS-DA** | 偏最小平方判別分析：依類別上色的分數圖、loadings、VIP 變數重要性與預測輸出。 |
+| **PLS Regression** | 定量 PLS 校正：可用一個或多個連續目標（如添加物百分比、酸度），輸出分數、loadings、迴歸係數、VIP 變數重要性、RMSEC 與 R²。 |
 
 輸出的 `Table` 採
 [Orange-Spectroscopy](https://orange-spectroscopy.readthedocs.io/)
@@ -198,7 +200,7 @@ macOS 請用 `python3` / `pip3`（可用 [Homebrew](https://brew.sh/) 裝 Python
 pip install PyQt5 PyQtWebEngine
 ```
 
-重新啟動 Orange，工具箱會出現 **Spectra** 分類（11 個 widgets）。
+重新啟動 Orange，工具箱會出現 **Spectra** 分類（12 個 widgets）。
 
 ## 快速上手
 
